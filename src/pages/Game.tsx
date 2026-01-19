@@ -13,6 +13,8 @@ import { ProfileModal } from '@/components/ProfileModal';
 import { TimeManager } from '@/components/TimeManager';
 import { TalentModal } from '@/components/TalentModal';
 import { AchievementModal } from '@/components/AchievementModal';
+import { SettingsModal } from '@/components/SettingsModal';
+import { Settings } from 'lucide-react';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ export const Game: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = React.useState(false);
   const [showTalents, setShowTalents] = React.useState(false);
   const [showAchievements, setShowAchievements] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
 
   const { 
@@ -192,12 +195,21 @@ export const Game: React.FC = () => {
         <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
-            <button 
-              onClick={() => { resetGame(); navigate('/'); }}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              退出游戏
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                title="系统设置"
+              >
+                <Settings size={20} />
+              </button>
+              <button 
+                onClick={() => { resetGame(); navigate('/'); }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                退出
+              </button>
+            </div>
           </header>
 
           <StatsDisplay 
@@ -373,6 +385,7 @@ export const Game: React.FC = () => {
 
       <TalentModal isOpen={showTalents} onClose={() => setShowTalents(false)} />
       <AchievementModal isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 };

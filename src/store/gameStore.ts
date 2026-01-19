@@ -46,6 +46,10 @@ interface GameStore extends GameState {
 
   // Developer Mode Methods
   updateStats: (updates: Partial<GameState>) => void;
+
+  // Save/Load Methods
+  exportSave: () => void;
+  importSave: (data: string) => boolean;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -661,6 +665,75 @@ export const useGameStore = create<GameStore>()(
           countyStats: { ...state.countyStats, ...(updates.countyStats || {}) },
         }));
         get().addLog('【系统】开发者模式修改了游戏数据');
+      },
+
+      exportSave: () => {
+        const state = get();
+        const saveData = {
+          role: state.role,
+          day: state.day,
+          playerStats: state.playerStats,
+          countyStats: state.countyStats,
+          dailyCounts: state.dailyCounts,
+          inventory: state.inventory,
+          flags: state.flags,
+          npcRelations: state.npcRelations,
+          logs: state.logs,
+          currentEvent: state.currentEvent,
+          isGameOver: state.isGameOver,
+          currentTaskId: state.currentTaskId,
+          completedTaskIds: state.completedTaskIds,
+          giftFailureCounts: state.giftFailureCounts,
+          npcInteractionStates: state.npcInteractionStates,
+          isVoiceLost: state.isVoiceLost,
+          collectedScrolls: state.collectedScrolls,
+          activePolicyId: state.activePolicyId,
+          talents: state.talents,
+          achievements: state.achievements,
+          playerProfile: state.playerProfile,
+          timeSettings: state.timeSettings,
+          timestamp: Date.now(),
+          version: '1.0.0'
+        };
+        
+        const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        get().addLog('【系统】存档导出成功！');
+      },
+
+      importSave: (dataStr: string) => {
+        try {
+          const data = JSON.parse(dataStr);
+          
+          // Basic validation
+          if (!data.role || !data.playerStats || !data.day) {
+            get().addLog('【系统】存档文件格式错误，无法导入。');
+            return false;
+          }
+
+          set(state => ({
+            ...state,
+            ...data,
+            // Ensure nested objects are merged/overwritten correctly if needed, 
+            // but since we export the full object structure, direct spread should work 
+            // for the top-level keys we care about.
+          }));
+          
+          get().addLog('【系统】存档导入成功！进度已加载。');
+          return true;
+        } catch (e) {
+          console.error('Import failed:', e);
+          get().addLog('【系统】存档导入失败，文件可能已损坏。');
+          return false;
+        }
       }
     }),
     {
