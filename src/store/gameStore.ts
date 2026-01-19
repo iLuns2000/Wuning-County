@@ -6,6 +6,8 @@ import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
 import { policies } from '@/data/policies';
 import { fortunes } from '@/data/fortunes';
+import { talents } from '@/data/talents';
+import { achievements } from '@/data/achievements';
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -25,6 +27,10 @@ interface GameStore extends GameState {
   setPolicy: (policyId: string) => void;
   cancelPolicy: () => void;
   divineFortune: () => void;
+  
+  // Talent & Achievement Methods
+  upgradeTalent: (talentId: string) => void;
+  checkAchievements: () => void;
   
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
@@ -54,7 +60,7 @@ export const useGameStore = create<GameStore>()(
         isPaused: false,
       },
       playerProfile: { name: '无名', avatar: '' },
-      playerStats: { money: 0, reputation: 0, ability: 0, health: 100 },
+      playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
       dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
       npcInteractionStates: {},
@@ -69,6 +75,8 @@ export const useGameStore = create<GameStore>()(
       currentTaskId: undefined,
       completedTaskIds: [],
       giftFailureCounts: {},
+      talents: {},
+      achievements: [],
 
       updateTimeSettings: (settings) => {
         set(state => ({
@@ -141,7 +149,7 @@ export const useGameStore = create<GameStore>()(
           role: roleId,
           day: 1,
           playerProfile: { name: roleConfig.name, avatar: '' },
-          playerStats: { ...roleConfig.initialStats },
+          playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
           npcInteractionStates: {},
@@ -157,6 +165,8 @@ export const useGameStore = create<GameStore>()(
           currentTaskId: firstTask?.id,
           completedTaskIds: [],
           giftFailureCounts: {},
+          talents: {},
+          achievements: [],
         });
         
         if (firstTask) {
@@ -321,6 +331,59 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      upgradeTalent: (talentId) => {
+        const state = get();
+        const talent = talents.find(t => t.id === talentId);
+        if (!talent) return;
+
+        const currentLevel = state.talents[talentId] || 0;
+        if (currentLevel >= talent.maxLevel) return;
+
+        const cost = talent.baseCost * (currentLevel + 1);
+        if (state.playerStats.experience < cost) {
+          state.addLog('阅历不足，无法领悟此天赋。');
+          return;
+        }
+
+        set(state => ({
+          playerStats: {
+            ...state.playerStats,
+            experience: state.playerStats.experience - cost
+          },
+          talents: {
+            ...state.talents,
+            [talentId]: currentLevel + 1
+          }
+        }));
+        state.addLog(`【天赋】你领悟了“${talent.name}”，等级提升至 ${currentLevel + 1}。`);
+      },
+
+      checkAchievements: () => {
+        const state = get();
+        const newUnlockedIds: string[] = [];
+        let totalRewardExp = 0;
+
+        achievements.forEach(ach => {
+          if (!state.achievements.includes(ach.id)) {
+            if (ach.condition(state)) {
+              newUnlockedIds.push(ach.id);
+              totalRewardExp += ach.rewardExp;
+              get().addLog(`【成就达成】${ach.name}：获得 ${ach.rewardExp} 阅历！`);
+            }
+          }
+        });
+
+        if (newUnlockedIds.length > 0) {
+          set(state => ({
+            achievements: [...state.achievements, ...newUnlockedIds],
+            playerStats: {
+              ...state.playerStats,
+              experience: state.playerStats.experience + totalRewardExp
+            }
+          }));
+        }
+      },
+
       setPolicy: (policyId) => {
         const state = get();
         const policy = policies.find(p => p.id === policyId);
@@ -367,14 +430,17 @@ export const useGameStore = create<GameStore>()(
       nextDay: () => {
         set(state => {
           const currentHealth = state.playerStats.health;
+          const fitnessLevel = state.talents['fitness'] || 0;
+          const maxHealth = 100 + fitnessLevel * 10;
+
           let newHealth = currentHealth;
           let recoveryMessage = '';
 
-          if (currentHealth > 50) {
-            newHealth = 100;
+          if (currentHealth > maxHealth * 0.5) {
+            newHealth = maxHealth;
             recoveryMessage = '经过一晚充足的休息，体力已完全恢复。';
           } else {
-            newHealth = Math.min(100, currentHealth + 10);
+            newHealth = Math.min(maxHealth, currentHealth + 10);
             recoveryMessage = '由于身体状况不佳，昨晚休息得不是很好，体力仅略有恢复。';
           }
 
@@ -430,6 +496,8 @@ export const useGameStore = create<GameStore>()(
           const logs = [recoveryMessage, ...state.logs];
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
+          
+          logs.unshift('获得 10 点阅历。');
 
           return { 
             day: state.day + 1,
@@ -437,13 +505,14 @@ export const useGameStore = create<GameStore>()(
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
             isVoiceLost: isVoiceLost,
-            playerStats: newPlayerStats,
+            playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },
             countyStats: newCountyStats,
             logs: logs.slice(0, 50),
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() } // Reset timer
           };
         });
         get().addLog(`第 ${get().day} 天`);
+        get().checkAchievements();
         get().checkTaskCompletion();
         get().triggerEvent();
       },
@@ -454,9 +523,32 @@ export const useGameStore = create<GameStore>()(
         if (effect) {
           set(state => {
             const newPlayerStats = { ...state.playerStats, ...effect.playerStats };
-            if (effect.money) newPlayerStats.money += effect.money;
-            if (effect.reputation) newPlayerStats.reputation += effect.reputation;
-            if (effect.ability) newPlayerStats.ability += effect.ability;
+            
+            // Apply Talent Modifiers
+            if (effect.money) {
+               if (effect.money > 0) {
+                   const level = state.talents['mercantile'] || 0;
+                   newPlayerStats.money += Math.floor(effect.money * (1 + level * 0.1));
+               } else {
+                   newPlayerStats.money += effect.money;
+               }
+            }
+            if (effect.reputation) {
+               if (effect.reputation > 0) {
+                   const level = state.talents['eloquence'] || 0;
+                   newPlayerStats.reputation += Math.floor(effect.reputation * (1 + level * 0.1));
+               } else {
+                   newPlayerStats.reputation += effect.reputation;
+               }
+            }
+            if (effect.ability) {
+               if (effect.ability > 0) {
+                   const level = state.talents['wisdom'] || 0;
+                   newPlayerStats.ability += Math.floor(effect.ability * (1 + level * 0.1));
+               } else {
+                   newPlayerStats.ability += effect.ability;
+               }
+            }
             if (effect.health) newPlayerStats.health += effect.health;
 
             const newCountyStats = { ...state.countyStats, ...effect.countyStats };
@@ -466,9 +558,12 @@ export const useGameStore = create<GameStore>()(
             if (effect.livelihood) newCountyStats.livelihood += effect.livelihood;
 
             // Clamp stats
+            const fitnessLevel = state.talents['fitness'] || 0;
+            const maxHealth = 100 + fitnessLevel * 10;
+
             newPlayerStats.reputation = Math.min(1000, Math.max(0, newPlayerStats.reputation));
             newPlayerStats.ability = Math.min(100, Math.max(0, newPlayerStats.ability));
-            newPlayerStats.health = Math.min(100, Math.max(0, newPlayerStats.health));
+            newPlayerStats.health = Math.min(maxHealth, Math.max(0, newPlayerStats.health));
 
             newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy));
             newCountyStats.order = Math.min(100, Math.max(0, newCountyStats.order));
@@ -503,6 +598,7 @@ export const useGameStore = create<GameStore>()(
           });
           // Check task completion after state update
           get().checkTaskCompletion();
+          get().checkAchievements();
         } else {
             set({ currentEvent: null });
         }
@@ -589,6 +685,8 @@ export const useGameStore = create<GameStore>()(
         isVoiceLost: state.isVoiceLost,
         collectedScrolls: state.collectedScrolls,
         activePolicyId: state.activePolicyId,
+        talents: state.talents,
+        achievements: state.achievements,
       }), // Save everything except actions
     }
   )

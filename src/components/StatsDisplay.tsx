@@ -1,6 +1,6 @@
 import React from 'react';
 import { PlayerStats, CountyStats, PlayerProfile } from '@/types/game';
-import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2 } from 'lucide-react';
+import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb } from 'lucide-react';
 
 interface StatsDisplayProps {
   playerStats: PlayerStats;
@@ -8,6 +8,8 @@ interface StatsDisplayProps {
   day: number;
   playerProfile?: PlayerProfile;
   onEditProfile?: () => void;
+  onOpenTalents?: () => void;
+  onOpenAchievements?: () => void;
 }
 
 const StatItem = ({ icon: Icon, value, label, color }: any) => (
@@ -18,7 +20,15 @@ const StatItem = ({ icon: Icon, value, label, color }: any) => (
   </div>
 );
 
-export const StatsDisplay: React.FC<StatsDisplayProps> = ({ playerStats, countyStats, day, playerProfile, onEditProfile }) => {
+export const StatsDisplay: React.FC<StatsDisplayProps> = ({ 
+  playerStats, 
+  countyStats, 
+  day, 
+  playerProfile, 
+  onEditProfile,
+  onOpenTalents,
+  onOpenAchievements
+}) => {
   return (
     <div className="flex flex-col gap-4 bg-card p-4 rounded-lg shadow-sm border text-card-foreground">
       {/* Profile Section */}
@@ -49,12 +59,31 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({ playerStats, countyS
       </div>
       
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">个人状态</h3>
+        <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-muted-foreground">个人状态</h3>
+            <div className="flex gap-1">
+                 <button 
+                    onClick={onOpenTalents}
+                    className="p-1 hover:bg-secondary rounded text-muted-foreground hover:text-primary"
+                    title="天赋"
+                 >
+                    <Lightbulb size={16} />
+                 </button>
+                 <button 
+                    onClick={onOpenAchievements}
+                    className="p-1 hover:bg-secondary rounded text-muted-foreground hover:text-primary"
+                    title="成就"
+                 >
+                    <Award size={16} />
+                 </button>
+            </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <StatItem icon={Coins} value={playerStats.money} label="金钱" color="text-yellow-500" />
           <StatItem icon={Trophy} value={playerStats.reputation} label="声望" color="text-purple-500" />
           <StatItem icon={Zap} value={playerStats.ability} label="能力" color="text-blue-500" />
           <StatItem icon={Heart} value={playerStats.health} label="健康" color="text-red-500" />
+          <StatItem icon={Star} value={playerStats.experience || 0} label="阅历" color="text-indigo-500" />
         </div>
       </div>
 

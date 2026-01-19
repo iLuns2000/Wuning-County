@@ -11,11 +11,15 @@ import { PolicyModal } from '@/components/PolicyModal';
 import { policies } from '@/data/policies';
 import { ProfileModal } from '@/components/ProfileModal';
 import { TimeManager } from '@/components/TimeManager';
+import { TalentModal } from '@/components/TalentModal';
+import { AchievementModal } from '@/components/AchievementModal';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
   const [showPolicies, setShowPolicies] = React.useState(false);
   const [showProfileModal, setShowProfileModal] = React.useState(false);
+  const [showTalents, setShowTalents] = React.useState(false);
+  const [showAchievements, setShowAchievements] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
 
   const { 
@@ -202,6 +206,8 @@ export const Game: React.FC = () => {
             day={day} 
             playerProfile={playerProfile}
             onEditProfile={() => setShowProfileModal(true)}
+            onOpenTalents={() => setShowTalents(true)}
+            onOpenAchievements={() => setShowAchievements(true)}
           />
 
           {currentTask && (
@@ -364,6 +370,9 @@ export const Game: React.FC = () => {
         initialAvatar={playerProfile?.avatar || ''}
         onSave={handleSaveProfile}
       />
+
+      <TalentModal isOpen={showTalents} onClose={() => setShowTalents(false)} />
+      <AchievementModal isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
     </div>
   );
 };

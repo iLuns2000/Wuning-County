@@ -5,6 +5,25 @@ export interface PlayerStats {
   reputation: number;
   ability: number;
   health: number;
+  experience: number;
+}
+
+export interface Talent {
+  id: string;
+  name: string;
+  description: string;
+  maxLevel: number;
+  baseCost: number;
+  effectType: 'money_gain' | 'reputation_gain' | 'max_health' | 'ability_gain' | 'action_cost';
+  effectValue: number; // value per level
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  rewardExp: number;
+  isHidden?: boolean; // If true, description is hidden until unlocked
 }
 
 export interface CountyStats {
@@ -73,6 +92,8 @@ export interface GameState {
   currentTaskId?: string; // Track current main task
   completedTaskIds: string[]; // Track completed tasks
   giftFailureCounts: Record<string, number>; // Track consecutive gift failures per NPC
+  talents: Record<string, number>; // id -> level
+  achievements: string[]; // ids of unlocked achievements
 }
 
 export interface Effect {
