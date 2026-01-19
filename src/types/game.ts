@@ -47,9 +47,17 @@ export interface PlayerProfile {
   avatar: string; // Base64 string
 }
 
+export interface TimeSettings {
+  dayDurationSeconds: number; // Duration of a day in seconds
+  isTimeFlowEnabled: boolean; // Whether natural time flow is active
+  dayStartTime: number; // Timestamp when the current day started (or was resumed)
+  isPaused: boolean; // Whether the timer is currently paused (e.g. during events)
+}
+
 export interface GameState {
   role: RoleType | null;
   day: number;
+  timeSettings: TimeSettings; // New field for time management
   playerProfile: PlayerProfile;
   playerStats: PlayerStats;
   countyStats: CountyStats;

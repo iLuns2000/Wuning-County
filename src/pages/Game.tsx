@@ -10,11 +10,13 @@ import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
 import { policies } from '@/data/policies';
 import { ProfileModal } from '@/components/ProfileModal';
+import { TimeManager } from '@/components/TimeManager';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
   const [showPolicies, setShowPolicies] = React.useState(false);
   const [showProfileModal, setShowProfileModal] = React.useState(false);
+  const [isNightWarning, setIsNightWarning] = React.useState(false);
 
   const { 
     role, 
@@ -49,6 +51,15 @@ export const Game: React.FC = () => {
       navigate('/');
     }
   }, [role, navigate]);
+
+  useEffect(() => {
+    if (isNightWarning) {
+       addLog('【天色渐晚】太阳即将落山，这一天快要结束了...');
+       // Reset warning after a few seconds to avoid spamming (or just let it be handled by log deduplication if any)
+       const timer = setTimeout(() => setIsNightWarning(false), 5000);
+       return () => clearTimeout(timer);
+    }
+  }, [isNightWarning]);
 
   if (!role) return null;
 
@@ -170,6 +181,7 @@ export const Game: React.FC = () => {
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
+      <TimeManager onNightWarning={() => setIsNightWarning(true)} />
       <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
         
         {/* Left Column: Stats & Actions */}

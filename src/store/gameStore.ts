@@ -33,6 +33,11 @@ interface GameStore extends GameState {
   // Profile Methods
   setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
 
+  // Time Methods
+  updateTimeSettings: (settings: Partial<import('@/types/game').TimeSettings>) => void;
+  resetDayTimer: () => void;
+  togglePause: (paused: boolean) => void;
+
   // Developer Mode Methods
   updateStats: (updates: Partial<GameState>) => void;
 }
@@ -42,6 +47,12 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       role: null,
       day: 1,
+      timeSettings: {
+        dayDurationSeconds: 300, // 5 minutes default
+        isTimeFlowEnabled: true,
+        dayStartTime: Date.now(),
+        isPaused: false,
+      },
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
@@ -58,6 +69,61 @@ export const useGameStore = create<GameStore>()(
       currentTaskId: undefined,
       completedTaskIds: [],
       giftFailureCounts: {},
+
+      updateTimeSettings: (settings) => {
+        set(state => ({
+            timeSettings: { ...state.timeSettings, ...settings }
+        }));
+      },
+
+      resetDayTimer: () => {
+        set(state => ({
+            timeSettings: { ...state.timeSettings, dayStartTime: Date.now(), isPaused: false }
+        }));
+      },
+
+      togglePause: (paused) => {
+        set(state => {
+            // If pausing, calculate elapsed so we can adjust startTime on resume?
+            // Simplified: Just toggle pause flag. The component will handle elapsed time logic by using stored duration.
+            // Actually, if we pause, we need to adjust startTime when we resume to "freeze" the time.
+            // But for now let's keep it simple. If we want to support true pause/resume, we need to track 'elapsed' in store or adjust startTime.
+            // Let's adjust startTime on resume:
+            // When pausing: store 'pauseTime'.
+            // When resuming: startTime = startTime + (now - pauseTime).
+            // For MVP: let's just use the boolean. The TimeManager component can handle "pausing" the visual timer.
+            // However, Date.now() keeps moving. If I pause for 10 mins, the day will end immediately on resume if I don't adjust.
+            // Strategy: When pausing, save 'elapsedTimeAtPause'. When resuming, set 'dayStartTime = Date.now() - elapsedTimeAtPause'.
+            
+            // Re-implementing correctly:
+            let newSettings = { ...state.timeSettings, isPaused: paused };
+            
+            if (paused) {
+                // We are pausing.
+                // We don't need to do anything to start time yet, just stop checking.
+                // But we need to know how much time had passed to restore it.
+                // Let's store 'elapsedTime' in the store? No, let's use a "pauseTimestamp".
+                // Actually, simplest way:
+                // We need to shift dayStartTime forward by the duration of the pause.
+                // So we need to store 'lastPauseTime' in state?
+                // Let's rely on the component to calculate offsets? No, store is source of truth.
+                
+                // Better approach: 
+                // We will add 'pausedAt' timestamp to settings.
+                // When resuming: dayStartTime += (Date.now() - pausedAt).
+                newSettings = { ...newSettings, pausedAt: Date.now() } as any; 
+            } else {
+                // Resuming
+                if ((state.timeSettings as any).pausedAt) {
+                    const pauseDuration = Date.now() - (state.timeSettings as any).pausedAt;
+                    newSettings.dayStartTime = state.timeSettings.dayStartTime + pauseDuration;
+                    newSettings = { ...newSettings, pausedAt: undefined } as any;
+                }
+            }
+
+            return { timeSettings: newSettings };
+        });
+      },
 
       setPlayerProfile: (profile) => {
         set(state => ({
@@ -373,7 +439,8 @@ export const useGameStore = create<GameStore>()(
             isVoiceLost: isVoiceLost,
             playerStats: newPlayerStats,
             countyStats: newCountyStats,
-            logs: logs.slice(0, 50)
+            logs: logs.slice(0, 50),
+            timeSettings: { ...state.timeSettings, dayStartTime: Date.now() } // Reset timer
           };
         });
         get().addLog(`第 ${get().day} 天`);
