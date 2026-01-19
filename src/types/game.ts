@@ -42,9 +42,15 @@ export interface Policy {
   cost: number; // Reputation cost to enact
 }
 
+export interface PlayerProfile {
+  name: string;
+  avatar: string; // Base64 string
+}
+
 export interface GameState {
   role: RoleType | null;
   day: number;
+  playerProfile: PlayerProfile;
   playerStats: PlayerStats;
   countyStats: CountyStats;
   dailyCounts: DailyActionCounts;

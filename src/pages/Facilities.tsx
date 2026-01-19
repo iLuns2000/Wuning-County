@@ -19,11 +19,11 @@ const FortuneTeller: React.FC = () => {
         费用：5 文/次。每日限一次。
       </p>
 
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col gap-4 items-center">
         <button
             onClick={divineFortune}
             disabled={dailyCounts.fortune > 0 || playerStats.money < 5}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="flex gap-2 justify-center items-center py-3 w-full text-white bg-purple-600 rounded-lg transition-all hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             <ScrollText size={20} />
             {dailyCounts.fortune > 0 ? '今日已算过' : '求签问卜 (5文)'}
@@ -191,7 +191,7 @@ const ArcheryRange: React.FC = () => {
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
         <Target className="text-primary" />
-        <h2 className="text-xl font-bold">无宁建馆(馆主:关山)</h2>
+        <h2 className="text-xl font-bold">无宁箭馆(馆主:关山)</h2>
       </div>
       <div className="space-y-1 text-sm text-muted-foreground">
         <p>这里聚集了不少神射手。你可以花钱挑战射箭，射中靶心可赢取彩头。</p>

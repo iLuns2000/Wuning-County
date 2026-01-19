@@ -1,3 +1,13 @@
+<!--
+ * @Author: xyZhan
+ * @Date: 2026-01-20 06:49:02
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-01-20 06:59:22
+ * @FilePath: \textgame\README.md
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+-->
 # 无宁县志 (Wuning County)
 
 一个基于文本的古风模拟经营与角色扮演游戏。在这座名为“无宁”的县城中，你可以扮演不同的角色，体验不同的人生轨迹，影响县城的命运。

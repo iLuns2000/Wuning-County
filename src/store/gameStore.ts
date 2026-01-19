@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -29,6 +29,9 @@ interface GameStore extends GameState {
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
+  
+  // Profile Methods
+  setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
 
   // Developer Mode Methods
   updateStats: (updates: Partial<GameState>) => void;
@@ -39,6 +42,7 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       role: null,
       day: 1,
+      playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
       dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
@@ -55,6 +59,12 @@ export const useGameStore = create<GameStore>()(
       completedTaskIds: [],
       giftFailureCounts: {},
 
+      setPlayerProfile: (profile) => {
+        set(state => ({
+          playerProfile: { ...(state.playerProfile || {}), ...profile }
+        }));
+      },
+
       startGame: (roleId) => {
         const roleConfig = roles.find(r => r.id === roleId);
         if (!roleConfig) return;
@@ -64,6 +74,7 @@ export const useGameStore = create<GameStore>()(
         set({
           role: roleId,
           day: 1,
+          playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats },
           countyStats: { ...roleConfig.initialCountyStats },
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },

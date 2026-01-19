@@ -9,15 +9,19 @@ import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
 import { policies } from '@/data/policies';
+import { ProfileModal } from '@/components/ProfileModal';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
   const [showPolicies, setShowPolicies] = React.useState(false);
+  const [showProfileModal, setShowProfileModal] = React.useState(false);
 
   const { 
     role, 
     day, 
-    playerStats, 
+    playerStats,
+    playerProfile,
+    setPlayerProfile,
     countyStats, 
     logs, 
     currentEvent, 
@@ -98,9 +102,14 @@ export const Game: React.FC = () => {
      const msg = role === 'hero' 
        ? '你运功调息，体力恢复得很快。' 
        : '你休息了一整天，感觉精力充沛。';
-     
-     incrementDailyCount('rest');
-     handleEventOption({ health: healAmount }, msg);
+    
+    incrementDailyCount('rest');
+    handleEventOption({ health: healAmount }, msg);
+  };
+
+  const handleSaveProfile = (name: string, avatar: string) => {
+    setPlayerProfile({ name, avatar });
+    addLog(`你更新了个人资料，改名为“${name}”。`);
   };
 
   const handleSpecialAbility = () => {
@@ -161,10 +170,10 @@ export const Game: React.FC = () => {
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 items-start w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
         
-        {/* Left Column: Operations */}
-        <div className="overflow-y-auto mx-auto space-y-4 w-full max-w-md h-full md:max-w-none no-scrollbar">
+        {/* Left Column: Stats & Actions */}
+        <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <button 
@@ -175,7 +184,13 @@ export const Game: React.FC = () => {
             </button>
           </header>
 
-          <StatsDisplay playerStats={playerStats} countyStats={countyStats} day={day} />
+          <StatsDisplay 
+            playerStats={playerStats} 
+            countyStats={countyStats} 
+            day={day} 
+            playerProfile={playerProfile}
+            onEditProfile={() => setShowProfileModal(true)}
+          />
 
           {currentTask && (
             <div className="space-y-1">
@@ -329,6 +344,14 @@ export const Game: React.FC = () => {
           onClose={() => setShowPolicies(false)}
         />
       )}
+
+      <ProfileModal 
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        initialName={playerProfile?.name || ''}
+        initialAvatar={playerProfile?.avatar || ''}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 };
