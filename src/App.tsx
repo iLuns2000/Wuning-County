@@ -5,6 +5,8 @@ import { NPCList } from '@/pages/NPCList';
 import { TaskList } from '@/pages/TaskList';
 import { Facilities } from '@/pages/Facilities';
 import { Collection } from '@/pages/Collection';
+import { Credits } from '@/pages/Credits';
+import { Watermark } from '@/components/Watermark';
 
 function App() {
   return (
@@ -16,7 +18,9 @@ function App() {
         <Route path="/tasks" element={<TaskList />} />
         <Route path="/facilities" element={<Facilities />} />
         <Route path="/collection" element={<Collection />} />
+        <Route path="/credits" element={<Credits />} />
       </Routes>
+      <Watermark />
     </BrowserRouter>
   );
 }
