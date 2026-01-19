@@ -1,8 +1,37 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Dices, Target, Trophy, Coins } from 'lucide-react';
+import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
+
+// Fortune Teller Component
+const FortuneTeller: React.FC = () => {
+  const { playerStats, dailyCounts, divineFortune } = useGameStore();
+
+  return (
+    <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
+      <div className="flex gap-2 items-center pb-2 border-b">
+        <Sparkles className="text-purple-500" />
+        <h2 className="text-xl font-bold">天机阁</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        "天机不可泄露..." 一位老者闭目养神，身前摆着签筒。<br/>
+        费用：5 文/次。每日限一次。
+      </p>
+
+      <div className="flex flex-col items-center gap-4">
+        <button
+            onClick={divineFortune}
+            disabled={dailyCounts.fortune > 0 || playerStats.money < 5}
+            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+            <ScrollText size={20} />
+            {dailyCounts.fortune > 0 ? '今日已算过' : '求签问卜 (5文)'}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Gambling House Component
 const GamblingHouse: React.FC = () => {
@@ -228,9 +257,10 @@ export const Facilities: React.FC = () => {
             >
               <ArrowLeft size={20} />
             </button>
-            <h1 className="text-xl font-bold">城西游乐坊</h1>
+            <h1 className="text-xl font-bold">游乐坊</h1>
           </header>
 
+          <FortuneTeller />
           <GamblingHouse />
           <ArcheryRange />
         </div>

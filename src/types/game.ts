@@ -18,6 +18,7 @@ export interface DailyActionCounts {
   work: number;
   rest: number;
   chatTotal: number; // Total chats today across all NPCs
+  fortune: number; // Daily fortune telling count
 }
 
 export interface NPCInteractionState {

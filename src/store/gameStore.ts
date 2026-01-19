@@ -5,6 +5,7 @@ import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
 import { policies } from '@/data/policies';
+import { fortunes } from '@/data/fortunes';
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -23,6 +24,7 @@ interface GameStore extends GameState {
   incrementDailyCount: (type: 'work' | 'rest') => void;
   setPolicy: (policyId: string) => void;
   cancelPolicy: () => void;
+  divineFortune: () => void;
   
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
@@ -39,7 +41,7 @@ export const useGameStore = create<GameStore>()(
       day: 1,
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
       collectedScrolls: [],
@@ -64,7 +66,7 @@ export const useGameStore = create<GameStore>()(
           day: 1,
           playerStats: { ...roleConfig.initialStats },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
           collectedScrolls: [],
@@ -267,6 +269,24 @@ export const useGameStore = create<GameStore>()(
         get().addLog('【政令】你废除了当前的政令。');
       },
 
+      divineFortune: () => {
+        const state = get();
+        if (state.dailyCounts.fortune > 0) return;
+
+        if (state.playerStats.money < 5) {
+          get().addLog('囊中羞涩，算命先生摇了摇头。');
+          return;
+        }
+
+        const fortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+        
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - 5 },
+          dailyCounts: { ...state.dailyCounts, fortune: state.dailyCounts.fortune + 1 },
+        }));
+        get().addLog(`【算命】花费5文钱，求得一签：${fortune.summary}。签文曰：“${fortune.text}”`);
+      },
+
       nextDay: () => {
         set(state => {
           const currentHealth = state.playerStats.health;
@@ -336,8 +356,9 @@ export const useGameStore = create<GameStore>()(
 
           return { 
             day: state.day + 1,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             npcInteractionStates: {}, // Reset daily NPC interaction limits
+            currentEvent: null,
             isVoiceLost: isVoiceLost,
             playerStats: newPlayerStats,
             countyStats: newCountyStats,
@@ -454,7 +475,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
         });
       },
 

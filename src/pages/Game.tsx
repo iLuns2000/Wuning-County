@@ -287,7 +287,7 @@ export const Game: React.FC = () => {
               className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
               <Dices size={20} />
-              <span>城西游乐坊</span>
+              <span>游乐坊</span>
             </button>
             
             <button 
