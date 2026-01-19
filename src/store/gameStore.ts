@@ -27,6 +27,9 @@ interface GameStore extends GameState {
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
+
+  // Developer Mode Methods
+  updateStats: (updates: Partial<GameState>) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -453,6 +456,16 @@ export const useGameStore = create<GameStore>()(
           currentTaskId: undefined,
           dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
         });
+      },
+
+      updateStats: (updates) => {
+        set(state => ({
+          ...state,
+          ...updates,
+          playerStats: { ...state.playerStats, ...(updates.playerStats || {}) },
+          countyStats: { ...state.countyStats, ...(updates.countyStats || {}) },
+        }));
+        get().addLog('【系统】开发者模式修改了游戏数据');
       }
     }),
     {

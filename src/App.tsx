@@ -6,6 +6,7 @@ import { TaskList } from '@/pages/TaskList';
 import { Facilities } from '@/pages/Facilities';
 import { Collection } from '@/pages/Collection';
 import { Credits } from '@/pages/Credits';
+import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/facilities" element={<Facilities />} />
         <Route path="/collection" element={<Collection />} />
         <Route path="/credits" element={<Credits />} />
+        <Route path="/developer" element={<Developer />} />
       </Routes>
       <Watermark />
     </BrowserRouter>
