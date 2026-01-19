@@ -1,0 +1,273 @@
+import React, { useEffect } from 'react';
+import { useGameStore } from '@/store/gameStore';
+import { StatsDisplay } from '@/components/StatsDisplay';
+import { LogPanel } from '@/components/LogPanel';
+import { EventModal } from '@/components/EventModal';
+import { useNavigate } from 'react-router-dom';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText } from 'lucide-react';
+import { roles } from '@/data/roles';
+import { tasks } from '@/data/tasks';
+
+export const Game: React.FC = () => {
+  const navigate = useNavigate();
+  const { 
+    role, 
+    day, 
+    playerStats, 
+    countyStats, 
+    logs, 
+    currentEvent, 
+    nextDay, 
+    handleEventOption,
+    resetGame,
+    addLog,
+    currentTaskId,
+    handleTaskAction,
+    dailyCounts,
+    incrementDailyCount
+  } = useGameStore();
+
+  const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
+  
+  const MAX_DAILY_WORK = 3;
+  const MAX_DAILY_REST = 1;
+
+  useEffect(() => {
+    if (!role) {
+      navigate('/');
+    }
+  }, [role, navigate]);
+
+  if (!role) return null;
+
+  const handleOptionSelect = (index: number) => {
+    if (!currentEvent) return;
+    const option = currentEvent.options[index];
+    handleEventOption(option.effect, option.message);
+  };
+
+  const handleWork = () => {
+    if (dailyCounts.work >= MAX_DAILY_WORK) {
+      addLog('今天的工作已经够多了，要注意劳逸结合。');
+      return;
+    }
+
+    // Simple work logic based on role
+    let msg = '';
+    let money = 0;
+    let reputation = 0;
+    const healthCost = -10;
+
+    if (playerStats.health < 10) {
+      addLog('你太累了，需要休息！');
+      return;
+    }
+
+    if (role === 'magistrate') {
+      msg = '你处理了一天的公务，县城治安有所改善。';
+      reputation = 5;
+    } else if (role === 'merchant') {
+      msg = '你用心经营店铺，获得了一些收益。';
+      // Passive effect: Merchant gains 20% more money
+      money = Math.floor(20 * 1.2);
+    } else {
+      msg = '你在城中行侠仗义，帮助了几个路人。';
+      reputation = 10;
+    }
+    
+    incrementDailyCount('work');
+    handleEventOption({ money, reputation, health: healthCost }, msg);
+  };
+
+  const handleRest = () => {
+     if (dailyCounts.rest >= MAX_DAILY_REST) {
+       addLog('你今天已经休息过了，不宜太过懒散。');
+       return;
+     }
+
+     // Passive effect: Hero recovers more health
+     const healAmount = role === 'hero' ? 30 : 20;
+     const msg = role === 'hero' 
+       ? '你运功调息，体力恢复得很快。' 
+       : '你休息了一整天，感觉精力充沛。';
+     
+     incrementDailyCount('rest');
+     handleEventOption({ health: healAmount }, msg);
+  };
+
+  const handleSpecialAbility = () => {
+    if (playerStats.health < 15) {
+      addLog('体力不足，无法使用技能！');
+      return;
+    }
+
+    if (role === 'magistrate') {
+      // 巡视乡里: Cost 15 Health, +3 Random County Stat, +5 Rep
+      const stats = ['economy', 'order', 'culture', 'livelihood'];
+      const randomStat = stats[Math.floor(Math.random() * stats.length)];
+      const statName = { economy: '经济', order: '治安', culture: '文化', livelihood: '民生' }[randomStat];
+      
+      handleEventOption({ 
+        health: -15, 
+        reputation: 5,
+        countyStats: { [randomStat]: 3 }
+      }, `你深入乡里巡视，解决了百姓的实际困难，${statName}有所提升。`);
+    } 
+    else if (role === 'merchant') {
+      // 风险投资: Cost 100 Money + 10 Health
+      if (playerStats.money < 100) {
+        addLog('资金不足，无法进行投资！');
+        return;
+      }
+      
+      const isSuccess = Math.random() > 0.5;
+      if (isSuccess) {
+        handleEventOption({
+          money: 100, // +200 - 100 cost
+          health: -10
+        }, '你的眼光独到，投资大获成功！');
+      } else {
+        handleEventOption({
+          money: -100,
+          health: -10
+        }, '市场风云变幻，这次投资血本无归...');
+      }
+    }
+    else if (role === 'hero') {
+      // 闭关修炼: Cost 30 Health, +5 Ability
+      if (playerStats.health < 30) {
+        addLog('体力不足，无法闭关！');
+        return;
+      }
+      handleEventOption({
+        health: -30,
+        ability: 5
+      }, '你闭关修炼，领悟了新的武学要义。');
+    }
+  };
+
+  const currentRoleConfig = roles.find(r => r.id === role);
+
+  return (
+    <div className="flex justify-center p-4 min-h-screen bg-background">
+      <div className="grid grid-cols-1 gap-6 items-start w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+        
+        {/* Left Column: Operations */}
+        <div className="mx-auto space-y-4 w-full max-w-md h-full overflow-y-auto md:max-w-none no-scrollbar">
+          <header className="flex justify-between items-center py-2 shrink-0">
+            <h1 className="text-xl font-bold">无宁县</h1>
+            <button 
+              onClick={() => { resetGame(); navigate('/'); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              退出游戏
+            </button>
+          </header>
+
+          <StatsDisplay playerStats={playerStats} countyStats={countyStats} day={day} />
+
+          {currentTask && (
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-muted-foreground ml-1">当前任务</h2>
+              <div className="p-4 space-y-2 rounded-lg border shadow-sm bg-card text-card-foreground border-primary/20">
+                <div className="flex gap-2 justify-between items-start">
+                  <h3 className="flex gap-2 items-center text-base font-bold shrink-0">
+                     <FileText size={18} className="text-primary" />
+                     <span>{currentTask.title}</span>
+                  </h3>
+                  <span className="px-2 py-1 text-xs text-right rounded-full bg-primary/10 text-primary">
+                    {currentTask.goalDescription}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{currentTask.description}</p>
+                
+                {currentTask.specialAction && (
+                  <button
+                    onClick={handleTaskAction}
+                    disabled={!!currentEvent}
+                    className="flex gap-2 justify-center items-center p-2 mt-2 w-full text-sm font-medium rounded border transition-colors bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 disabled:opacity-50"
+                  >
+                    <span>{currentTask.specialAction.label}</span>
+                    <span className="text-xs opacity-70">({currentTask.specialAction.costText})</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={handleWork}
+              disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Briefcase size={20} />
+              <span>日常工作 ({dailyCounts.work}/{MAX_DAILY_WORK})</span>
+            </button>
+            <button 
+              onClick={handleRest}
+              disabled={!!currentEvent || dailyCounts.rest >= MAX_DAILY_REST}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Coffee size={20} />
+              <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
+            </button>
+            <div className="flex flex-col col-span-2 gap-1">
+              <button 
+                onClick={handleSpecialAbility}
+                disabled={!!currentEvent}
+                className="flex flex-col gap-1 justify-center items-center p-3 w-full rounded-lg border transition-colors bg-primary/10 border-primary/20 hover:bg-primary/20 disabled:opacity-50 group"
+              >
+                <div className="flex gap-2 items-center font-bold text-primary">
+                  <Star size={18} />
+                  <span>{currentRoleConfig?.specialAbility?.name || '专属技能'}</span>
+                </div>
+                <span className="text-xs transition-colors text-muted-foreground group-hover:text-primary/80">
+                  {currentRoleConfig?.specialAbility?.costText}
+                </span>
+              </button>
+              <p className="px-4 text-xs text-center text-muted-foreground whitespace-pre-line">
+                {currentRoleConfig?.specialAbility?.description}
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate('/npcs')}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Users size={20} />
+              <span>拜访 NPC</span>
+            </button>
+            <button 
+              onClick={() => navigate('/tasks')}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <ScrollText size={20} />
+              <span>任务记录</span>
+            </button>
+          </div>
+
+          <button
+            onClick={nextDay}
+            disabled={!!currentEvent}
+            className="flex gap-2 justify-center items-center p-4 w-full text-lg font-bold rounded-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Moon size={24} />
+            <span>结束这一天</span>
+          </button>
+        </div>
+
+        {/* Right Column: Logs */}
+        <div className="w-full max-w-md mx-auto h-96 md:h-full md:max-w-none">
+          <LogPanel logs={logs} />
+        </div>
+
+      </div>
+
+      {currentEvent && (
+        <EventModal event={currentEvent} onOptionSelect={handleOptionSelect} />
+      )}
+    </div>
+  );
+};
