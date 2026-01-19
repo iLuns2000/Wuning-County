@@ -451,7 +451,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
         });
       }
     }),

@@ -128,3 +128,21 @@ export interface NPC {
   background: string;
   avatar?: string;
 }
+
+export interface Task {
+  id: string;
+  role: RoleType;
+  title: string;
+  description: string;
+  goalDescription: string;
+  checkCompletion: (state: GameState) => boolean;
+  reward: Effect;
+  rewardText: string;
+  nextTaskId?: string;
+  specialAction?: {
+    label: string;
+    description: string;
+    costText: string;
+    handler: (state: GameState) => { success: boolean; message: string; effect?: Effect };
+  };
+}
