@@ -4,6 +4,7 @@ import { GameState, RoleType, GameEvent, Effect } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
+import { policies } from '@/data/policies';
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -20,6 +21,12 @@ interface GameStore extends GameState {
   incrementGiftFailure: (npcId: string) => void;
   resetGiftFailure: (npcId: string) => void;
   incrementDailyCount: (type: 'work' | 'rest') => void;
+  setPolicy: (policyId: string) => void;
+  cancelPolicy: () => void;
+  
+  // NPC Interaction Methods
+  interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
+  checkVoiceStatus: () => boolean;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -29,7 +36,10 @@ export const useGameStore = create<GameStore>()(
       day: 1,
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+      npcInteractionStates: {},
+      isVoiceLost: false,
+      collectedScrolls: [],
       inventory: [],
       flags: {},
       npcRelations: {},
@@ -51,7 +61,11 @@ export const useGameStore = create<GameStore>()(
           day: 1,
           playerStats: { ...roleConfig.initialStats },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+          npcInteractionStates: {},
+          isVoiceLost: false,
+          collectedScrolls: [],
+          activePolicyId: undefined,
           inventory: [],
           flags: {},
           npcRelations: {},
@@ -111,6 +125,94 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
+      checkVoiceStatus: () => {
+        return get().isVoiceLost;
+      },
+
+      interactWithNPC: (npcId, type) => {
+        const state = get();
+        const npcState = state.npcInteractionStates[npcId] || { dailyGiftCount: 0, dailyChatCount: 0 };
+        
+        if (type === 'chat') {
+            if (state.isVoiceLost) {
+                return { success: false, message: '你嗓子哑了，发不出声音，无法闲聊。' };
+            }
+
+            if (state.dailyCounts.chatTotal >= 100) {
+                 return { success: false, message: '你今天说的话太多了，嗓子已经开始冒烟了。' };
+            }
+
+            if (npcState.dailyChatCount >= 10) {
+                 // Annoyance mechanic
+                 set(prev => ({
+                    npcInteractionStates: {
+                        ...prev.npcInteractionStates,
+                        [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
+                    },
+                    dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
+                    npcRelations: {
+                        ...prev.npcRelations,
+                        [npcId]: (prev.npcRelations[npcId] || 0) - 1
+                    }
+                 }));
+                 return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。' };
+            }
+
+            // Normal chat
+            set(prev => ({
+                npcInteractionStates: {
+                    ...prev.npcInteractionStates,
+                    [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
+                },
+                dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
+                // Chat logic for relation gain handled in UI/Logic component usually, 
+                // but here we just update limits. 
+                // Assuming +2 relation for normal chat is handled by caller or we add it here?
+                // The original implementation likely handled it. 
+                // We'll update relation here to centralize.
+                npcRelations: {
+                    ...prev.npcRelations,
+                    [npcId]: (prev.npcRelations[npcId] || 0) + 2
+                }
+            }));
+            return { success: true, message: '你们愉快地聊了一会儿。' };
+        } 
+        else if (type === 'gift') {
+            if (npcState.dailyGiftCount >= 20) {
+                return { success: false, message: '对方今天收礼收到手软，委婉地拒绝了你。' };
+            }
+            
+            // Logic for scroll drop (1% chance if relation > 100)
+            const currentRelation = state.npcRelations[npcId] || 0;
+            if (currentRelation > 100 && Math.random() < 0.01) {
+                // Drop Scroll logic
+                // For simplicity, generate a generic scroll if NPC specific ones aren't defined yet
+                const newScroll = {
+                    id: `scroll_${Date.now()}`,
+                    name: '神秘卷轴',
+                    description: '记载着一些不为人知的秘密。',
+                    npcId: npcId,
+                    obtainedAt: state.day
+                };
+                set(prev => ({
+                    collectedScrolls: [...prev.collectedScrolls, newScroll]
+                }));
+                get().addLog(`【奇遇】你在送礼时意外获得了一个${newScroll.name}！`);
+            }
+
+            set(prev => ({
+                npcInteractionStates: {
+                    ...prev.npcInteractionStates,
+                    [npcId]: { ...npcState, dailyGiftCount: npcState.dailyGiftCount + 1 }
+                }
+            }));
+            
+            return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
+        }
+
+        return { success: false, message: '未知操作' };
+      },
+
       incrementGiftFailure: (npcId) => {
         set(state => ({
           giftFailureCounts: {
@@ -137,6 +239,31 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      setPolicy: (policyId) => {
+        const state = get();
+        const policy = policies.find(p => p.id === policyId);
+        if (!policy) return;
+
+        if (state.playerStats.reputation < policy.cost) {
+          state.addLog('声望不足，无法推行此政令。');
+          return;
+        }
+
+        set(state => ({
+          activePolicyId: policyId,
+          playerStats: {
+            ...state.playerStats,
+            reputation: state.playerStats.reputation - policy.cost
+          }
+        }));
+        state.addLog(`【政令】你颁布了“${policy.name}”政令。`);
+      },
+
+      cancelPolicy: () => {
+        set({ activePolicyId: undefined });
+        get().addLog('【政令】你废除了当前的政令。');
+      },
+
       nextDay: () => {
         set(state => {
           const currentHealth = state.playerStats.health;
@@ -151,14 +278,67 @@ export const useGameStore = create<GameStore>()(
             recoveryMessage = '由于身体状况不佳，昨晚休息得不是很好，体力仅略有恢复。';
           }
 
+          // Apply Policy Effects
+          let policyMessage = '';
+          let newCountyStats = { ...state.countyStats };
+          let newPlayerStats = { ...state.playerStats, health: newHealth };
+          
+          if (state.activePolicyId) {
+             const policy = policies.find(p => p.id === state.activePolicyId);
+             if (policy) {
+                const effect = policy.dailyEffect;
+                policyMessage = `【政令生效】${policy.name}: `;
+                
+                if (effect.economy) {
+                   newCountyStats.economy += effect.economy;
+                   newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy));
+                }
+                if (effect.order) {
+                   newCountyStats.order += effect.order;
+                   newCountyStats.order = Math.min(100, Math.max(0, newCountyStats.order));
+                }
+                if (effect.culture) {
+                   newCountyStats.culture += effect.culture;
+                   newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture));
+                }
+                if (effect.livelihood) {
+                   newCountyStats.livelihood += effect.livelihood;
+                   newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood));
+                }
+                
+                if (effect.money) newPlayerStats.money += effect.money;
+                if (effect.reputation) newPlayerStats.reputation += effect.reputation;
+                
+                // Clamp player stats
+                newPlayerStats.reputation = Math.min(1000, Math.max(0, newPlayerStats.reputation));
+             }
+          }
+
+          // Voice loss logic
+          const chatTotal = state.dailyCounts.chatTotal;
+          let isVoiceLost = false;
+          let voiceMessage = '';
+          
+          if (chatTotal >= 100) {
+              isVoiceLost = true;
+              voiceMessage = '因为昨天说话太多，你今天嗓子彻底哑了，无法说话。';
+          } else if (state.isVoiceLost) {
+              isVoiceLost = false;
+              voiceMessage = '经过一天的休息，你的嗓子终于恢复了。';
+          }
+
+          const logs = [recoveryMessage, ...state.logs];
+          if (policyMessage) logs.unshift(policyMessage);
+          if (voiceMessage) logs.unshift(voiceMessage);
+
           return { 
             day: state.day + 1,
-            dailyCounts: { work: 0, rest: 0 },
-            playerStats: {
-              ...state.playerStats,
-              health: newHealth
-            },
-            logs: [recoveryMessage, ...state.logs].slice(0, 50)
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0 },
+            npcInteractionStates: {}, // Reset daily NPC interaction limits
+            isVoiceLost: isVoiceLost,
+            playerStats: newPlayerStats,
+            countyStats: newCountyStats,
+            logs: logs.slice(0, 50)
           };
         });
         get().addLog(`第 ${get().day} 天`);
@@ -293,6 +473,10 @@ export const useGameStore = create<GameStore>()(
         currentTaskId: state.currentTaskId,
         completedTaskIds: state.completedTaskIds,
         giftFailureCounts: state.giftFailureCounts,
+        npcInteractionStates: state.npcInteractionStates,
+        isVoiceLost: state.isVoiceLost,
+        collectedScrolls: state.collectedScrolls,
+        activePolicyId: state.activePolicyId,
       }), // Save everything except actions
     }
   )

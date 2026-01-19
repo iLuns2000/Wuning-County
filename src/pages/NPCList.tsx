@@ -2,7 +2,7 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-19 19:01:31
+ * @LastEditTime: 2026-01-19 22:18:57
  * @FilePath: \textgame\src\pages\NPCList.tsx
  * @Description: 
  * 
@@ -25,7 +25,8 @@ export const NPCList: React.FC = () => {
     addLog,
     giftFailureCounts,
     incrementGiftFailure,
-    resetGiftFailure
+    resetGiftFailure,
+    interactWithNPC
   } = useGameStore();
 
   const handleInteraction = (npcId: string, type: 'talk' | 'gift') => {
@@ -33,25 +34,12 @@ export const NPCList: React.FC = () => {
     if (!npc) return;
 
     if (type === 'talk') {
-      const relation = npcRelations[npcId] || 0;
-      let msg = '';
-      let change = 0;
-      
-      if (Math.random() > 0.5) {
-        msg = `你和${npc.name}聊了会儿天，相谈甚欢。`;
-        change = 2;
-      } else {
-        msg = `${npc.name}似乎很忙，只是匆匆打了个招呼。`;
-        change = 1;
-      }
-      
-      handleEventOption({ relationChange: { [npcId]: change } }, msg);
+      const result = interactWithNPC(npcId, 'chat');
+      if (result.message) addLog(result.message);
     } else {
       // Gift logic
       if (playerStats.money < 50) {
         incrementGiftFailure(npcId);
-        // Get updated count (optimistic or need from store but store update is async-ish in React batching but Zustand set is sync usually, 
-        // but reading state immediately might need get(). let's just use current + 1)
         const currentCount = (giftFailureCounts[npcId] || 0) + 1;
         
         if (currentCount % 5 === 0) {
@@ -65,15 +53,17 @@ export const NPCList: React.FC = () => {
         return;
       }
       
-      // Success
-      resetGiftFailure(npcId);
-      handleEventOption(
-        { money: -50, relationChange: { [npcId]: 10 } }, 
-        `你送了一份礼物给${npc.name}，对方很高兴。`
-      );
+      const result = interactWithNPC(npcId, 'gift');
+      if (result.success) {
+        resetGiftFailure(npcId);
+        handleEventOption(
+            { money: -50, relationChange: { [npcId]: 10 } }, 
+            `你送了一份礼物给${npc.name}，对方很高兴。`
+        );
+      } else {
+        addLog(result.message);
+      }
     }
-    
-    // Auto navigate back after interaction? Or stay? Let's stay and show toast/log
   };
 
   return (
@@ -101,11 +91,25 @@ export const NPCList: React.FC = () => {
                     <div>
                       <h3 className="flex gap-2 items-center text-lg font-bold">
                         {npc.name}
-                        <span className="px-2 py-0.5 text-xs font-normal rounded-full text-muted-foreground bg-secondary">
-                          {npc.title}
-                        </span>
+                        {relation >= 40 && (
+                            <span className="px-2 py-0.5 text-xs font-normal rounded-full text-muted-foreground bg-secondary">
+                                {npc.title}
+                            </span>
+                        )}
                       </h3>
                       <p className="mt-1 text-sm text-muted-foreground">{npc.description}</p>
+                      
+                      {relation >= 80 && (
+                          <div className="p-2 mt-2 text-xs rounded bg-secondary/50 text-muted-foreground">
+                              <strong>县居日常:</strong> 经常在集市和茶馆出没，喜欢收集古玩字画。
+                          </div>
+                      )}
+                      
+                      {relation >= 100 && (
+                          <div className="p-2 mt-2 text-xs rounded bg-primary/10 text-foreground">
+                              <strong>身世背景:</strong> {npc.background}
+                          </div>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-muted-foreground">好感度</div>
@@ -136,7 +140,7 @@ export const NPCList: React.FC = () => {
         </div>
         
         {/* Right: Log Panel */}
-        <div className="w-full max-w-md mx-auto h-64 md:h-full md:max-w-none">
+        <div className="mx-auto w-full max-w-md h-64 md:h-full md:max-w-none">
           <LogPanel logs={logs} />
         </div>
       </div>

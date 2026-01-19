@@ -4,12 +4,16 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Dices, Scroll } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
+import { PolicyModal } from '@/components/PolicyModal';
+import { policies } from '@/data/policies';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
+  const [showPolicies, setShowPolicies] = React.useState(false);
+
   const { 
     role, 
     day, 
@@ -24,10 +28,14 @@ export const Game: React.FC = () => {
     currentTaskId,
     handleTaskAction,
     dailyCounts,
-    incrementDailyCount
+    incrementDailyCount,
+    activePolicyId,
+    setPolicy,
+    cancelPolicy
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
+  const activePolicy = activePolicyId ? policies.find(p => p.id === activePolicyId) : null;
   
   const MAX_DAILY_WORK = 3;
   const MAX_DAILY_REST = 1;
@@ -110,8 +118,9 @@ export const Game: React.FC = () => {
       handleEventOption({ 
         health: -15, 
         reputation: 5,
+        ability: 2, // Add ability gain
         countyStats: { [randomStat]: 3 }
-      }, `你深入乡里巡视，解决了百姓的实际困难，${statName}有所提升。`);
+      }, `你深入乡里巡视，解决了百姓的实际困难，${statName}有所提升，处理政务的能力也得到了锻炼。`);
     } 
     else if (role === 'merchant') {
       // 风险投资: Cost 100 Money + 10 Health
@@ -124,13 +133,15 @@ export const Game: React.FC = () => {
       if (isSuccess) {
         handleEventOption({
           money: 100, // +200 - 100 cost
-          health: -10
-        }, '你的眼光独到，投资大获成功！');
+          health: -10,
+          ability: 2 // Add ability gain on success
+        }, '你的眼光独到，投资大获成功！商业头脑更敏锐了。');
       } else {
         handleEventOption({
           money: -100,
-          health: -10
-        }, '市场风云变幻，这次投资血本无归...');
+          health: -10,
+          ability: 1 // Learn from failure
+        }, '市场风云变幻，这次投资血本无归... 但你从中吸取了教训。');
       }
     }
     else if (role === 'hero') {
@@ -153,7 +164,7 @@ export const Game: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 items-start w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
         
         {/* Left Column: Operations */}
-        <div className="mx-auto space-y-4 w-full max-w-md h-full overflow-y-auto md:max-w-none no-scrollbar">
+        <div className="overflow-y-auto mx-auto space-y-4 w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <button 
@@ -168,7 +179,7 @@ export const Game: React.FC = () => {
 
           {currentTask && (
             <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-muted-foreground ml-1">当前任务</h2>
+              <h2 className="ml-1 text-sm font-semibold text-muted-foreground">当前任务</h2>
               <div className="p-4 space-y-2 rounded-lg border shadow-sm bg-card text-card-foreground border-primary/20">
                 <div className="flex gap-2 justify-between items-start">
                   <h3 className="flex gap-2 items-center text-base font-bold shrink-0">
@@ -212,6 +223,29 @@ export const Game: React.FC = () => {
               <Coffee size={20} />
               <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
             </button>
+            
+            {role === 'magistrate' && (
+               <div className="flex flex-col col-span-2 gap-2">
+                 <button 
+                   onClick={() => setShowPolicies(true)}
+                   disabled={!!currentEvent}
+                   className="flex justify-between items-center p-4 w-full rounded-lg border transition-colors bg-card border-primary/20 hover:bg-primary/5 disabled:opacity-50"
+                 >
+                   <div className="flex gap-2 items-center">
+                     <FileText size={20} className="text-primary" />
+                     <span className="font-bold">施政方针</span>
+                   </div>
+                   <div className="text-sm text-muted-foreground">
+                     {activePolicy ? (
+                       <span className="font-medium text-primary">{activePolicy.name}</span>
+                     ) : (
+                       <span>暂无政令</span>
+                     )}
+                   </div>
+                 </button>
+               </div>
+            )}
+
             <div className="flex flex-col col-span-2 gap-1">
               <button 
                 onClick={handleSpecialAbility}
@@ -226,7 +260,7 @@ export const Game: React.FC = () => {
                   {currentRoleConfig?.specialAbility?.costText}
                 </span>
               </button>
-              <p className="px-4 text-xs text-center text-muted-foreground whitespace-pre-line">
+              <p className="px-4 text-xs text-center whitespace-pre-line text-muted-foreground">
                 {currentRoleConfig?.specialAbility?.description}
               </p>
             </div>
@@ -246,6 +280,24 @@ export const Game: React.FC = () => {
               <ScrollText size={20} />
               <span>任务记录</span>
             </button>
+
+            <button 
+              onClick={() => navigate('/facilities')}
+              disabled={!!currentEvent}
+              className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Dices size={20} />
+              <span>城西游乐坊</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate('/collection')}
+              disabled={!!currentEvent}
+              className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Scroll size={20} />
+              <span>藏珍匣</span>
+            </button>
           </div>
 
           <button
@@ -259,7 +311,7 @@ export const Game: React.FC = () => {
         </div>
 
         {/* Right Column: Logs */}
-        <div className="w-full max-w-md mx-auto h-96 md:h-full md:max-w-none">
+        <div className="mx-auto w-full max-w-md h-96 md:h-full md:max-w-none">
           <LogPanel logs={logs} />
         </div>
 
@@ -267,6 +319,15 @@ export const Game: React.FC = () => {
 
       {currentEvent && (
         <EventModal event={currentEvent} onOptionSelect={handleOptionSelect} />
+      )}
+
+      {showPolicies && role === 'magistrate' && (
+        <PolicyModal 
+          activePolicyId={activePolicyId} 
+          onSelect={setPolicy}
+          onCancel={cancelPolicy}
+          onClose={() => setShowPolicies(false)}
+        />
       )}
     </div>
   );

@@ -17,6 +17,28 @@ export interface CountyStats {
 export interface DailyActionCounts {
   work: number;
   rest: number;
+  chatTotal: number; // Total chats today across all NPCs
+}
+
+export interface NPCInteractionState {
+  dailyGiftCount: number;
+  dailyChatCount: number;
+}
+
+export interface Scroll {
+  id: string;
+  name: string;
+  description: string;
+  npcId?: string; // If specific to an NPC
+  obtainedAt: number; // Day obtained
+}
+
+export interface Policy {
+  id: string;
+  name: string;
+  description: string;
+  dailyEffect: Effect; // Effect applied every day
+  cost: number; // Reputation cost to enact
 }
 
 export interface GameState {
@@ -25,6 +47,10 @@ export interface GameState {
   playerStats: PlayerStats;
   countyStats: CountyStats;
   dailyCounts: DailyActionCounts;
+  npcInteractionStates: Record<string, NPCInteractionState>; // Track daily interactions per NPC
+  isVoiceLost: boolean; // Cannot chat if true
+  collectedScrolls: Scroll[];
+  activePolicyId?: string; // Currently active policy
   inventory: string[];
   flags: Record<string, boolean>;
   npcRelations: Record<string, number>;

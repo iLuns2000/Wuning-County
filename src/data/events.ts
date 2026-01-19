@@ -15,8 +15,9 @@ export const randomEvents: GameEvent[] = [
         effect: { money: -10, health: 5, livelihood: 2 } // inferred effects
       },
       {
-        label: '不去',
-        message: '你决定今天不去凑热闹。',
+        label: '沉迷玩乐',
+        message: '你在集市上沉迷于杂耍表演，荒废了时光。',
+        effect: { money: -20, ability: -1 } // Decrease ability
       }
     ]
   },
@@ -33,9 +34,9 @@ export const randomEvents: GameEvent[] = [
         effect: { ability: 1 }
       },
       {
-        label: '改变计划',
-        message: '你决定待在室内，处理一些文书工作。',
-        effect: { ability: 2 }
+        label: '偷懒睡觉',
+        message: '你觉得下雨天正好睡觉，什么也没做。',
+        effect: { ability: -1, health: 5 } // Decrease ability, gain health
       }
     ]
   },
