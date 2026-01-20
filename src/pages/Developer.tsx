@@ -12,6 +12,7 @@ export const Developer: React.FC = () => {
     reputation: playerStats.reputation,
     ability: playerStats.ability,
     health: playerStats.health,
+    experience: playerStats.experience,
     economy: countyStats.economy,
     order: countyStats.order,
     culture: countyStats.culture,
@@ -50,6 +51,7 @@ export const Developer: React.FC = () => {
         reputation: formData.reputation,
         ability: formData.ability,
         health: formData.health,
+        experience: formData.experience,
       },
       countyStats: {
         economy: formData.economy,
@@ -133,6 +135,16 @@ export const Developer: React.FC = () => {
                    type="number"
                    name="health"
                    value={formData.health}
+                   onChange={handleChange}
+                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">阅历/经验</label>
+                 <input
+                   type="number"
+                   name="experience"
+                   value={formData.experience}
                    onChange={handleChange}
                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                  />

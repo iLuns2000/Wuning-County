@@ -20,6 +20,7 @@ export const roles: RoleConfig[] = [
       reputation: 200,
       ability: 50,
       health: 100,
+      experience: 0,
     },
     initialCountyStats: {
       economy: 50,
@@ -46,6 +47,7 @@ export const roles: RoleConfig[] = [
       reputation: 50,
       ability: 30,
       health: 100,
+      experience: 0,
     },
     initialCountyStats: {
       economy: 60,
@@ -72,6 +74,7 @@ export const roles: RoleConfig[] = [
       reputation: 100,
       ability: 80,
       health: 120,
+      experience: 0,
     },
     initialCountyStats: {
       economy: 40,
