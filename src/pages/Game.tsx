@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Dices, Scroll, ShoppingBag, Building2 } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2 } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';

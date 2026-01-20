@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building2, Coins, ArrowUpCircle } from 'lucide-react';
+import { X, Building2, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { facilities } from '@/data/facilities';
 
@@ -8,7 +8,7 @@ interface EstateModalProps {
 }
 
 export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
-  const { ownedFacilities, playerStats, buyFacility, countyStats } = useGameStore();
+  const { ownedFacilities, playerStats, buyFacility } = useGameStore();
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

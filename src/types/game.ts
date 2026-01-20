@@ -26,6 +26,24 @@ export interface Achievement {
   isHidden?: boolean; // If true, description is hidden until unlocked
 }
 
+export interface Good {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  volatility: number;
+}
+
+export interface Facility {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  dailyIncome: number;
+  incomeDescription: string;
+  condition?: (stats: CountyStats) => boolean;
+}
+
 export interface CountyStats {
   economy: number;
   order: number;
