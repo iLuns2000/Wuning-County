@@ -35,6 +35,14 @@ export const Watermark: React.FC = () => {
         >
           感谢名单
         </button>
+        <a 
+          href="https://github.com/iLuns2000/Wuning-County"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-primary hover:underline transition-all mt-0.5 cursor-pointer"
+        >
+          Github 仓库
+        </a>
       </div>
     </div>
   );
