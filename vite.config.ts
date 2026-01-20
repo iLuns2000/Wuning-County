@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'singlefile' && viteSingleFile()
   ].filter(Boolean),
-  base: mode === 'singlefile' ? './' : '/',
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

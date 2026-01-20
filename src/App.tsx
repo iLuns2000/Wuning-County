@@ -1,4 +1,14 @@
-import { HashRouter, BrowserRouter, Routes, Route } from 'react-router-dom';
+/*
+ * @Author: xyZhan
+ * @Date: 2026-01-19 15:02:38
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-01-20 13:55:30
+ * @FilePath: \textgame\src\App.tsx
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+ */
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Home } from '@/pages/Home';
 import { Game } from '@/pages/Game';
 import { NPCList } from '@/pages/NPCList';
@@ -9,8 +19,7 @@ import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
 
-const isSingleFile = import.meta.env.MODE === 'singlefile';
-const Router = isSingleFile ? HashRouter : BrowserRouter;
+const Router = HashRouter;
 
 function App() {
   return (
