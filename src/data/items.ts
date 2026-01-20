@@ -1,3 +1,13 @@
+/*
+ * @Author: xyZhan
+ * @Date: 2026-01-20 20:03:30
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-01-21 07:36:47
+ * @FilePath: \textgame\src\data\items.ts
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+ */
 import { Item } from '@/types/game';
 
 export const items: Item[] = [
@@ -39,6 +49,12 @@ export const items: Item[] = [
     id: 'lovesickness_tablet',
     name: '相思碑',
     description: '一块大石头，它好像是一块碑，经历了岁月的沉淀，很多字迹已经模糊不清，但是依稀可以看见上面刻着“冷雁南飞 而我面向北 自锁眉 凭栏等谁归”。',
+    type: 'misc'
+  },
+  {
+    id: 'cursed_sword',
+    name: '被诅咒的剑',
+    description: '一把黑色的剑，在雨夜里更加显得诡异。剑身呈现幽蓝光泽，材质为特殊玄铁铸造，带有不规则的黑色纹路如同黑蝶展翅。剑柄缠绕着褪色的蓝色丝绸，末端镶嵌着一颗深邃的蓝宝石，宝石表面流转着细微的黑色雾气。在夜晚或阴暗环境中，剑身会发出微弱的蓝光，同时有黑色蝶影在剑身边缘环绕飞舞。',
     type: 'misc'
   }
 ];

@@ -131,6 +131,9 @@ export interface GameState {
   marketPrices: Record<string, number>; // goodId -> currentPrice
   ownedGoods: Record<string, number>; // goodId -> quantity
   ownedFacilities: Record<string, number>; // facilityId -> quantity
+  
+  // Daily Fortune
+  fortuneLevel?: 'great_blessing' | 'blessing' | 'normal' | 'bad_luck' | 'terrible_luck';
 }
 
 export interface Effect {

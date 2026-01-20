@@ -248,8 +248,8 @@ export const randomEvents: GameEvent[] = [
     },
     options: [
       {
-        label: '上前询问',
-        message: '你决定介入此事，查个水落石出。老张和老李见县令大人来了，连忙下跪喊冤。',
+        label: '协助县令调查',
+        message: '你决定协助县令调查此事。老张和老李见有人出面，连忙拉着你评理。',
         effect: { 
           flagsSet: { chicken_case_started: true, chicken_stage: 1 },
           reputation: 5
@@ -257,7 +257,7 @@ export const randomEvents: GameEvent[] = [
       },
       {
         label: '无视',
-        message: '你觉得清官难断家务事，摇了摇头离开了。',
+        message: '你觉得这只是邻里小事，摇了摇头离开了。',
         effect: { 
           flagsSet: { chicken_case_ignored: true },
           reputation: -5
@@ -268,7 +268,7 @@ export const randomEvents: GameEvent[] = [
   {
     id: 'chicken_theft_investigate',
     title: '案件调查',
-    description: '对于偷鸡一案，你需要收集更多线索。',
+    description: '受县令所托，你需要收集更多线索，以便协助县令断案。',
     type: 'npc',
     triggerCondition: { 
       // Always available if stage is 1, essentially forcing this to be a high priority if picked, 
@@ -279,12 +279,12 @@ export const randomEvents: GameEvent[] = [
     options: [
       {
         label: '询问老张',
-        message: '老张激动地说：“大人！昨天我家院墙上有搭梯子的痕迹，今早我看到老李鞋底有和我家后院一样的淤泥！肯定是他！”',
+        message: '老张激动地说：“少侠/掌柜的！昨天我家院墙上有搭梯子的痕迹，今早我看到老李鞋底有和我家后院一样的淤泥！肯定是他！”',
         effect: { flagsSet: { chicken_clue_zhang: true } }
       },
       {
         label: '询问老李',
-        message: '老李一脸委屈：“大人冤枉啊！我昨晚早早就睡了，大门紧闭根本没出门。那鞋底的淤泥……是我今早去村口池塘打水沾上的！”',
+        message: '老李一脸委屈：“您明鉴啊！我昨晚早早就睡了，大门紧闭根本没出门。那鞋底的淤泥……是我今早去村口池塘打水沾上的！”',
         effect: { flagsSet: { chicken_clue_li: true } }
       },
       {
@@ -293,16 +293,16 @@ export const randomEvents: GameEvent[] = [
         effect: { flagsSet: { chicken_clue_scene: true } }
       },
       {
-        label: '开始断案',
-        message: '经过一番调查，你心里已经有了底，决定升堂断案。',
+        label: '向县令禀报',
+        message: '经过一番调查，你心里已经有了底，决定向县令禀报调查结果。',
         effect: { flagsSet: { chicken_stage: 2 } }
       }
     ]
   },
   {
     id: 'chicken_theft_verdict',
-    title: '升堂断案',
-    description: '公堂之上，老张和老李跪在堂下。百姓们议论纷纷，都在等着你的判决。谁才是真正的偷鸡贼？',
+    title: '协助断案',
+    description: '公堂之上，县令正在审问老张和老李。县令转头看向你：“对于此案，你有何高见？”',
     type: 'npc',
     triggerCondition: { 
       probability: 1.0,
@@ -310,18 +310,18 @@ export const randomEvents: GameEvent[] = [
     },
     options: [
       {
-        label: '定老李的罪',
-        message: '你厉声喝道：“老李！那麻绳正是你编竹筐所用，且上面粘有鸡毛，你还有何话可说！”老李见证据确凿，瘫倒在地，承认了一时贪念偷鸡的事实。案情大白，百姓纷纷称赞。',
+        label: '建议定老李的罪',
+        message: '你向县令呈上证据：“大人，那麻绳正是老李编竹筐所用，且上面粘有鸡毛。”县令听后一拍惊堂木，老李见证据确凿，瘫倒在地承认了事实。案情大白，县令对你赞赏有加。',
         effect: { 
           flagsSet: { chicken_case_solved_success: true, chicken_stage: 3 }, 
           reputation: 50,
-          money: 20, // Fine
+          money: 20, // Reward
           relationChange: { lao_zhang: 20, lao_li: -10 }
         }
       },
       {
-        label: '定老张诬告',
-        message: '你认为老张凭空污人清白，重打了老张二十大板。然而数日后，有人看见老李在偷偷吃鸡……你这才知道判错了案，不仅声望受损，还成了百姓茶余饭后的笑柄。',
+        label: '建议定老张诬告',
+        message: '你认为证据不足，建议县令惩戒老张。然而数日后，有人看见老李在偷偷吃鸡……你这才知道建议错了，不仅让县令断了错案，自己也成了笑柄。',
         effect: { 
           flagsSet: { chicken_case_failed: true, chicken_stage: 3 }, 
           reputation: -30,
@@ -329,8 +329,8 @@ export const randomEvents: GameEvent[] = [
         }
       },
       {
-        label: '证据不足，退堂',
-        message: '你觉得现有证据不足以定罪，只能暂时将两人劝回。案子成了悬案，百姓对你的能力颇有微词。',
+        label: '建议证据不足',
+        message: '你建议县令因证据不足暂时退堂。案子成了悬案，县令叹了口气，百姓也对你的能力颇有微词。',
         effect: { 
           flagsSet: { chicken_stage: 3 },
           reputation: -10

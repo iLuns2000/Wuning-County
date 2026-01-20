@@ -109,5 +109,12 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '大雪满山，路上死寂',
     rewardExp: 200,
     condition: (state) => !!state.flags['first_heavy_snow_encountered']
+  },
+  {
+    id: 'night_rain_jianghu',
+    name: '夜雨江湖',
+    description: '恭喜你在夜雨中依旧有外出江湖探索的勇气',
+    rewardExp: 200,
+    condition: (state) => state.inventory.includes('cursed_sword')
   }
 ];

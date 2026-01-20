@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Terminal } from 'lucide-react';
+import { ArrowLeft, Save, Terminal, Plus } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 
 export const Developer: React.FC = () => {
   const navigate = useNavigate();
-  const { playerStats, countyStats, updateStats, day, role } = useGameStore();
+  const { playerStats, countyStats, updateStats, day, role, fortuneLevel, inventory, handleEventOption } = useGameStore();
 
   const [formData, setFormData] = useState({
     money: playerStats.money,
@@ -17,8 +17,11 @@ export const Developer: React.FC = () => {
     order: countyStats.order,
     culture: countyStats.culture,
     livelihood: countyStats.livelihood,
-    day: day
+    day: day,
+    fortuneLevel: fortuneLevel || 'normal',
   });
+  
+  const [itemIdInput, setItemIdInput] = useState('');
 
   if (!role) {
     return (
@@ -35,17 +38,18 @@ export const Developer: React.FC = () => {
     );
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: parseInt(value) || 0
+      [name]: name === 'fortuneLevel' ? value : (parseInt(value) || 0)
     }));
   };
 
   const handleSave = () => {
     updateStats({
       day: formData.day,
+      fortuneLevel: formData.fortuneLevel as any,
       playerStats: {
         money: formData.money,
         reputation: formData.reputation,
@@ -61,6 +65,15 @@ export const Developer: React.FC = () => {
       }
     });
     alert('数据修改成功！');
+  };
+
+  const handleAddItem = () => {
+    if (!itemIdInput.trim()) return;
+    handleEventOption({
+        itemsAdd: [itemIdInput.trim()]
+    }, `[开发者指令] 添加物品: ${itemIdInput.trim()}`);
+    setItemIdInput('');
+    alert(`尝试添加物品: ${itemIdInput.trim()} (请确认ID是否正确)`);
   };
 
   return (
@@ -92,6 +105,21 @@ export const Developer: React.FC = () => {
                    onChange={handleChange}
                    className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">今日运势</label>
+                 <select
+                   name="fortuneLevel"
+                   value={formData.fortuneLevel}
+                   onChange={handleChange}
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
+                 >
+                    <option value="great_blessing">大吉</option>
+                    <option value="blessing">中吉/小吉</option>
+                    <option value="normal">平</option>
+                    <option value="bad_luck">末吉/小凶</option>
+                    <option value="terrible_luck">大凶</option>
+                 </select>
                </div>
             </div>
           </div>
@@ -195,6 +223,33 @@ export const Developer: React.FC = () => {
                    className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="pb-2 text-lg font-bold border-b">物品管理</h2>
+            <div className="flex gap-4 items-end">
+               <div className="flex-1 space-y-2">
+                 <label className="text-sm font-medium">物品 ID</label>
+                 <input
+                   type="text"
+                   value={itemIdInput}
+                   onChange={(e) => setItemIdInput(e.target.value)}
+                   placeholder="输入物品ID (如: oil_paper_umbrella)"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
+                 />
+               </div>
+               <button 
+                 onClick={handleAddItem}
+                 disabled={!itemIdInput.trim()}
+                 className="flex gap-2 justify-center items-center px-4 h-10 font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50"
+               >
+                 <Plus size={16} />
+                 添加物品
+               </button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+                当前持有物品数: {inventory.length}
             </div>
           </div>
 

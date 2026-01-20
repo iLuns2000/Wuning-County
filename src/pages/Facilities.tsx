@@ -35,9 +35,9 @@ const FortuneTeller: React.FC = () => {
 
 // Gambling House Component
 const GamblingHouse: React.FC = () => {
-  const { playerStats, addLog, handleEventOption } = useGameStore();
+  const { playerStats, addLog, handleEventOption, fortuneLevel } = useGameStore();
   const [betAmount, setBetAmount] = useState<string>('10');
-  const [lastResult, setLastResult] = useState<{ dice: number[], sum: number, win: boolean } | null>(null);
+  const [lastResult, setLastResult] = useState<{ dice: number[], sum: number, win: boolean, msg?: string } | null>(null);
 
   const handleGamble = (choice: 'big' | 'small') => {
     const amount = parseInt(betAmount);
@@ -50,22 +50,111 @@ const GamblingHouse: React.FC = () => {
       return;
     }
 
-    // 3d6 logic
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    const d3 = Math.floor(Math.random() * 6) + 1;
-    const sum = d1 + d2 + d3;
-    const resultType = sum >= 11 ? 'big' : 'small';
-    const isWin = choice === resultType;
+    // --- New Gambling Logic ---
+    // 1. Base win rate: 40% (User requested)
+    let winChance = 0.40;
 
-    setLastResult({ dice: [d1, d2, d3], sum, win: isWin });
+    // 2. Fortune Modifier
+    if (fortuneLevel === 'great_blessing') winChance += 0.15;
+    else if (fortuneLevel === 'blessing') winChance += 0.08;
+    else if (fortuneLevel === 'bad_luck') winChance -= 0.05;
+    else if (fortuneLevel === 'terrible_luck') winChance -= 0.10;
 
-    if (isWin) {
-      handleEventOption({ money: amount }, `【小司赌坊】买${choice === 'big' ? '大' : '小'}中了！掷出 ${d1}+${d2}+${d3}=${sum}点，赢了 ${amount} 文钱。`);
+    // 3. Ability Modifier (Cheating/Skill)
+    // High ability can slightly increase odds (simulating observation/hearing dice)
+    // But very low ability might decrease it? No, keep it positive bonus.
+    // Max +5% from ability (at 100 ability)
+    const abilityBonus = Math.min(0.05, (playerStats.ability / 100) * 0.05);
+    winChance += abilityBonus;
+
+    // Clamp win chance
+    winChance = Math.max(0.1, Math.min(0.9, winChance));
+
+    // Determine Win/Loss first based on probability
+    const isWin = Math.random() < winChance;
+
+    // Generate Dice to match result
+    // Dealer Mechanic: "Leopard" (Triple) counts as Loss for player usually, but let's keep it simple:
+    // If win, generate consistent dice. If loss, generate consistent dice.
+    // Also need to respect "Big" (11-17) / "Small" (4-10). 
+    // Note: 3 and 18 are usually Triples (111, 666) which are house wins in some rules, 
+    // but here we just map sums.
+    
+    let d1, d2, d3, sum;
+    let resultType: 'big' | 'small' | 'leopard'; // leopard is house win
+
+    // Helper to generate random int
+    const rand6 = () => Math.floor(Math.random() * 6) + 1;
+
+    // We need to generate dice that match the outcome (Win/Loss) AND the player's choice.
+    // However, pure random dice generation is the "physics". 
+    // The "Probability" requested (40% win) implies the game is rigged or luck-based beyond physics.
+    // So we generate dice repeatedly until they match the desired outcome? 
+    // Or we just fake the dice? Let's generate valid dice.
+
+    let attempts = 0;
+    while (true) {
+        attempts++;
+        d1 = rand6();
+        d2 = rand6();
+        d3 = rand6();
+        sum = d1 + d2 + d3;
+        
+        // Leopard check (House takes all usually) - 3 of a kind
+        const isLeopard = d1 === d2 && d2 === d3;
+        
+        if (isLeopard) {
+            resultType = 'leopard';
+            // Leopard is always a loss for simple Big/Small bets
+            if (!isWin) break; // If we are supposed to lose, Leopard is a valid outcome
+            // If we are supposed to win, we can't accept Leopard, retry
+        } else {
+            resultType = sum >= 11 ? 'big' : 'small';
+            
+            if (isWin) {
+                if (resultType === choice) break; // Match!
+            } else {
+                if (resultType !== choice) break; // Mismatch (Loss)!
+            }
+        }
+        
+        // Safety break to prevent infinite loops (though unlikely)
+        if (attempts > 100) {
+            // Fallback to pure random if stuck
+             break; 
+        }
+    }
+    
+    // Recalculate isWin based on actual dice (in case we hit safety break)
+    // and handle Leopard explicitly
+    const finalIsLeopard = d1 === d2 && d2 === d3;
+    const finalResultType = sum >= 11 ? 'big' : 'small';
+    const finalIsWin = !finalIsLeopard && finalResultType === choice;
+
+    setLastResult({ dice: [d1, d2, d3], sum, win: finalIsWin });
+
+    let logMsg = '';
+    if (finalIsWin) {
+      logMsg = `【小司赌坊】买${choice === 'big' ? '大' : '小'}中了！掷出 ${d1}+${d2}+${d3}=${sum}点，赢了 ${amount} 文钱。`;
+      handleEventOption({ money: amount }, logMsg);
     } else {
-      handleEventOption({ money: -amount }, `【小司赌坊】买${choice === 'big' ? '大' : '小'}输了... 掷出 ${d1}+${d2}+${d3}=${sum}点，损失 ${amount} 文钱。`);
+      if (finalIsLeopard) {
+          logMsg = `【小司赌坊】豹子通吃！掷出 ${d1}+${d2}+${d3} (${d1}围骰)，庄家收走所有筹码，损失 ${amount} 文钱。`;
+      } else {
+          logMsg = `【小司赌坊】买${choice === 'big' ? '大' : '小'}输了... 掷出 ${d1}+${d2}+${d3}=${sum}点，损失 ${amount} 文钱。`;
+      }
+      handleEventOption({ money: -amount }, logMsg);
     }
   };
+
+  // Calculate current win rate for display (educational/transparency)
+  let currentWinRate = 40;
+  if (fortuneLevel === 'great_blessing') currentWinRate += 15;
+  else if (fortuneLevel === 'blessing') currentWinRate += 8;
+  else if (fortuneLevel === 'bad_luck') currentWinRate -= 5;
+  else if (fortuneLevel === 'terrible_luck') currentWinRate -= 10;
+  currentWinRate += Math.floor(Math.min(0.05, (playerStats.ability / 100) * 0.05) * 100);
+  currentWinRate = Math.max(10, Math.min(90, currentWinRate));
 
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
@@ -75,7 +164,7 @@ const GamblingHouse: React.FC = () => {
       </div>
       <p className="text-sm text-muted-foreground">
         "买定离手！" 喧闹的赌坊里，骰子声此起彼伏。<br/>
-        规则：三颗骰子总和 3-10 为小，11-18 为大。赔率 1:1。
+        <span className="text-xs opacity-80">当前胜率估算: 约{currentWinRate}% (受运势与能力影响)</span>
       </p>
 
       <div className="space-y-4">
@@ -99,7 +188,7 @@ const GamblingHouse: React.FC = () => {
             className="flex flex-col justify-center items-center p-6 rounded-lg border-2 transition-all border-primary/20 hover:bg-primary/10 hover:border-primary group"
           >
             <span className="mb-1 text-2xl font-bold transition-transform group-hover:scale-110">大</span>
-            <span className="text-xs text-muted-foreground">11-18 点</span>
+            <span className="text-xs text-muted-foreground">11-17 点</span>
           </button>
           <button
             onClick={() => handleGamble('small')}
@@ -107,7 +196,7 @@ const GamblingHouse: React.FC = () => {
             className="flex flex-col justify-center items-center p-6 rounded-lg border-2 transition-all border-primary/20 hover:bg-primary/10 hover:border-primary group"
           >
             <span className="mb-1 text-2xl font-bold transition-transform group-hover:scale-110">小</span>
-            <span className="text-xs text-muted-foreground">3-10 点</span>
+            <span className="text-xs text-muted-foreground">4-10 点</span>
           </button>
         </div>
 
@@ -120,7 +209,12 @@ const GamblingHouse: React.FC = () => {
                 </span>
               ))}
             </div>
-            {lastResult.sum}点 {lastResult.sum >= 11 ? '大' : '小'} —— {lastResult.win ? '赢啦！' : '输了...'}
+            {/* Logic to display result text correctly including Leopard */}
+            {lastResult.dice[0] === lastResult.dice[1] && lastResult.dice[1] === lastResult.dice[2] 
+                ? `豹子 (${lastResult.sum}点)` 
+                : `${lastResult.sum}点 ${lastResult.sum >= 11 ? '大' : '小'}`
+            } 
+            —— {lastResult.win ? '赢啦！' : '输了...'}
           </div>
         )}
       </div>

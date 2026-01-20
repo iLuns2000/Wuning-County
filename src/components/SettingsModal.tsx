@@ -9,6 +9,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { exportSave, importSave } = useGameStore();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -33,7 +34,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     };
     reader.readAsText(file);
     
-    // Reset input so same file can be selected again if needed
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -41,7 +41,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-card border rounded-xl shadow-xl p-6 space-y-6">
+      <div className="w-full max-w-md bg-card border rounded-xl shadow-xl p-6 space-y-6 text-card-foreground">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-primary" />
