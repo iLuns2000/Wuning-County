@@ -1,5 +1,7 @@
 export type RoleType = 'magistrate' | 'merchant' | 'hero';
 
+export type WeatherType = 'sunny' | 'cloudy' | 'rain_light' | 'rain_heavy' | 'snow_light' | 'snow_heavy';
+
 export interface PlayerStats {
   money: number;
   reputation: number;
@@ -32,6 +34,14 @@ export interface Good {
   description: string;
   basePrice: number;
   volatility: number;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  description: string;
+  type: 'consumable' | 'material' | 'quest' | 'misc';
+  effect?: Effect; // Optional effect if used
 }
 
 export interface Facility {
@@ -94,6 +104,7 @@ export interface TimeSettings {
 export interface GameState {
   role: RoleType | null;
   day: number;
+  weather: WeatherType; // Current weather
   timeSettings: TimeSettings; // New field for time management
   playerProfile: PlayerProfile;
   playerStats: PlayerStats;
@@ -104,7 +115,7 @@ export interface GameState {
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
   inventory: string[];
-  flags: Record<string, boolean>;
+  flags: Record<string, any>;
   npcRelations: Record<string, number>;
   logs: string[];
   currentTaskId?: string; // Track current main task
@@ -112,6 +123,9 @@ export interface GameState {
   giftFailureCounts: Record<string, number>; // Track consecutive gift failures per NPC
   talents: Record<string, number>; // id -> level
   achievements: string[]; // ids of unlocked achievements
+  
+  // UI State for Achievements
+  latestUnlockedAchievementId?: string; 
   
   // Market & Economy
   marketPrices: Record<string, number>; // goodId -> currentPrice
@@ -135,7 +149,7 @@ export interface Effect {
   
   itemsAdd?: string[];
   itemsRemove?: string[];
-  flagsSet?: Record<string, boolean>;
+  flagsSet?: Record<string, any>;
   relationChange?: Record<string, number>;
 }
 
@@ -149,7 +163,7 @@ export interface GameEvent {
   id: string;
   title: string;
   description: string;
-  type: 'daily' | 'opportunity' | 'challenge' | 'npc';
+  type: 'daily' | 'opportunity' | 'challenge' | 'npc' | 'random';
   triggerCondition?: {
     minReputation?: number;
     minMoney?: number;

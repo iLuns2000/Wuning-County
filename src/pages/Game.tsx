@@ -16,7 +16,11 @@ import { AchievementModal } from '@/components/AchievementModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { MarketModal } from '@/components/MarketModal';
 import { EstateModal } from '@/components/EstateModal';
-import { Settings } from 'lucide-react';
+import { InventoryModal } from '@/components/InventoryModal';
+import { ExploreModal } from '@/components/ExploreModal';
+import { AchievementPopup } from '@/components/AchievementPopup';
+import { Settings, Backpack, Compass } from 'lucide-react';
+import { achievements as achievementData } from '@/data/achievements';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
@@ -27,11 +31,15 @@ export const Game: React.FC = () => {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showMarket, setShowMarket] = React.useState(false);
   const [showEstates, setShowEstates] = React.useState(false);
+  const [showInventory, setShowInventory] = React.useState(false);
+  const [showExplore, setShowExplore] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
+  const [showTeaPopup, setShowTeaPopup] = React.useState(false);
 
   const { 
     role, 
     day, 
+    weather,
     playerStats,
     playerProfile,
     setPlayerProfile,
@@ -48,14 +56,30 @@ export const Game: React.FC = () => {
     incrementDailyCount,
     activePolicyId,
     setPolicy,
-    cancelPolicy
+    cancelPolicy,
+    flags,
+    latestUnlockedAchievementId,
+    dismissAchievementPopup
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
   const activePolicy = activePolicyId ? policies.find(p => p.id === activePolicyId) : null;
+  const latestAchievement = latestUnlockedAchievementId ? achievementData.find(a => a.id === latestUnlockedAchievementId) : null;
   
   const MAX_DAILY_WORK = 3;
   const MAX_DAILY_REST = 1;
+
+  // Meiwu Tea Seeking Logic
+  const isTeaDay = ((day - 1) % 360 + 1) === 61 && weather === 'sunny';
+
+  useEffect(() => {
+    if (isTeaDay && !flags['tea_seeking_popup_shown']) {
+      setShowTeaPopup(true);
+      handleEventOption({
+        flagsSet: { tea_seeking_popup_shown: true }
+      });
+    }
+  }, [isTeaDay, flags, handleEventOption]);
 
   useEffect(() => {
     if (!role) {
@@ -189,9 +213,16 @@ export const Game: React.FC = () => {
   };
 
   const currentRoleConfig = roles.find(r => r.id === role);
+  
+  const isHeavySnow = weather === 'snow_heavy';
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
+    <div 
+      className="flex justify-center p-4 min-h-screen transition-colors duration-1000 bg-background"
+      style={{
+        backgroundColor: isTeaDay ? 'rgb(0,191,255)' : undefined
+      }}
+    >
       <TimeManager onNightWarning={() => setIsNightWarning(true)} />
       <div className="grid grid-cols-1 gap-6 w-full max-w-7xl md:grid-cols-3 md:h-[calc(100vh-2rem)]">
         
@@ -221,6 +252,7 @@ export const Game: React.FC = () => {
             playerStats={playerStats} 
             countyStats={countyStats} 
             day={day} 
+            weather={weather}
             playerProfile={playerProfile}
             onEditProfile={() => setShowProfileModal(true)}
             onOpenTalents={() => setShowTalents(true)}
@@ -262,11 +294,17 @@ export const Game: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <button 
               onClick={handleWork}
-              disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || isHeavySnow}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 relative group/btn"
+              title={isHeavySnow ? "大雪封山，无法工作" : ""}
             >
               <Briefcase size={20} />
               <span>日常工作 ({dailyCounts.work}/{MAX_DAILY_WORK})</span>
+              {isHeavySnow && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                  大雪停工
+                </div>
+              )}
             </button>
             <button 
               onClick={handleRest}
@@ -319,11 +357,17 @@ export const Game: React.FC = () => {
             </div>
             <button 
               onClick={() => navigate('/npcs')}
-              disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              disabled={!!currentEvent || isHeavySnow}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 relative group/btn"
+              title={isHeavySnow ? "大雪封山，无法出行" : ""}
             >
               <Users size={20} />
               <span>拜访 NPC</span>
+              {isHeavySnow && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                  大雪封路
+                </div>
+              )}
             </button>
             <button 
               onClick={() => navigate('/tasks')}
@@ -337,7 +381,7 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => setShowMarket(true)}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-amber-100 text-amber-900 hover:bg-amber-200 disabled:opacity-50"
+              className="flex gap-2 justify-center items-center p-4 text-amber-900 bg-amber-100 rounded-lg transition-colors hover:bg-amber-200 disabled:opacity-50"
             >
               <ShoppingBag size={20} />
               <span>西市集</span>
@@ -346,7 +390,7 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => setShowEstates(true)}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-indigo-100 text-indigo-900 hover:bg-indigo-200 disabled:opacity-50"
+              className="flex gap-2 justify-center items-center p-4 text-indigo-900 bg-indigo-100 rounded-lg transition-colors hover:bg-indigo-200 disabled:opacity-50"
             >
               <Building2 size={20} />
               <span>产业置办</span>
@@ -361,12 +405,36 @@ export const Game: React.FC = () => {
             </button>
             
             <button 
+              onClick={() => setShowExplore(true)}
+              disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || dailyCounts.rest >= MAX_DAILY_REST || isHeavySnow}
+              className="flex gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50 relative group/btn"
+              title={isHeavySnow ? "大雪封山，无法探险" : ""}
+            >
+              <Compass size={20} />
+              <span>外出探险</span>
+              {isHeavySnow && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                  无法探险
+                </div>
+              )}
+            </button>
+
+            <button 
               onClick={() => navigate('/collection')}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
               <Scroll size={20} />
               <span>藏珍匣</span>
+            </button>
+
+            <button 
+              onClick={() => setShowInventory(true)}
+              disabled={!!currentEvent}
+              className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+            >
+              <Backpack size={20} />
+              <span>行囊</span>
             </button>
           </div>
 
@@ -413,6 +481,38 @@ export const Game: React.FC = () => {
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       {showMarket && <MarketModal onClose={() => setShowMarket(false)} />}
       {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
+      {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
+      {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
+      
+      {showTeaPopup && (
+        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">
+          <div className="p-6 max-w-sm text-center rounded-lg shadow-xl duration-300 bg-card border-primary/20 animate-in fade-in zoom-in">
+             <div className="flex justify-center mb-4 text-primary">
+                <ScrollText size={48} />
+             </div>
+             <h3 className="mb-2 text-xl font-bold">梅坞寻茶</h3>
+             <p className="mb-4 text-muted-foreground">
+               恭喜你今天是三月三，天水蓝，阳光照暖了青杉
+             </p>
+             <div className="p-2 mb-4 text-sm font-medium rounded bg-secondary/50 text-primary">
+                获得成就《梅坞寻茶》
+             </div>
+             <button 
+               onClick={() => setShowTeaPopup(false)}
+               className="px-4 py-2 w-full font-bold rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+             >
+               收下这份美好
+             </button>
+          </div>
+        </div>
+      )}
+
+      {latestAchievement && (
+        <AchievementPopup 
+          achievement={latestAchievement} 
+          onClose={dismissAchievementPopup} 
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -11,6 +11,54 @@ import { achievements } from '@/data/achievements';
 import { npcs } from '@/data/npcs';
 import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
+
+// Weather System Helper
+const SEASON_LENGTH = 90;
+const SEASONS = ['春', '夏', '秋', '冬'] as const;
+
+export const getDateInfo = (day: number) => {
+  const adjustedDay = day - 1;
+  const year = Math.floor(adjustedDay / (SEASON_LENGTH * 4)) + 1;
+  const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+  const dayOfSeason = (adjustedDay % SEASON_LENGTH) + 1;
+  
+  return {
+    year,
+    season: SEASONS[seasonIndex],
+    seasonIndex, // 0: Spring, 1: Summer, 2: Autumn, 3: Winter
+    dayOfSeason
+  };
+};
+
+const generateWeather = (seasonIndex: number): WeatherType => {
+  const rand = Math.random();
+  
+  // Probabilities based on season
+  switch (seasonIndex) {
+    case 0: // Spring
+      if (rand < 0.5) return 'sunny';
+      if (rand < 0.7) return 'cloudy';
+      if (rand < 0.9) return 'rain_light';
+      return 'rain_heavy';
+    case 1: // Summer
+      if (rand < 0.4) return 'sunny';
+      if (rand < 0.5) return 'cloudy';
+      if (rand < 0.7) return 'rain_light';
+      return 'rain_heavy';
+    case 2: // Autumn
+      if (rand < 0.6) return 'sunny';
+      if (rand < 0.8) return 'cloudy';
+      if (rand < 0.95) return 'rain_light';
+      return 'rain_heavy';
+    case 3: // Winter
+      if (rand < 0.4) return 'cloudy';
+      if (rand < 0.6) return 'sunny';
+      if (rand < 0.8) return 'snow_light';
+      return 'snow_heavy';
+    default:
+      return 'sunny';
+  }
+};
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -31,7 +79,18 @@ interface GameStore extends GameState {
   cancelPolicy: () => void;
   divineFortune: () => void;
   
-  // Market Methods
+  // UI State for Achievements
+  latestUnlockedAchievementId?: string;
+
+  // Explore State
+  isExploring: boolean;
+  exploreResult: {
+    money: number;
+    reputation: number;
+    itemId?: string;
+  } | null;
+
+  // Market & Economy
   buyGood: (goodId: string, quantity: number) => void;
   sellGood: (goodId: string, quantity: number) => void;
   
@@ -57,6 +116,12 @@ interface GameStore extends GameState {
   // Developer Mode Methods
   updateStats: (updates: Partial<GameState>) => void;
 
+  // Achievement Actions
+  dismissAchievementPopup: () => void;
+  
+  // Explore Actions
+  performExplore: () => void;
+
   // Save/Load Methods
   exportSave: () => void;
   importSave: (data: string) => boolean;
@@ -67,6 +132,7 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       role: null,
       day: 1,
+      weather: 'sunny', // Default weather
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -91,9 +157,76 @@ export const useGameStore = create<GameStore>()(
       giftFailureCounts: {},
       talents: {},
       achievements: [],
+      latestUnlockedAchievementId: undefined, // Init UI state
+      isExploring: false,
+      exploreResult: null,
       marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
       ownedGoods: {},
       ownedFacilities: {},
+
+      dismissAchievementPopup: () => set({ latestUnlockedAchievementId: undefined }),
+
+      performExplore: () => {
+        set({ isExploring: true, exploreResult: null });
+        
+        // Random rewards
+        const money = Math.floor(Math.random() * 50) + 10; // 10-60 money
+        const reputation = Math.floor(Math.random() * 10) + 5; // 5-15 reputation
+        let itemId: string | undefined = undefined;
+
+        // 15% chance to get an item
+        if (Math.random() < 0.15) {
+           // For now, just random item from pool, or specifically Lovesickness Tablet
+           // Let's make Lovesickness Tablet a rare drop from explore (e.g. 20% of the 15% chance, or just direct for this task)
+           // Task implies "if user gets item... e.g. Lovesickness Tablet". Let's make it the primary explore item for now.
+           itemId = 'lovesickness_tablet';
+        }
+
+        // Apply effects after "delay" simulated in UI, but state updates happen now or after?
+        // Let's update stats immediately but keep 'isExploring' true for UI to show spinner.
+        // Actually, we should update stats only when UI finishes or immediately.
+        // Let's update immediately for simplicity of state management.
+        
+        const effect: Effect = {
+            money,
+            reputation,
+            itemsAdd: itemId ? [itemId] : undefined,
+            // Explore consumes entire day? User prompt says "cannot do other things".
+            // We can set daily counts to max to prevent other actions.
+        };
+
+        // Apply rewards
+        get().handleEventOption(effect);
+        
+        // Lock day actions
+        set(state => ({
+            dailyCounts: { 
+                ...state.dailyCounts, 
+                work: 100, // Max out to prevent work
+                rest: 100  // Max out to prevent rest
+            },
+            exploreResult: { money, reputation, itemId },
+            isExploring: false // Set false immediately? No, wait for UI to handle animation timing? 
+                               // Better: Set result, keep isExploring true? 
+                               // UI needs to know when to show result.
+                               // Let's use isExploring as "animation playing".
+                               // Actually, let's just set result and let UI handle "isExploring" visual state if needed,
+                               // or use a timeout here.
+        }));
+        
+        // Use timeout to simulate async exploration for store state if we want to block interaction
+        // But since we maxed out daily counts, user can't do much anyway.
+        // Let's keep isExploring = false here and let component manage the "visual" delay start.
+        // Re-reading component: it calls performExplore on mount.
+        // So:
+        // 1. User clicks Explore -> UI shows Modal -> Modal mounts -> calls performExplore
+        // 2. performExplore sets isExploring=true (start), waits, then sets result and isExploring=false.
+        
+        set({ isExploring: true });
+        setTimeout(() => {
+             set({ isExploring: false });
+        }, 2000); // Sync with UI delay
+      },
 
       buyGood: (goodId, quantity) => {
         const state = get();
@@ -227,6 +360,7 @@ export const useGameStore = create<GameStore>()(
         set({
           role: roleId,
           day: 1,
+          weather: 'sunny',
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
@@ -458,6 +592,7 @@ export const useGameStore = create<GameStore>()(
         if (newUnlockedIds.length > 0) {
           set(state => ({
             achievements: [...state.achievements, ...newUnlockedIds],
+            latestUnlockedAchievementId: newUnlockedIds[newUnlockedIds.length - 1], // Show the latest one
             playerStats: {
               ...state.playerStats,
               experience: state.playerStats.experience + totalRewardExp
@@ -602,15 +737,30 @@ export const useGameStore = create<GameStore>()(
               facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
 
+          // Weather Generation
+          const nextDayVal = state.day + 1;
+          const { seasonIndex } = getDateInfo(nextDayVal);
+          const nextWeather = generateWeather(seasonIndex);
+          const weatherNames: Record<string, string> = {
+            'sunny': '晴',
+            'cloudy': '阴',
+            'rain_light': '小雨',
+            'rain_heavy': '大雨',
+            'snow_light': '小雪',
+            'snow_heavy': '大雪'
+          };
+
           const logs = [recoveryMessage, ...state.logs];
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
           if (facilityMessage) logs.unshift(facilityMessage);
           
+          logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
 
           return { 
             day: state.day + 1,
+            weather: nextWeather,
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,

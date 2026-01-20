@@ -63,5 +63,51 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '持有金钱超过 100000 文',
     rewardExp: 2000,
     condition: (state) => state.playerStats.money >= 100000
+  },
+  {
+    id: 'chicken_case_solved',
+    name: '断案如神',
+    description: '成功破获老李偷鸡案，查明真相',
+    rewardExp: 100,
+    condition: (state) => !!state.flags['chicken_case_solved_success']
+  },
+  {
+    id: 'tea_seeking',
+    name: '梅坞寻茶',
+    description: '三月三，天水蓝，阳光照暖了青杉',
+    rewardExp: 200,
+    condition: (state) => {
+      // Day 61 of the year (Spring 61) and Sunny
+      const dayOfYear = (state.day - 1) % 360 + 1;
+      return dayOfYear === 61 && state.weather === 'sunny';
+    }
+  },
+  {
+    id: 'linan_memory',
+    name: '临安记忆',
+    description: '伞柄上刻着临安制造四个字，也许上一任主人曾经撑着这把伞在断桥等人...',
+    rewardExp: 50,
+    condition: (state) => state.inventory.includes('oil_paper_umbrella')
+  },
+  {
+    id: 'lovesickness_tablet_found',
+    name: '相思碑',
+    description: '冷雁南飞 而我面向北 自锁眉 凭栏等谁归',
+    rewardExp: 100,
+    condition: (state) => state.inventory.includes('lovesickness_tablet')
+  },
+  {
+    id: 'guest_please_enter',
+    name: '客官请进',
+    description: '客官里面请几位，请上座好茶来奉陪',
+    rewardExp: 150,
+    condition: (state) => state.countyStats.economy > 80 && state.countyStats.order > 80
+  },
+  {
+    id: 'thousand_mountains_snow_silence',
+    name: '千山雪寂',
+    description: '大雪满山，路上死寂',
+    rewardExp: 200,
+    condition: (state) => !!state.flags['first_heavy_snow_encountered']
   }
 ];

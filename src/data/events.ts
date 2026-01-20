@@ -22,25 +22,6 @@ export const randomEvents: GameEvent[] = [
     ]
   },
   {
-    id: 'daily_weather',
-    title: '天气变化',
-    description: '天气突然变化，似乎要下雨了。',
-    type: 'daily',
-    triggerCondition: { probability: 1.0 },
-    options: [
-      {
-        label: '带伞出行',
-        message: '你带了伞，虽然有些不便，但没有淋湿。',
-        effect: { ability: 1 }
-      },
-      {
-        label: '偷懒睡觉',
-        message: '你觉得下雨天正好睡觉，什么也没做。',
-        effect: { ability: -1, health: 5 } // Decrease ability, gain health
-      }
-    ]
-  },
-  {
     id: 'daily_festival',
     title: '节日庆典',
     description: '县城举办节日庆典，到处张灯结彩。',
@@ -254,43 +235,291 @@ export const randomEvents: GameEvent[] = [
         effect: { ability: 5 }
       }
     ]
+  },
+  // Chicken Theft Case Events
+  {
+    id: 'chicken_theft_dispute',
+    title: '偷鸡疑云',
+    description: '集市上，老张拉着老李吵得不可开交，引来许多百姓围观。老张声称老李偷了他家的下蛋母鸡，老李则矢口否认。',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0.3, 
+      custom: (state) => !state.flags['chicken_case_started'] && !state.flags['chicken_case_solved_success'] && !state.flags['chicken_case_failed']
+    },
+    options: [
+      {
+        label: '上前询问',
+        message: '你决定介入此事，查个水落石出。老张和老李见县令大人来了，连忙下跪喊冤。',
+        effect: { 
+          flagsSet: { chicken_case_started: true, chicken_stage: 1 },
+          reputation: 5
+        }
+      },
+      {
+        label: '无视',
+        message: '你觉得清官难断家务事，摇了摇头离开了。',
+        effect: { 
+          flagsSet: { chicken_case_ignored: true },
+          reputation: -5
+        }
+      }
+    ]
+  },
+  {
+    id: 'chicken_theft_investigate',
+    title: '案件调查',
+    description: '对于偷鸡一案，你需要收集更多线索。',
+    type: 'npc',
+    triggerCondition: { 
+      // Always available if stage is 1, essentially forcing this to be a high priority if picked, 
+      // but since we rely on random selection, probability 1.0 makes it likely to appear.
+      probability: 1.0,
+      custom: (state) => state.flags['chicken_stage'] === 1
+    },
+    options: [
+      {
+        label: '询问老张',
+        message: '老张激动地说：“大人！昨天我家院墙上有搭梯子的痕迹，今早我看到老李鞋底有和我家后院一样的淤泥！肯定是他！”',
+        effect: { flagsSet: { chicken_clue_zhang: true } }
+      },
+      {
+        label: '询问老李',
+        message: '老李一脸委屈：“大人冤枉啊！我昨晚早早就睡了，大门紧闭根本没出门。那鞋底的淤泥……是我今早去村口池塘打水沾上的！”',
+        effect: { flagsSet: { chicken_clue_li: true } }
+      },
+      {
+        label: '查看现场',
+        message: '你仔细查看了现场，发现院墙确实有攀爬痕迹。在墙角的草丛里，你发现了一根遗落的麻绳，上面粘着鸡毛。这麻绳编制手法独特，像是老李编竹筐常用的那种。',
+        effect: { flagsSet: { chicken_clue_scene: true } }
+      },
+      {
+        label: '开始断案',
+        message: '经过一番调查，你心里已经有了底，决定升堂断案。',
+        effect: { flagsSet: { chicken_stage: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'chicken_theft_verdict',
+    title: '升堂断案',
+    description: '公堂之上，老张和老李跪在堂下。百姓们议论纷纷，都在等着你的判决。谁才是真正的偷鸡贼？',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 1.0,
+      custom: (state) => state.flags['chicken_stage'] === 2
+    },
+    options: [
+      {
+        label: '定老李的罪',
+        message: '你厉声喝道：“老李！那麻绳正是你编竹筐所用，且上面粘有鸡毛，你还有何话可说！”老李见证据确凿，瘫倒在地，承认了一时贪念偷鸡的事实。案情大白，百姓纷纷称赞。',
+        effect: { 
+          flagsSet: { chicken_case_solved_success: true, chicken_stage: 3 }, 
+          reputation: 50,
+          money: 20, // Fine
+          relationChange: { lao_zhang: 20, lao_li: -10 }
+        }
+      },
+      {
+        label: '定老张诬告',
+        message: '你认为老张凭空污人清白，重打了老张二十大板。然而数日后，有人看见老李在偷偷吃鸡……你这才知道判错了案，不仅声望受损，还成了百姓茶余饭后的笑柄。',
+        effect: { 
+          flagsSet: { chicken_case_failed: true, chicken_stage: 3 }, 
+          reputation: -30,
+          relationChange: { lao_zhang: -30, lao_li: 10 }
+        }
+      },
+      {
+        label: '证据不足，退堂',
+        message: '你觉得现有证据不足以定罪，只能暂时将两人劝回。案子成了悬案，百姓对你的能力颇有微词。',
+        effect: { 
+          flagsSet: { chicken_stage: 3 },
+          reputation: -10
+        }
+      }
+    ]
+  },
+  // Umbrella Sale Event
+  {
+    id: 'rainy_day_umbrella',
+    title: '雨中叫卖',
+    description: '今天阴雨连绵，街边有个小贩正在叫卖二手的油纸伞。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1,
+      custom: (state) => {
+        const isRainy = state.weather === 'rain_light' || state.weather === 'rain_heavy';
+        const hasMoney = state.playerStats.money >= 50;
+        const hasUmbrella = state.inventory.includes('oil_paper_umbrella');
+        return isRainy && hasMoney && !hasUmbrella;
+      }
+    },
+    options: [
+      {
+        label: '购买油纸伞 (50文)',
+        message: '你花50文买下了这把旧伞。细细观察时，发现伞柄上刻着“临安制造”四个字。',
+        effect: {
+          money: -50,
+          itemsAdd: ['oil_paper_umbrella']
+        }
+      },
+      {
+        label: '不需要',
+        message: '你觉得淋点雨也无妨，便匆匆走过了。',
+      }
+    ]
+  },
+  // New Restaurant Event
+  {
+    id: 'new_restaurant_opening',
+    title: '新酒楼开张',
+    description: '由于无宁县经商环境良好治安稳定，有外地商人闻名而来开了一个新酒楼。这个酒楼据说天南地北的菜都会做，门口一位店小二嘴皮十分利索，见人便喊：“客官里面请几位，请上座好茶来奉陪！”',
+    type: 'random',
+    triggerCondition: {
+      probability: 1.0, // Always triggers if condition met (handled by custom logic below, usually achievement unlocks are instant, but events need trigger)
+                        // Actually, achievements are checked automatically. This event is for flavor/narrative.
+                        // We can make it trigger once when stats are high.
+      custom: (state) => {
+        // Trigger if stats are high AND event hasn't happened yet
+        return state.countyStats.economy > 80 && 
+               state.countyStats.order > 80 && 
+               !state.flags['new_restaurant_event_shown'];
+      }
+    },
+    options: [
+      {
+        label: '进店看看',
+        message: '你走进酒楼，果然宾客满座，热闹非凡。店小二热情地招呼你入座。',
+        effect: {
+          reputation: 10,
+          flagsSet: { new_restaurant_event_shown: true }
+        }
+      },
+      {
+        label: '路过',
+        message: '你看着热闹的酒楼，欣慰地点了点头，继续巡视。',
+        effect: {
+          flagsSet: { new_restaurant_event_shown: true }
+        }
+      }
+    ]
+  },
+  // First Heavy Snow Event
+  {
+    id: 'first_heavy_snow',
+    title: '大雪封山',
+    description: '今天是你遇到的第一个大雪天，雪势过大无法出门。你在宅子里看着窗外大雪满山，路上也一片死寂。',
+    type: 'random', // Using random but high probability logic handles it
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        return state.weather === 'snow_heavy' && !state.flags['first_heavy_snow_encountered'];
+      }
+    },
+    options: [
+      {
+        label: '静观雪景',
+        message: '你静静地看着窗外，感受着这份天地间的寂静。',
+        effect: {
+           flagsSet: { first_heavy_snow_encountered: true },
+           // We don't need to force achievement unlock here if we use the flag condition in achievements.ts
+           // But to be safe and provide immediate feedback:
+           // Actually achievements checks are run after events in gameStore.
+        }
+      }
+    ]
   }
 ];
 
 export const npcEvents: GameEvent[] = [
-  // Lou Xianling
   {
-    id: 'lou_discuss',
-    title: '政务讨论',
-    description: '楼县令邀请你前往县衙讨论政务。',
+    id: 'npc_lou_invite',
+    title: '县令邀请',
+    description: '楼县令邀请你到府上一叙。',
     type: 'npc',
-    triggerCondition: { minReputation: 500 },
+    triggerCondition: { minReputation: 100, probability: 0.1 },
     options: [
-      { label: '接受邀请', message: '你们深入探讨了治县方略，受益匪浅。', effect: { reputation: 20, ability: 5, order: 5 } },
-      { label: '婉拒', message: '你推脱身体不适，没有前往。' }
+      {
+        label: '欣然前往',
+        message: '你与楼县令相谈甚欢，他对你的见解颇为赞赏。',
+        effect: { reputation: 20, ability: 5, relationChange: { lou_xianling: 10 } }
+      },
+      {
+        label: '婉言谢绝',
+        message: '你推脱身体不适，楼县令表示遗憾。',
+        effect: { reputation: -5, relationChange: { lou_xianling: -5 } }
+      }
     ]
   },
   {
-    id: 'lou_patrol',
-    title: '县城巡视',
-    description: '楼县令准备微服私访，邀你同行。',
+    id: 'npc_lao_li_bamboo',
+    title: '竹编新品',
+    description: '老李新编了一批精巧的竹篮，正愁怎么卖个好价钱。',
     type: 'npc',
-    triggerCondition: { minReputation: 300 },
+    triggerCondition: { probability: 0.1 },
     options: [
-      { label: '同行', message: '你们走访了街头巷尾，了解了民生疾苦。', effect: { reputation: 15, livelihood: 5 } },
-      { label: '不去', message: '你错过了这次接近县令的机会。' }
+      {
+        label: '帮忙推销',
+        message: '你凭借三寸不烂之舌帮老李卖了个好价钱，老李笑得合不拢嘴。',
+        effect: { money: 10, reputation: 5, relationChange: { lao_li: 15, lao_zhang: -5 } } // 老张嫉妒
+      },
+      {
+        label: '自己买下',
+        message: '你自掏腰包买下了竹篮，老李感激涕零。',
+        effect: { money: -20, relationChange: { lao_li: 20 } }
+      },
+      {
+        label: '嘲讽两句',
+        message: '你嘲笑这竹篮样式过时，老李气得吹胡子瞪眼。',
+        effect: { relationChange: { lao_li: -20, lao_zhang: 10 } } // 老张幸灾乐祸
+      }
     ]
   },
   {
-    id: 'lou_reward',
-    title: '县令嘉奖',
-    description: '鉴于你的贡献，楼县令决定公开嘉奖你。',
+    id: 'npc_lao_zhang_harvest',
+    title: '丰收喜悦',
+    description: '今年风调雨顺，老张家的庄稼大丰收，但他正发愁收割不及。',
     type: 'npc',
-    triggerCondition: { minReputation: 700 },
+    triggerCondition: { probability: 0.1 },
     options: [
-      { label: '接受嘉奖', message: '你在全县百姓面前接受了表彰，声望大增。', effect: { money: 200, reputation: 100 } },
-      { label: '谦辞', message: '你谦虚地推辞了，大家反而更加敬重你。', effect: { reputation: 120 } }
+      {
+        label: '下地帮忙',
+        message: '你卷起裤腿下地帮忙，累得腰酸背痛，但老张非要送你一袋新米。',
+        effect: { health: -10, money: 5, relationChange: { lao_zhang: 20 } }
+      },
+      {
+        label: '雇人相助',
+        message: '你出钱帮老张雇了几个短工，老张感动得直抹眼泪。',
+        effect: { money: -15, reputation: 10, relationChange: { lao_zhang: 25, lao_li: -5 } } // 老李觉得你多管闲事
+      },
+      {
+        label: '视而不见',
+        message: '你假装没看见，匆匆走过。',
+        effect: { relationChange: { lao_zhang: -5 } }
+      }
     ]
   },
-  
+  {
+    id: 'npc_neighbors_quarrel',
+    title: '邻里争吵',
+    description: '老李和老张又因为门口的一块地界吵了起来，引来众人围观。',
+    type: 'npc',
+    triggerCondition: { probability: 0.05 }, // Rare event
+    options: [
+      {
+        label: '帮老李说话',
+        message: '你指出地界确实偏向老李家，老张气愤地回了屋，老李得意洋洋。',
+        effect: { relationChange: { lao_li: 15, lao_zhang: -20 } }
+      },
+      {
+        label: '帮老张说话',
+        message: '你认为老张占理，老李虽然不服但没再多说，老张对你投来感激的目光。',
+        effect: { relationChange: { lao_li: -20, lao_zhang: 15 } }
+      },
+      {
+        label: '各打五十大板',
+        message: '你指出两人都有不对之处，两人虽然都不爽，但也觉得你说得在理。',
+        effect: { reputation: 10, relationChange: { lao_li: -5, lao_zhang: -5 } }
+      }
+    ]
+  }
 ];
