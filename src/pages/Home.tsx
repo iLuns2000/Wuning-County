@@ -48,7 +48,7 @@ export const Home: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>能力: {role.initialStats.ability}</span>
-                <span>健康: {role.initialStats.health}</span>
+                <span>体力: {role.initialStats.health}</span>
               </div>
               <div className="pt-2 border-t border-border/50 text-left space-y-1">
                 <p><span className="font-bold text-primary">技能:</span> {role.specialAbility.name} - {role.specialAbility.description}</p>

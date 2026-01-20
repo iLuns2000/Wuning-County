@@ -9,6 +9,8 @@ import { fortunes } from '@/data/fortunes';
 import { talents } from '@/data/talents';
 import { achievements } from '@/data/achievements';
 import { npcs } from '@/data/npcs';
+import { goods } from '@/data/goods';
+import { facilities } from '@/data/facilities';
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -28,6 +30,13 @@ interface GameStore extends GameState {
   setPolicy: (policyId: string) => void;
   cancelPolicy: () => void;
   divineFortune: () => void;
+  
+  // Market Methods
+  buyGood: (goodId: string, quantity: number) => void;
+  sellGood: (goodId: string, quantity: number) => void;
+  
+  // Facility Methods
+  buyFacility: (facilityId: string) => void;
   
   // Talent & Achievement Methods
   upgradeTalent: (talentId: string) => void;
@@ -82,6 +91,71 @@ export const useGameStore = create<GameStore>()(
       giftFailureCounts: {},
       talents: {},
       achievements: [],
+      marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
+      ownedGoods: {},
+      ownedFacilities: {},
+
+      buyGood: (goodId, quantity) => {
+        const state = get();
+        const price = state.marketPrices[goodId];
+        const cost = price * quantity;
+        
+        if (state.playerStats.money < cost) {
+          state.addLog('资金不足，无法购买。');
+          return;
+        }
+        
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+          ownedGoods: {
+            ...state.ownedGoods,
+            [goodId]: (state.ownedGoods[goodId] || 0) + quantity
+          }
+        }));
+        get().addLog(`【市集】花费 ${cost} 文买入 ${quantity} 个${goods.find(g => g.id === goodId)?.name}。`);
+      },
+
+      sellGood: (goodId, quantity) => {
+        const state = get();
+        const currentQty = state.ownedGoods[goodId] || 0;
+        
+        if (currentQty < quantity) {
+          state.addLog('库存不足，无法出售。');
+          return;
+        }
+        
+        const price = state.marketPrices[goodId];
+        const earnings = price * quantity;
+        
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money + earnings },
+          ownedGoods: {
+            ...state.ownedGoods,
+            [goodId]: currentQty - quantity
+          }
+        }));
+        get().addLog(`【市集】出售 ${quantity} 个${goods.find(g => g.id === goodId)?.name}，获得 ${earnings} 文。`);
+      },
+
+      buyFacility: (facilityId) => {
+        const state = get();
+        const facility = facilities.find(f => f.id === facilityId);
+        if (!facility) return;
+        
+        if (state.playerStats.money < facility.cost) {
+          state.addLog('资金不足，无法置办此产业。');
+          return;
+        }
+        
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - facility.cost },
+          ownedFacilities: {
+            ...state.ownedFacilities,
+            [facilityId]: (state.ownedFacilities[facilityId] || 0) + 1
+          }
+        }));
+        get().addLog(`【产业】花费 ${facility.cost} 文置办了 ${facility.name}。`);
+      },
 
       updateTimeSettings: (settings) => {
         set(state => ({
@@ -172,6 +246,9 @@ export const useGameStore = create<GameStore>()(
           giftFailureCounts: {},
           talents: {},
           achievements: [],
+          marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
+          ownedGoods: {},
+          ownedFacilities: {},
         });
         
         if (firstTask) {
@@ -498,9 +575,37 @@ export const useGameStore = create<GameStore>()(
               voiceMessage = '经过一天的休息，你的嗓子终于恢复了。';
           }
 
+          // Market Fluctuation
+          const newMarketPrices = { ...state.marketPrices };
+          goods.forEach(good => {
+             const fluctuation = (Math.random() * 2 - 1) * good.volatility;
+             let newPrice = Math.floor(good.basePrice * (1 + fluctuation));
+             newPrice = Math.max(Math.floor(good.basePrice * 0.5), Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+             newMarketPrices[good.id] = newPrice;
+          });
+
+          // Facility Income
+          let facilityIncome = 0;
+          let facilityMessage = '';
+          Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
+             const facility = facilities.find(f => f.id === facilityId);
+             if (facility && count > 0) {
+                 facilityIncome += facility.dailyIncome * count;
+             }
+          });
+          
+          if (facilityIncome > 0) {
+              // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
+              const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
+              facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
+              newPlayerStats.money += facilityIncome;
+              facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
+          }
+
           const logs = [recoveryMessage, ...state.logs];
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
+          if (facilityMessage) logs.unshift(facilityMessage);
           
           logs.unshift('获得 10 点阅历。');
 
@@ -513,7 +618,8 @@ export const useGameStore = create<GameStore>()(
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },
             countyStats: newCountyStats,
             logs: logs.slice(0, 50),
-            timeSettings: { ...state.timeSettings, dayStartTime: Date.now() } // Reset timer
+            timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
+            marketPrices: newMarketPrices
           };
         });
         get().addLog(`第 ${get().day} 天`);

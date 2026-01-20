@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Dices, Scroll } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Dices, Scroll, ShoppingBag, Building2 } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -14,6 +14,8 @@ import { TimeManager } from '@/components/TimeManager';
 import { TalentModal } from '@/components/TalentModal';
 import { AchievementModal } from '@/components/AchievementModal';
 import { SettingsModal } from '@/components/SettingsModal';
+import { MarketModal } from '@/components/MarketModal';
+import { EstateModal } from '@/components/EstateModal';
 import { Settings } from 'lucide-react';
 
 export const Game: React.FC = () => {
@@ -23,6 +25,8 @@ export const Game: React.FC = () => {
   const [showTalents, setShowTalents] = React.useState(false);
   const [showAchievements, setShowAchievements] = React.useState(false);
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showMarket, setShowMarket] = React.useState(false);
+  const [showEstates, setShowEstates] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
 
   const { 
@@ -327,12 +331,21 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => navigate('/facilities')}
+              onClick={() => setShowMarket(true)}
               disabled={!!currentEvent}
-              className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-amber-100 text-amber-900 hover:bg-amber-200 disabled:opacity-50"
             >
-              <Dices size={20} />
-              <span>游乐坊</span>
+              <ShoppingBag size={20} />
+              <span>西市集</span>
+            </button>
+
+            <button 
+              onClick={() => setShowEstates(true)}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-indigo-100 text-indigo-900 hover:bg-indigo-200 disabled:opacity-50"
+            >
+              <Building2 size={20} />
+              <span>产业置办</span>
             </button>
             
             <button 
@@ -386,6 +399,8 @@ export const Game: React.FC = () => {
       <TalentModal isOpen={showTalents} onClose={() => setShowTalents(false)} />
       <AchievementModal isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      {showMarket && <MarketModal onClose={() => setShowMarket(false)} />}
+      {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
     </div>
   );
 };

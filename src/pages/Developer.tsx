@@ -22,12 +22,12 @@ export const Developer: React.FC = () => {
 
   if (!role) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-            <h1 className="text-xl font-bold mb-4">开发者模式</h1>
-            <p className="text-muted-foreground mb-6">请先开始游戏选择角色后再进入此模式。</p>
+        <div className="flex flex-col justify-center items-center p-4 min-h-screen text-center">
+            <h1 className="mb-4 text-xl font-bold">开发者模式</h1>
+            <p className="mb-6 text-muted-foreground">请先开始游戏选择角色后再进入此模式。</p>
             <button 
                 onClick={() => navigate('/')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground"
             >
                 返回主页
             </button>
@@ -65,23 +65,23 @@ export const Developer: React.FC = () => {
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="w-full max-w-2xl space-y-6">
-        <header className="flex items-center gap-4 py-2 shrink-0">
+      <div className="space-y-6 w-full max-w-2xl">
+        <header className="flex gap-4 items-center py-2 shrink-0">
           <button 
             onClick={() => navigate('/game')}
-            className="p-2 hover:bg-secondary rounded-full transition-colors"
+            className="p-2 rounded-full transition-colors hover:bg-secondary"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold flex items-center gap-2">
+          <h1 className="flex gap-2 items-center text-xl font-bold">
             <Terminal className="text-primary" />
             开发者控制台
           </h1>
         </header>
 
-        <div className="p-6 border rounded-lg bg-card shadow-sm space-y-6">
+        <div className="p-6 space-y-6 rounded-lg border shadow-sm bg-card">
           <div className="space-y-4">
-            <h2 className="text-lg font-bold border-b pb-2">基础信息</h2>
+            <h2 className="pb-2 text-lg font-bold border-b">基础信息</h2>
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
                  <label className="text-sm font-medium">当前天数</label>
@@ -90,14 +90,14 @@ export const Developer: React.FC = () => {
                    name="day"
                    value={formData.day}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-bold border-b pb-2">角色属性</h2>
+            <h2 className="pb-2 text-lg font-bold border-b">角色属性</h2>
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
                  <label className="text-sm font-medium">金钱</label>
@@ -106,7 +106,7 @@ export const Developer: React.FC = () => {
                    name="money"
                    value={formData.money}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -116,7 +116,7 @@ export const Developer: React.FC = () => {
                    name="reputation"
                    value={formData.reputation}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -126,7 +126,7 @@ export const Developer: React.FC = () => {
                    name="ability"
                    value={formData.ability}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -136,7 +136,7 @@ export const Developer: React.FC = () => {
                    name="health"
                    value={formData.health}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -146,14 +146,14 @@ export const Developer: React.FC = () => {
                    name="experience"
                    value={formData.experience}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-bold border-b pb-2">县城状况</h2>
+            <h2 className="pb-2 text-lg font-bold border-b">县城状况</h2>
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
                  <label className="text-sm font-medium">经济</label>
@@ -162,7 +162,7 @@ export const Developer: React.FC = () => {
                    name="economy"
                    value={formData.economy}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -172,7 +172,7 @@ export const Developer: React.FC = () => {
                    name="order"
                    value={formData.order}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -182,7 +182,7 @@ export const Developer: React.FC = () => {
                    name="culture"
                    value={formData.culture}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
                <div className="space-y-2">
@@ -192,7 +192,7 @@ export const Developer: React.FC = () => {
                    name="livelihood"
                    value={formData.livelihood}
                    onChange={handleChange}
-                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
                </div>
             </div>
@@ -200,7 +200,7 @@ export const Developer: React.FC = () => {
 
           <button 
             onClick={handleSave}
-            className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+            className="flex gap-2 justify-center items-center py-3 w-full font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Save size={20} />
             保存修改

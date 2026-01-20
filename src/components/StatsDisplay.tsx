@@ -82,7 +82,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           <StatItem icon={Coins} value={playerStats.money} label="金钱" color="text-yellow-500" />
           <StatItem icon={Trophy} value={playerStats.reputation} label="声望" color="text-purple-500" />
           <StatItem icon={Zap} value={playerStats.ability} label="能力" color="text-blue-500" />
-          <StatItem icon={Heart} value={playerStats.health} label="健康" color="text-red-500" />
+          <StatItem icon={Heart} value={playerStats.health} label="体力" color="text-red-500" />
           <StatItem icon={Star} value={playerStats.experience || 0} label="阅历" color="text-indigo-500" />
         </div>
       </div>

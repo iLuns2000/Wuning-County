@@ -94,6 +94,11 @@ export interface GameState {
   giftFailureCounts: Record<string, number>; // Track consecutive gift failures per NPC
   talents: Record<string, number>; // id -> level
   achievements: string[]; // ids of unlocked achievements
+  
+  // Market & Economy
+  marketPrices: Record<string, number>; // goodId -> currentPrice
+  ownedGoods: Record<string, number>; // goodId -> quantity
+  ownedFacilities: Record<string, number>; // facilityId -> quantity
 }
 
 export interface Effect {
