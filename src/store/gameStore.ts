@@ -868,6 +868,9 @@ export const useGameStore = create<GameStore>()(
           achievements: state.achievements,
           playerProfile: state.playerProfile,
           timeSettings: state.timeSettings,
+          marketPrices: state.marketPrices,
+          ownedGoods: state.ownedGoods,
+          ownedFacilities: state.ownedFacilities,
           timestamp: Date.now(),
           version: '1.0.0'
         };
@@ -936,6 +939,9 @@ export const useGameStore = create<GameStore>()(
         activePolicyId: state.activePolicyId,
         talents: state.talents,
         achievements: state.achievements,
+        marketPrices: state.marketPrices,
+        ownedGoods: state.ownedGoods,
+        ownedFacilities: state.ownedFacilities,
       }), // Save everything except actions
     }
   )

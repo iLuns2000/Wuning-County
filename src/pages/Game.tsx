@@ -193,9 +193,9 @@ export const Game: React.FC = () => {
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
       <TimeManager onNightWarning={() => setIsNightWarning(true)} />
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+      <div className="grid grid-cols-1 gap-6 w-full max-w-7xl md:grid-cols-3 md:h-[calc(100vh-2rem)]">
         
-        {/* Left Column: Stats & Actions */}
+        {/* Left Column: Stats */}
         <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
@@ -210,6 +210,7 @@ export const Game: React.FC = () => {
               <button 
                 onClick={() => { resetGame(); navigate('/'); }}
                 className="text-xs text-muted-foreground hover:text-foreground"
+                title="退出游戏"
               >
                 退出
               </button>
@@ -225,7 +226,10 @@ export const Game: React.FC = () => {
             onOpenTalents={() => setShowTalents(true)}
             onOpenAchievements={() => setShowAchievements(true)}
           />
+        </div>
 
+        {/* Middle Column: Actions */}
+        <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           {currentTask && (
             <div className="space-y-1">
               <h2 className="ml-1 text-sm font-semibold text-muted-foreground">当前任务</h2>
