@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Home } from '@/pages/Home';
 import { Game } from '@/pages/Game';
 import { NPCList } from '@/pages/NPCList';
@@ -9,9 +9,12 @@ import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
 
+const isSingleFile = import.meta.env.MODE === 'singlefile';
+const Router = isSingleFile ? HashRouter : BrowserRouter;
+
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
@@ -23,7 +26,7 @@ function App() {
         <Route path="/developer" element={<Developer />} />
       </Routes>
       <Watermark />
-    </BrowserRouter>
+    </Router>
   );
 }
 

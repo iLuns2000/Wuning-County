@@ -8,6 +8,7 @@ import { policies } from '@/data/policies';
 import { fortunes } from '@/data/fortunes';
 import { talents } from '@/data/talents';
 import { achievements } from '@/data/achievements';
+import { npcs } from '@/data/npcs';
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
@@ -522,44 +523,113 @@ export const useGameStore = create<GameStore>()(
       },
 
       handleEventOption: (effect, message) => {
-        if (message) get().addLog(message);
+        const state = get();
+        let statChanges: string[] = [];
+
+        // Calculate all changes first
+        let moneyChange = 0;
+        let reputationChange = 0;
+        let abilityChange = 0;
+        let healthChange = 0;
+        let experienceChange = 0;
+        
+        let economyChange = 0;
+        let orderChange = 0;
+        let cultureChange = 0;
+        let livelihoodChange = 0;
+
+        if (effect) {
+            // 1. Accumulate changes from nested objects (treating them as deltas)
+            if (effect.playerStats) {
+                if (effect.playerStats.money) moneyChange += effect.playerStats.money;
+                if (effect.playerStats.reputation) reputationChange += effect.playerStats.reputation;
+                if (effect.playerStats.ability) abilityChange += effect.playerStats.ability;
+                if (effect.playerStats.health) healthChange += effect.playerStats.health;
+                if (effect.playerStats.experience) experienceChange += effect.playerStats.experience;
+            }
+            
+            if (effect.countyStats) {
+                if (effect.countyStats.economy) economyChange += effect.countyStats.economy;
+                if (effect.countyStats.order) orderChange += effect.countyStats.order;
+                if (effect.countyStats.culture) cultureChange += effect.countyStats.culture;
+                if (effect.countyStats.livelihood) livelihoodChange += effect.countyStats.livelihood;
+            }
+
+            // 2. Accumulate changes from flat properties
+            if (effect.money) moneyChange += effect.money;
+            if (effect.reputation) reputationChange += effect.reputation;
+            if (effect.ability) abilityChange += effect.ability;
+            if (effect.health) healthChange += effect.health;
+            
+            if (effect.economy) economyChange += effect.economy;
+            if (effect.order) orderChange += effect.order;
+            if (effect.culture) cultureChange += effect.culture;
+            if (effect.livelihood) livelihoodChange += effect.livelihood;
+
+            // 3. Apply Talent Modifiers to positive gains
+            if (moneyChange > 0) {
+                 const level = state.talents['mercantile'] || 0;
+                 moneyChange = Math.floor(moneyChange * (1 + level * 0.1));
+            }
+            if (reputationChange > 0) {
+                 const level = state.talents['eloquence'] || 0;
+                 reputationChange = Math.floor(reputationChange * (1 + level * 0.1));
+            }
+            if (abilityChange > 0) {
+                 const level = state.talents['wisdom'] || 0;
+                 abilityChange = Math.floor(abilityChange * (1 + level * 0.1));
+            }
+            
+            // 4. Generate Log Strings
+            const formatChange = (name: string, value: number) => {
+                return `${name}${value > 0 ? '+' : ''}${value}`;
+            };
+
+            if (healthChange !== 0) statChanges.push(formatChange('体力', healthChange));
+            if (moneyChange !== 0) statChanges.push(formatChange('银两', moneyChange));
+            if (reputationChange !== 0) statChanges.push(formatChange('声望', reputationChange));
+            if (abilityChange !== 0) statChanges.push(formatChange('能力', abilityChange));
+            if (experienceChange !== 0) statChanges.push(formatChange('阅历', experienceChange));
+            
+            if (economyChange !== 0) statChanges.push(formatChange('经济', economyChange));
+            if (orderChange !== 0) statChanges.push(formatChange('治安', orderChange));
+            if (cultureChange !== 0) statChanges.push(formatChange('文化', cultureChange));
+            if (livelihoodChange !== 0) statChanges.push(formatChange('民生', livelihoodChange));
+            
+            if (effect.itemsAdd && effect.itemsAdd.length > 0) {
+                statChanges.push(`获得 ${effect.itemsAdd.join('、')}`);
+            }
+
+            if (effect.relationChange) {
+               Object.entries(effect.relationChange).forEach(([id, val]) => {
+                 const npc = npcs.find(n => n.id === id);
+                 const name = npc ? npc.name : id;
+                 statChanges.push(`${name}好感${val > 0 ? '+' : ''}${val}`);
+               });
+            }
+        }
+
+        let fullMessage = message || '';
+        if (statChanges.length > 0) {
+            fullMessage += (fullMessage ? ' ' : '') + statChanges.join('，');
+        }
+
+        if (fullMessage) get().addLog(fullMessage);
 
         if (effect) {
           set(state => {
-            const newPlayerStats = { ...state.playerStats, ...effect.playerStats };
-            
-            // Apply Talent Modifiers
-            if (effect.money) {
-               if (effect.money > 0) {
-                   const level = state.talents['mercantile'] || 0;
-                   newPlayerStats.money += Math.floor(effect.money * (1 + level * 0.1));
-               } else {
-                   newPlayerStats.money += effect.money;
-               }
-            }
-            if (effect.reputation) {
-               if (effect.reputation > 0) {
-                   const level = state.talents['eloquence'] || 0;
-                   newPlayerStats.reputation += Math.floor(effect.reputation * (1 + level * 0.1));
-               } else {
-                   newPlayerStats.reputation += effect.reputation;
-               }
-            }
-            if (effect.ability) {
-               if (effect.ability > 0) {
-                   const level = state.talents['wisdom'] || 0;
-                   newPlayerStats.ability += Math.floor(effect.ability * (1 + level * 0.1));
-               } else {
-                   newPlayerStats.ability += effect.ability;
-               }
-            }
-            if (effect.health) newPlayerStats.health += effect.health;
+            const newPlayerStats = { ...state.playerStats };
+            newPlayerStats.money = (newPlayerStats.money || 0) + moneyChange;
+            newPlayerStats.reputation = (newPlayerStats.reputation || 0) + reputationChange;
+            newPlayerStats.ability = (newPlayerStats.ability || 0) + abilityChange;
+            newPlayerStats.health = (newPlayerStats.health || 0) + healthChange;
+            newPlayerStats.experience = (newPlayerStats.experience || 0) + experienceChange;
 
-            const newCountyStats = { ...state.countyStats, ...effect.countyStats };
-            if (effect.economy) newCountyStats.economy += effect.economy;
-            if (effect.order) newCountyStats.order += effect.order;
-            if (effect.culture) newCountyStats.culture += effect.culture;
-            if (effect.livelihood) newCountyStats.livelihood += effect.livelihood;
+            const newCountyStats = { ...state.countyStats };
+            newCountyStats.economy = (newCountyStats.economy || 0) + economyChange;
+            newCountyStats.order = (newCountyStats.order || 0) + orderChange;
+            newCountyStats.culture = (newCountyStats.culture || 0) + cultureChange;
+            newCountyStats.livelihood = (newCountyStats.livelihood || 0) + livelihoodChange;
 
             // Clamp stats
             const fitnessLevel = state.talents['fitness'] || 0;
