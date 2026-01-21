@@ -134,7 +134,7 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'down_the_mountain',
     name: '下山',
-    description: '江湖险恶，你孤身一人需须有宝物护身',
+    description: '江湖险恶，你孤身一人须有宝物护身',
     rewardExp: 300,
     condition: (state) => 
       state.inventory.includes('wolf_claw') &&
