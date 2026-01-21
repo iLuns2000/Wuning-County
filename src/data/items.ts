@@ -90,7 +90,19 @@ export const items: Item[] = [
     effect: {
       health: 20
     }
-  }
+  },
+  // Alchemy Items (2048 Minigame)
+  { id: 'alc_residue', name: '药渣', description: '炼丹失败的产物，虽无大用，但这灰烬中似乎还残留着一丝药性。', type: 'material' },
+  { id: 'alc_herb', name: '甘草', description: '寻常可见的草药，药性温和，是炼丹的基础材料。', type: 'material' },
+  { id: 'alc_powder', name: '灵芝粉', description: '将灵芝研磨成粉，散发着淡淡的清香。', type: 'material' },
+  { id: 'alc_pill_qi', name: '凝气丹', description: '初级丹药，服用后可略微调理气息。', type: 'consumable', effect: { health: 5 } },
+  { id: 'alc_liquid', name: '聚灵液', description: '萃取草木精华而成的灵液，晶莹剔透。', type: 'material' },
+  { id: 'alc_pill_marrow', name: '洗髓丹', description: '伐毛洗髓，脱胎换骨。', type: 'consumable', effect: { ability: 2, health: -5 } },
+  { id: 'alc_pill_foundation', name: '筑基丹', description: '修仙者筑基必备之物，凡人服之可延年益寿。', type: 'consumable', effect: { ability: 5, health: 10 } },
+  { id: 'alc_pill_gold', name: '金元丹', description: '色泽金黄，隐约有流光转动。', type: 'consumable', effect: { money: 100 } }, // Special: sell for money or consume? Let's say consume gives nothing but description says valuable.
+  { id: 'alc_fruit', name: '元婴果', description: '形似婴孩的奇异果实，蕴含庞大生机。', type: 'consumable', effect: { health: 100 } },
+  { id: 'alc_water_spirit', name: '化神水', description: '一滴便可化腐朽为神奇的神水。', type: 'consumable', effect: { ability: 20 } },
+  { id: 'alc_pill_immortal', name: '长生不老丹', description: '传说中可让人长生不老的仙丹，价值连城。', type: 'consumable', effect: { health: 999, ability: 50, reputation: 100 } }
 ];
 
 export const getItemById = (id: string): Item | undefined => {
