@@ -295,13 +295,13 @@ export const Game: React.FC = () => {
             <button 
               onClick={handleWork}
               disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || isHeavySnow}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 relative group/btn"
+              className="flex relative gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法工作" : ""}
             >
               <Briefcase size={20} />
               <span>日常工作 ({dailyCounts.work}/{MAX_DAILY_WORK})</span>
               {isHeavySnow && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                <div className="flex absolute inset-0 justify-center items-center text-xs font-bold rounded-lg opacity-0 transition-opacity bg-background/80 text-foreground group-hover/btn:opacity-100">
                   大雪停工
                 </div>
               )}
@@ -358,13 +358,13 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => navigate('/npcs')}
               disabled={!!currentEvent || isHeavySnow}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 relative group/btn"
+              className="flex relative gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法出行" : ""}
             >
               <Users size={20} />
               <span>拜访 NPC</span>
               {isHeavySnow && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                <div className="flex absolute inset-0 justify-center items-center text-xs font-bold rounded-lg opacity-0 transition-opacity bg-background/80 text-foreground group-hover/btn:opacity-100">
                   大雪封路
                 </div>
               )}
@@ -407,13 +407,13 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => setShowExplore(true)}
               disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || dailyCounts.rest >= MAX_DAILY_REST || isHeavySnow}
-              className="flex gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50 relative group/btn"
+              className="flex relative gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法探险" : ""}
             >
               <Compass size={20} />
               <span>外出探险</span>
               {isHeavySnow && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 text-foreground text-xs font-bold opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-lg">
+                <div className="flex absolute inset-0 justify-center items-center text-xs font-bold rounded-lg opacity-0 transition-opacity bg-background/80 text-foreground group-hover/btn:opacity-100">
                   无法探险
                 </div>
               )}
@@ -449,7 +449,7 @@ export const Game: React.FC = () => {
         </div>
 
         {/* Right Column: Logs */}
-        <div className="mx-auto w-full max-w-md h-96 md:h-full md:max-w-none">
+        <div className="mx-auto w-full max-w-md h-96 md:h-[768px] md:max-w-none">
           <LogPanel logs={logs} />
         </div>
 
