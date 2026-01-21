@@ -177,10 +177,8 @@ export const useGameStore = create<GameStore>()(
 
         // 15% chance to get an item
         if (Math.random() < 0.15) {
-           // For now, just random item from pool, or specifically Lovesickness Tablet
-           // Let's make Lovesickness Tablet a rare drop from explore (e.g. 20% of the 15% chance, or just direct for this task)
-           // Task implies "if user gets item... e.g. Lovesickness Tablet". Let's make it the primary explore item for now.
-           itemId = 'lovesickness_tablet';
+           const dropPool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
+           itemId = dropPool[Math.floor(Math.random() * dropPool.length)];
         }
 
         // Apply effects after "delay" simulated in UI, but state updates happen now or after?

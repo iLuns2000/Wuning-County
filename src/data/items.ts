@@ -62,6 +62,34 @@ export const items: Item[] = [
     name: '弯月亮徽章',
     description: '一枚上弦月月亮模样的徽章，好像有故乡的味道。',
     type: 'misc'
+  },
+  {
+    id: 'wolf_claw',
+    name: '荒原灰狼的利爪',
+    description: '荒原灰狼的锋利爪子，可做武器防身。',
+    type: 'consumable',
+    effect: {
+      ability: 5
+    }
+  },
+  {
+    id: 'goose_feather',
+    name: '南飞落雁的神羽',
+    description: '传说中南飞落雁留下的神羽，轻盈坚韧，可为羽衣护体。',
+    type: 'consumable',
+    effect: {
+      reputation: 5,
+      health: 5
+    }
+  },
+  {
+    id: 'holy_water',
+    name: '深山清潭的圣水',
+    description: '深山人迹罕至处的清潭之水，据说可当甘泉疗伤。',
+    type: 'consumable',
+    effect: {
+      health: 20
+    }
   }
 ];
 

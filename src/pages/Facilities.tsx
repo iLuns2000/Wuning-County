@@ -12,10 +12,10 @@ const FortuneTeller: React.FC = () => {
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
         <Sparkles className="text-purple-500" />
-        <h2 className="text-xl font-bold">天机阁</h2>
+        <h2 className="text-xl font-bold">算命小摊</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        "天机不可泄露..." 一位老者闭目养神，身前摆着签筒。<br/>
+        "算命咯算命咯，不准不要钱"<br/> 一位手持招牌背着破口袋的江湖道士在茶馆面前晃悠吆喝<br/>
         费用：5 文/次。每日限一次。
       </p>
 
@@ -148,7 +148,7 @@ const GamblingHouse: React.FC = () => {
   };
 
   // Calculate current win rate for display (educational/transparency)
-  let currentWinRate = 40;
+  let currentWinRate = 30;
   if (fortuneLevel === 'great_blessing') currentWinRate += 15;
   else if (fortuneLevel === 'blessing') currentWinRate += 8;
   else if (fortuneLevel === 'bad_luck') currentWinRate -= 5;
@@ -163,8 +163,12 @@ const GamblingHouse: React.FC = () => {
         <h2 className="text-xl font-bold">小司赌坊</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        "买定离手！" 喧闹的赌坊里，骰子声此起彼伏。<br/>
-        <span className="text-xs opacity-80">当前胜率估算: 约{currentWinRate}% (受运势与能力影响)</span>
+        {playerStats.money <= 0 
+          ? "快走 快走 别在这晃悠 一个铜板都没有 嘘"
+          : "来来来都押上 六点晃起我坐庄"
+        }
+        <br/>
+        {/* <span className="text-xs opacity-80">当前胜率估算: 约{currentWinRate}% (受运势与能力影响)</span> */}
       </p>
 
       <div className="space-y-4">
