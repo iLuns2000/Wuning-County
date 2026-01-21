@@ -350,7 +350,9 @@ export const randomEvents: GameEvent[] = [
         const isRainy = state.weather === 'rain_light' || state.weather === 'rain_heavy';
         const hasMoney = state.playerStats.money >= 50;
         const hasUmbrella = state.inventory.includes('oil_paper_umbrella');
-        return isRainy && hasMoney && !hasUmbrella;
+        // Check if achievement is already unlocked
+        const hasAchievement = state.achievements.includes('linan_memory');
+        return isRainy && hasMoney && !hasUmbrella && !hasAchievement;
       }
     },
     options: [
@@ -450,7 +452,8 @@ export const randomEvents: GameEvent[] = [
         return seasonIndex === 2 && 
                (dayOfSeason === 7 || dayOfSeason === 8) && 
                (state.dailyCounts.work + state.dailyCounts.rest >= 10) &&
-               !state.inventory.includes('crescent_moon_badge');
+               !state.inventory.includes('crescent_moon_badge') &&
+               !state.achievements.includes('first_moon');
       }
     },
     options: [

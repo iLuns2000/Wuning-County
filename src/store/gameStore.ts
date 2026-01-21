@@ -177,8 +177,20 @@ export const useGameStore = create<GameStore>()(
 
         // 15% chance to get an item
         if (Math.random() < 0.15) {
-           const dropPool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
-           itemId = dropPool[Math.floor(Math.random() * dropPool.length)];
+           const state = get();
+           let dropPool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
+           
+           // Filter out items for completed achievements
+           if (state.achievements.includes('lovesickness_tablet_found')) {
+             dropPool = dropPool.filter(id => id !== 'lovesickness_tablet');
+           }
+           if (state.achievements.includes('down_the_mountain')) {
+             dropPool = dropPool.filter(id => !['wolf_claw', 'goose_feather', 'holy_water'].includes(id));
+           }
+
+           if (dropPool.length > 0) {
+             itemId = dropPool[Math.floor(Math.random() * dropPool.length)];
+           }
         }
 
         // Apply effects after "delay" simulated in UI, but state updates happen now or after?
@@ -211,7 +223,7 @@ export const useGameStore = create<GameStore>()(
             // Assume it's "night" enough or add randomness? 
             // Or just grant it if it's heavy rain for now as per "night rain" theme.
             // Let's add the sword and unlock achievement.
-            if (!state.inventory.includes('cursed_sword')) {
+            if (!state.inventory.includes('cursed_sword') && !state.achievements.includes('night_rain_jianghu')) {
                  effect.itemsAdd = effect.itemsAdd ? [...effect.itemsAdd, 'cursed_sword'] : ['cursed_sword'];
                  // Achievement unlock is handled automatically by checkAchievements if we have the item.
             }
