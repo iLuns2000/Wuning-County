@@ -427,6 +427,85 @@ export const randomEvents: GameEvent[] = [
         }
       }
     ]
+  },
+  // Autumn Moon Viewing Event
+  {
+    id: 'autumn_moon_viewing',
+    title: '观月',
+    description: '这么晚还在工作的你抬头望向天空，惊讶的发现今天是，一枚月亮弯弯挂在天上。迷迷糊糊的月亮好像掉了下来落到了你的背包里。',
+    type: 'random',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        // Check for Autumn (Season index 2) AND Day 7 or 8 of season AND "Working late" (high daily counts)
+        // Helper logic duplicated from store since we can't import easily
+        const SEASON_LENGTH = 90;
+        const adjustedDay = state.day - 1;
+        const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+        const dayOfSeason = (adjustedDay % SEASON_LENGTH) + 1;
+        
+        // Autumn is index 2. 7th or 8th day.
+        // "Still working late at night" -> check total actions. Assuming > 10 is getting late.
+        // Also check if we already have the badge to avoid repeat.
+        return seasonIndex === 2 && 
+               (dayOfSeason === 7 || dayOfSeason === 8) && 
+               (state.dailyCounts.work + state.dailyCounts.rest >= 10) &&
+               !state.inventory.includes('crescent_moon_badge');
+      }
+    },
+    options: [
+      {
+        label: '收下月亮',
+        message: '你捡起了那枚弯弯的月亮徽章，心中泛起一丝思乡之情。“在秋天掉落一枚弯月亮，无论凑近端详还是远望，都算吾乡”。',
+        effect: {
+           itemsAdd: ['crescent_moon_badge']
+        }
+      }
+    ]
+  },
+  // Slacking Off Event
+  {
+    id: 'slacking_off',
+    title: '摸鱼时刻',
+    description: '今天是不是什么也不想干只想摸鱼？那就送你一首《上班摸鱼写的歌》。“天下人波澜壮阔 如火如荼 我要吃饱喝足 好同命运赌上一赌 逆水孤舟敢笑着就不觉苦 借过山重水复 铺开云烟打个地铺”',
+    type: 'random',
+    triggerCondition: {
+      probability: 0, // Triggered manually only
+      custom: () => false
+    },
+    options: [
+       {
+         label: '收下歌词',
+         message: '你听着这首歌，觉得心情格外舒畅。',
+         effect: {
+            // We use a flag to unlock the achievement
+            flagsSet: { achievement_slacking_unlocked: true },
+            // Important: We must set a flag to mark that we handled slacking for this day
+            // But we need the current day value. Effect doesn't support dynamic values easily here.
+            // Wait, Effect is static. 
+            // We need to solve the loop issue.
+            // TimeManager checks `flags['slacking_event_day'] === day`.
+            // But we can't set dynamic `day` in static `events.ts`.
+            
+            // Workaround: We can't use static `flagsSet` with dynamic value.
+            // We can use a boolean flag like `slacking_event_triggered_generic: true`?
+            // No, because `day` changes.
+            
+            // Better approach:
+            // In TimeManager, we are triggering the event.
+            // We can update the flag *immediately* before or after triggering the event in TimeManager?
+            // But we can't call `updateStats` easily from TimeManager without exposing it.
+            // `useGameStore` exposes `updateStats`.
+            // So in TimeManager, we can do:
+            // triggerSpecificEvent('slacking_off');
+            // updateStats({ flags: { ...flags, slacking_event_day: day } });
+            
+            // Let's modify TimeManager to do this.
+            // So we don't need to change events.ts for the loop prevention flag.
+            // Just the achievement flag.
+         }
+       }
+     ]
   }
 ];
 

@@ -69,6 +69,7 @@ interface GameStore extends GameState {
   handleEventOption: (effect?: Effect, message?: string) => void;
   addLog: (message: string) => void;
   triggerEvent: () => void;
+  triggerSpecificEvent: (eventId: string) => void;
   resetGame: () => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
@@ -994,6 +995,14 @@ export const useGameStore = create<GameStore>()(
            const event = allEvents[Math.floor(Math.random() * allEvents.length)];
            set({ currentEvent: event });
          }
+      },
+
+      triggerSpecificEvent: (eventId: string) => {
+          // Look in all event collections
+          const event = [...npcEvents, ...randomEvents].find(e => e.id === eventId);
+          if (event) {
+              set({ currentEvent: event });
+          }
       },
 
       resetGame: () => {

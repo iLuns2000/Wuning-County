@@ -116,5 +116,19 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '恭喜你在夜雨中依旧有外出江湖探索的勇气',
     rewardExp: 200,
     condition: (state) => state.inventory.includes('cursed_sword')
+  },
+  {
+    id: 'first_moon',
+    name: '第一枚月亮',
+    description: '在秋天掉落一枚弯月亮，无论凑近端详还是远望，都算吾乡',
+    rewardExp: 100,
+    condition: (state) => state.inventory.includes('crescent_moon_badge')
+  },
+  {
+    id: 'slacking_off_song',
+    name: '上班摸鱼写的歌',
+    description: '天下人波澜壮阔 如火如荼 我要吃饱喝足 好同命运赌上一赌',
+    rewardExp: 50,
+    condition: (state) => !!state.flags['achievement_slacking_unlocked']
   }
 ];

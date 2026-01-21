@@ -13,7 +13,12 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
     updateTimeSettings, 
     resetDayTimer, 
     togglePause,
-    currentEvent
+    currentEvent,
+    dailyCounts,
+    triggerSpecificEvent,
+    day,
+    flags,
+    updateStats // Needed to update flags manually
   } = useGameStore();
 
   const [timeLeft, setTimeLeft] = useState(timeSettings.dayDurationSeconds);
@@ -37,12 +42,31 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
         }
 
         if (remaining <= 0) {
-            nextDay();
+            // Check for slacking off condition
+            // Condition: All daily actions are 0 AND not already triggered today
+            const isIdle = dailyCounts.work === 0 && 
+                           dailyCounts.rest === 0 && 
+                           dailyCounts.chatTotal === 0 && 
+                           dailyCounts.fortune === 0;
+            
+            // Check flag to ensure we only trigger it once per specific day instance 
+            // (though nextDay will change the day, so check against current day)
+            const alreadyTriggered = flags['slacking_event_day'] === day;
+
+            if (isIdle && !alreadyTriggered) {
+                // Trigger event
+                triggerSpecificEvent('slacking_off');
+                
+                // Mark as triggered for this day to avoid loop
+                updateStats({ flags: { ...flags, slacking_event_day: day } });
+            } else {
+                nextDay();
+            }
         }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeSettings, currentEvent, nextDay, onNightWarning]);
+  }, [timeSettings, currentEvent, nextDay, onNightWarning, dailyCounts, day, flags, triggerSpecificEvent, updateStats]);
 
   // Sync local state when store updates
   useEffect(() => {
