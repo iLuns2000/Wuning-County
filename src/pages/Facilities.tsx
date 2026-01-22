@@ -31,6 +31,7 @@ const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
   );
 };
 
+
 // Fortune Teller Component
 const FortuneTeller: React.FC = () => {
   const { playerStats, dailyCounts, divineFortune } = useGameStore();
