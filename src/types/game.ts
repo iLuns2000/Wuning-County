@@ -203,11 +203,6 @@ export interface NPC {
   description: string;
   background: string;
   avatar?: string;
-  chatDialogues?: {
-    high: string[];
-    medium: string[];
-    low: string[];
-  };
 }
 
 export interface Task {
