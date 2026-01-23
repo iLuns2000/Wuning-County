@@ -14,6 +14,7 @@ import { Game } from '@/pages/Game';
 import { NPCList } from '@/pages/NPCList';
 import { TaskList } from '@/pages/TaskList';
 import { Facilities } from '@/pages/Facilities';
+import { Buildings } from '@/pages/Buildings';
 import { Collection } from '@/pages/Collection';
 import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
@@ -30,6 +31,7 @@ function App() {
         <Route path="/npcs" element={<NPCList />} />
         <Route path="/tasks" element={<TaskList />} />
         <Route path="/facilities" element={<Facilities />} />
+        <Route path="/buildings" element={<Buildings />} />
         <Route path="/collection" element={<Collection />} />
         <Route path="/credits" element={<Credits />} />
         <Route path="/developer" element={<Developer />} />
