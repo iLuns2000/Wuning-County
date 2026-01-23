@@ -1,35 +1,8 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
-import { AlchemyGame } from '@/components/AlchemyGame';
-
-// Alchemy Facility Component
-const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
-  return (
-    <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
-      <div className="flex gap-2 items-center pb-2 border-b">
-        <FlaskConical className="text-amber-600" />
-        <h2 className="text-xl font-bold">长生丹房</h2>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        "大道无形，生育天地；大道无情，运行日月。" <br/>
-        这里有一口古老的丹炉，投入药材，或许能炼出惊世骇俗的丹药。
-      </p>
-      
-      <div className="flex flex-col gap-4 items-center">
-         <button
-            onClick={onEnter}
-            className="flex gap-2 justify-center items-center py-3 w-full text-white bg-amber-600 rounded-lg transition-all hover:bg-amber-700 font-bold"
-        >
-            <FlaskConical size={20} />
-            开炉炼丹 (小游戏)
-        </button>
-      </div>
-    </div>
-  );
-};
 
 
 // Fortune Teller Component
@@ -40,10 +13,10 @@ const FortuneTeller: React.FC = () => {
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
         <Sparkles className="text-purple-500" />
-        <h2 className="text-xl font-bold">算命小摊</h2>
+        <h2 className="text-xl font-bold">天机阁</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        "算命咯算命咯，不准不要钱"<br/> 一位手持招牌背着破口袋的江湖道士在茶馆面前晃悠吆喝<br/>
+        "天机不可泄露..." 一位老者闭目养神，身前摆着签筒。<br/>
         费用：5 文/次。每日限一次。
       </p>
 
@@ -176,7 +149,7 @@ const GamblingHouse: React.FC = () => {
   };
 
   // Calculate current win rate for display (educational/transparency)
-  let currentWinRate = 30;
+  let currentWinRate = 40;
   if (fortuneLevel === 'great_blessing') currentWinRate += 15;
   else if (fortuneLevel === 'blessing') currentWinRate += 8;
   else if (fortuneLevel === 'bad_luck') currentWinRate -= 5;
@@ -191,12 +164,8 @@ const GamblingHouse: React.FC = () => {
         <h2 className="text-xl font-bold">小司赌坊</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        {playerStats.money <= 0 
-          ? "快走 快走 别在这晃悠 一个铜板都没有 嘘"
-          : "来来来都押上 六点晃起我坐庄"
-        }
-        <br/>
-        {/* <span className="text-xs opacity-80">当前胜率估算: 约{currentWinRate}% (受运势与能力影响)</span> */}
+        "买定离手！" 喧闹的赌坊里，骰子声此起彼伏。<br/>
+        <span className="text-xs opacity-80">当前胜率估算: 约{currentWinRate}% (受运势与能力影响)</span>
       </p>
 
       <div className="space-y-4">
@@ -369,7 +338,6 @@ const ArcheryRange: React.FC = () => {
 export const Facilities: React.FC = () => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
-  const [showAlchemy, setShowAlchemy] = useState(false);
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
@@ -388,7 +356,6 @@ export const Facilities: React.FC = () => {
           </header>
 
           <FortuneTeller />
-          <AlchemyFacility onEnter={() => setShowAlchemy(true)} />
           <GamblingHouse />
           <ArcheryRange />
         </div>
@@ -398,8 +365,6 @@ export const Facilities: React.FC = () => {
           <LogPanel logs={logs} />
         </div>
       </div>
-      
-      {showAlchemy && <AlchemyGame onClose={() => setShowAlchemy(false)} />}
     </div>
   );
 };

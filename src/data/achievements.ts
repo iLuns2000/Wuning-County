@@ -66,8 +66,8 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   },
   {
     id: 'chicken_case_solved',
-    name: '老李偷鸡案',
-    description: '德主刑为辅 原心定罪',
+    name: '断案如神',
+    description: '成功破获老李偷鸡案，查明真相',
     rewardExp: 100,
     condition: (state) => !!state.flags['chicken_case_solved_success']
   },
@@ -85,7 +85,7 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'linan_memory',
     name: '临安记忆',
-    description: '西子湖畔你撑着那把油纸伞 在断桥等了几晚',
+    description: '伞柄上刻着临安制造四个字，也许上一任主人曾经撑着这把伞在断桥等人...',
     rewardExp: 50,
     condition: (state) => state.inventory.includes('oil_paper_umbrella')
   },
@@ -106,14 +106,14 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'thousand_mountains_snow_silence',
     name: '千山雪寂',
-    description: '万家飞雪明灯 融入异乡笛声 ',
+    description: '大雪满山，路上死寂',
     rewardExp: 200,
     condition: (state) => !!state.flags['first_heavy_snow_encountered']
   },
   {
     id: 'night_rain_jianghu',
     name: '夜雨江湖',
-    description: '这是我 最淋漓的江湖 被诅咒的剑 命悬一线舍身不顾',
+    description: '恭喜你在夜雨中依旧有外出江湖探索的勇气',
     rewardExp: 200,
     condition: (state) => state.inventory.includes('cursed_sword')
   },
