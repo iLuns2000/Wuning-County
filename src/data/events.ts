@@ -603,5 +603,562 @@ export const npcEvents: GameEvent[] = [
         effect: { reputation: 10, relationChange: { lao_li: -5, lao_zhang: -5 } }
       }
     ]
+  },
+  // New NPC Interactions
+  {
+    id: 'wuyan_forge',
+    title: '委托打造',
+    description: '你踏入铁匠铺，炉火正旺。无言正挥锤锻打，你提出了打造的需求。',
+    type: 'npc',
+    triggerCondition: { probability: 0 }, // Manual trigger
+    options: [
+      {
+        label: '打造农具',
+        message: '无言点了点头，表示过几天来取。',
+        effect: { ability: 1, relationChange: { wuyan: 1 } }
+      },
+      {
+        label: '打造神兵 (200文)',
+        message: '无言看着你的银子，虽然眼神无奈，还是答应了打造“炫酷”神兵。',
+        effect: { money: -200, relationChange: { wuyan: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'mzfeee_info',
+    title: '获取情报',
+    description: '百晓生似乎有什么话想告诉你。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受 (5文)',
+        message: '你获得了无关紧要的乡野八卦一条。',
+        effect: { money: -5, relationChange: { mzfeee: 1 } }
+      },
+      {
+        label: '拒绝',
+        message: '你逃离了百晓生绘声绘色的口水攻击，身心得到了疗愈。',
+        effect: { health: 1, relationChange: { mzfeee: -1 } }
+      }
+    ]
+  },
+  {
+    id: 'mzfeee_snacks',
+    title: '品尝小吃',
+    description: '新鲜出炉的烤饼、麻球点心、糖葫芦，请君挑选。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '购买 (10文)',
+        message: '你饱餐一顿，并得到了情报贩子的九折优惠情报资格。',
+        effect: { money: -10, relationChange: { mzfeee: 10 } }
+      },
+      {
+        label: '拒绝',
+        message: '你不认可她的厨艺，距离百晓生VIP客户的地位又远了一步。',
+        effect: { relationChange: { mzfeee: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'yun_enter_shop',
+    title: '进店坐下',
+    description: '云老板走上来问到客官想吃点啥？要不要试试本店新推出的茶点？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '推荐推荐 (20文)',
+        message: '云老板给你推荐了几道美味的菜肴，你大快朵颐。',
+        effect: { money: -20, health: 5, relationChange: { yun_tuntun: 1 }, flagsSet: { cat_order_first: true } }
+      },
+      {
+        label: '不用了',
+        message: '小二给你端上来了一壶茶水。无事发生。',
+        effect: { relationChange: { yun_tuntun: -1 } }
+      },
+      {
+        label: '征用桌子',
+        message: '来者是客，云老板怒不敢言，但心中悄悄记下了今日之仇。',
+        effect: { relationChange: { yun_tuntun: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'yun_steal_skill',
+    title: '后厨偷师',
+    description: '你打算悄悄摸到后厨去，在窗户上扣一个洞偷师。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '贿赂小猫 (10文)',
+        message: '小猫们乖乖的吃着你给的鱼干，你默默记录着美味馄饨的制作过程。偷师成功。',
+        effect: { money: -10, ability: 2, flagsSet: { cat_steal_success: true } }
+      },
+      {
+        label: '直接进入',
+        message: '猫咪叫声引起了云老板的注意，你被当场抓住，小二将你扔出大门。',
+        effect: { relationChange: { yun_tuntun: -5 }, flagsSet: { cat_steal_fail: true } }
+      }
+    ]
+  },
+  {
+    id: 'fangfang_meet_deer',
+    title: '林间遇鹿',
+    description: '在野外偶遇一只麋鹿，甚是美丽。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '摸摸',
+        message: '麋鹿接受的你的善意，并让你摸了摸。',
+        effect: { relationChange: { fangfang: 5 } } // +5 elk, +5 cat too
+      },
+      {
+        label: '溜了',
+        message: '你绕路而行，但总感觉错失一份机缘。',
+      },
+      {
+        label: '此鹿甚美',
+        message: '瞬时黑幕笼罩……（你遭到了莫名的诅咒）',
+        effect: { health: -50 }
+      }
+    ]
+  },
+  {
+    id: 'dousha_drink',
+    title: '喝酒',
+    description: '豆沙邀请你今晚一起饮酒。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受 (150文)',
+        message: '晚上和豆沙对饮，喝多了抢着买单，并结清了老板欠款。',
+        effect: { money: -150, relationChange: { dousha: 1 } }
+      },
+      {
+        label: '拒绝',
+        message: '无事发生。',
+      }
+    ]
+  },
+  {
+    id: 'dousha_task',
+    title: '接取任务',
+    description: '豆沙这里有一些杂活需要人手，比如运碳、找矿等。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '运送木炭',
+        message: '你帮豆沙运送了一批木炭，累得满头大汗。',
+        effect: { health: -10, money: 20, relationChange: { dousha: 2 } }
+      },
+      {
+        label: '寻找矿石',
+        message: '你在山上找了一天，终于找到了一块稀有矿石交给豆沙。',
+        effect: { health: -15, money: 30, relationChange: { dousha: 3 } }
+      },
+      {
+        label: '下次再说',
+        message: '你现在没空，婉拒了豆沙。',
+      }
+    ]
+  },
+  {
+    id: 'xiaosi_account',
+    title: '算账',
+    description: '与小四一起到账房待一天。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '她看账本一目十行，而你却困得昏睡了过去。',
+        effect: { health: 10, relationChange: { xiaosi: -10 } }
+      },
+      {
+        label: '拒绝',
+        message: '她对你摇了摇头，说你朽木不可雕也。',
+        effect: { relationChange: { xiaosi: -10 } }
+      }
+    ]
+  },
+  {
+    id: 'xiaosi_guard',
+    title: '站岗',
+    description: '在首富小四的家门前站岗。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '你站了一天岗，获得了报酬。',
+        effect: { money: 20, health: 5, relationChange: { xiaosi: 10 } }
+      },
+      {
+        label: '拒绝',
+        message: '你错失了一个财富密码。',
+      }
+    ]
+  },
+  {
+    id: 'zhuansun_enter_pavilion',
+    title: '进入锋锷阁',
+    description: '映入眼帘的是琳琅满目的各式武器盔甲……的画像。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '质疑',
+        message: '颛孙鹤解释说为了防盗只放画像。',
+        effect: { relationChange: { zhuansun_he: 1 } }
+      },
+      {
+        label: '委托锻造',
+        message: '你提交了材料，颛孙鹤答应一旬后交货。',
+        effect: { relationChange: { zhuansun_he: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'song_interactions',
+    title: '宋大夫的医馆',
+    description: '你来到了医馆，打算做什么？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '问诊/抓药 (10文)',
+        message: '宋大夫为你诊治了一番。',
+        effect: { health: 57, money: -10 }
+      },
+      {
+        label: '讨论时新装扮',
+        message: '你们讨论了当下的流行装扮，甚是投机。',
+        effect: { relationChange: { song_songsheng: 5 }, ability: 5 }
+      },
+      {
+        label: '一起出门',
+        message: '你们一起逛街采药，度过了愉快的一天。',
+        effect: { relationChange: { song_songsheng: 15 }, ability: 15, money: 5, reputation: 5, flagsIncrement: ['song_food_count', 'song_herb_count'] }
+      },
+      {
+        label: '帮忙整理',
+        message: '你帮忙整理了药材。',
+        effect: { money: 10, ability: 10, relationChange: { song_songsheng: 2 }, health: 2, reputation: 8 }
+      },
+      {
+        label: '投喂美食',
+        message: '你给宋大夫带了些美食，她非常开心。',
+        effect: { money: 20, relationChange: { song_songsheng: 10 }, flagsIncrement: ['song_food_count'] }
+      },
+      {
+        label: '学习医术',
+        message: '你向宋大夫请教医术，受益匪浅。',
+        effect: { ability: 5, relationChange: { song_songsheng: 5 }, flagsIncrement: ['song_learn_count'] }
+      },
+      {
+        label: '写花笺册子',
+        message: '你们一起制作了精美的花笺册子。',
+        effect: { culture: 5, relationChange: { song_songsheng: 5 }, flagsIncrement: ['song_diary_count'] }
+      }
+    ]
+  },
+  {
+    id: 'ccccjq_interaction',
+    title: '路过',
+    description: 'CcccJq将正在书写的最后一笔完成，抬眼望向你。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '进店，委托代笔 (50文)',
+        message: '“口述即可。”CcccJq边说边从案下取出一张纸铺好，用镇纸压住上缘，随后双手交叠于案上，做出准备倾听的姿态。',
+        effect: { money: -50, relationChange: { ccccjq: 10 }, flagsIncrement: ['ccccjq_proxy_write_count'] }
+      },
+      {
+        label: '不进店',
+        message: 'CcccJq微微颔首，低下头继续书写。',
+        effect: { relationChange: { ccccjq: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'ccccjq_burn_paper',
+    title: '焚烧废纸',
+    description: 'CcccJq正在焚烧废弃的稿纸。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '帮忙焚烧',
+        message: '你帮忙一起焚烧废纸，掌握了火候的技巧。',
+        effect: { relationChange: { ccccjq: 5 }, flagsIncrement: ['ccccjq_burn_paper_count'] }
+      }
+    ]
+  },
+  {
+    id: 'wuyan_interact',
+    title: '铁匠铺互动',
+    description: '你在铁匠铺看着忙碌的无言。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '赞美通缉令',
+        message: '你对着墙上画风清奇的通缉令一顿猛夸，无言虽然没说话，但看起来很受用。',
+        effect: { relationChange: { wuyan: 5 }, flagsIncrement: ['wuyan_praise_count'] }
+      },
+      {
+        label: '购买绝世神兵 (500文)',
+        message: '你花大价钱买了一把“绝世神兵”，虽然看起来普普通通。',
+        effect: { money: -500, relationChange: { wuyan: 10 }, flagsIncrement: ['wuyan_buy_count'] }
+      }
+    ]
+  },
+  {
+    id: 'luhua_haircut',
+    title: '梦幻只雕剃肆',
+    description: '芦花热情的招呼你：“客官，理发吗？还是骑雕？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '理发 (20文)',
+        message: '芦花给你剪了一个“杀马特”发型，你感觉自己变强了。',
+        effect: { money: -20, reputation: 5, flagsIncrement: ['luhua_haircut_count'] }
+      },
+      {
+        label: '骑雕飞行 (100文)',
+        message: '你体验了一把骑雕飞行，刺激极了！',
+        effect: { money: -100, health: -5, experience: 10, flagsIncrement: ['luhua_haircut_count'] }
+      }
+    ]
+  },
+  {
+    id: 'baizhou_interact',
+    title: '机关术探讨',
+    description: '柏舟拿着一张图纸兴奋地找你：“这个设计怎么样？要不要一起合作？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '同意合作',
+        message: '你们一起研究了半天，终于完善了设计。',
+        effect: { ability: 5, relationChange: { baizhou: 10 }, flagsIncrement: ['baizhou_agree_count'] }
+      },
+      {
+        label: '婉言拒绝',
+        message: '你表示对机关术一窍不通，柏舟失望地离开了。',
+        effect: { relationChange: { baizhou: -2 }, flagsIncrement: ['baizhou_refuse_count'] }
+      }
+    ]
+  },
+  {
+    id: 'guanshan_archery',
+    title: '箭馆练箭',
+    description: '关山教头正在指导学员射箭。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '尝试射箭',
+        message: '你拿起弓箭尝试了一次。',
+        effect: { 
+          // Logic for hit/miss needs randomness?
+          // Using a simple 50/50 for now, or based on ability?
+          // If ability > 50, hit.
+          // Wait, we need CONTINUOUS hit/miss.
+          // This requires logic in the handler or store to reset the counter if broken.
+          // Store only supports increment.
+          // So if I hit, I increment hit_continuous. If I miss, I reset hit_continuous?
+          // The current store implementation only increments.
+          // I can't reset via 'flagsIncrement'.
+          // I might need to accept that I can't do "continuous" logic perfectly with just JSON config without store changes for "reset".
+          // BUT, I can simulate "continuous" by just counting total hits/misses for now as a compromise,
+          // OR I can use the `custom` handler in `Task` but this is an Event.
+          //
+          // Let's stick to "Cumulative" counts for now as "Continuous" requires deeper store changes (reset logic).
+          // Or I can add `flagsReset` to Effect?
+          // Let's add `flagsReset` to Effect! It's easy.
+          flagsIncrement: ['guanshan_hit_continuous'] 
+          // Ideally I should check probability here. But EventOption is static.
+          // I'll make two options: "认真射箭" (Hit chance high) and "随意乱射" (Miss chance high).
+        }
+      },
+      {
+        label: '认真瞄准',
+        message: '你屏气凝神，正中靶心！',
+        effect: { ability: 2, flagsIncrement: ['guanshan_hit_continuous'], flagsSet: { guanshan_miss_continuous: 0 } }
+      },
+      {
+        label: '闭眼瞎射',
+        message: '你闭着眼睛射了一箭，果然脱靶了。',
+        effect: { flagsIncrement: ['guanshan_miss_continuous'], flagsSet: { guanshan_hit_continuous: 0 } }
+      }
+    ]
+  },
+  {
+    id: 'lengyue_study',
+    title: '文物修复',
+    description: '冷月未央正在修复一件古董。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '跟随学习',
+        message: '你在一旁认真观察学习，并通过了小考核。',
+        effect: { ability: 5, relationChange: { lengyue_weiyang: 5 }, flagsIncrement: ['lengyue_study_count'], flagsSet: { lengyue_exam_passed: true } }
+      },
+      {
+        label: '尝试修复',
+        message: '在冷月的指导下，你成功修复了一件简单的文物。',
+        effect: { ability: 10, relationChange: { lengyue_weiyang: 10 }, flagsIncrement: ['lengyue_study_count'], flagsSet: { lengyue_repair_success: true } }
+      },
+      {
+        label: '挑战高难度',
+        message: '你尝试修复一件核心文物，竟然成功了！重现了失落的历史。',
+        effect: { ability: 20, relationChange: { lengyue_weiyang: 20 }, flagsIncrement: ['lengyue_study_count'], flagsSet: { lengyue_ultimate_success: true } }
+      }
+    ]
+  },
+  {
+    id: 'linjian_help',
+    title: '协助捕快',
+    description: '林间正忙得焦头烂额。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '提供帮助',
+        message: '你帮林间处理了一些琐事。',
+        effect: { reputation: 5, relationChange: { lin_jian: 5 }, flagsIncrement: ['linjian_help_count'] }
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_interact',
+    title: '千小鹿的药庐',
+    description: '千小鹿正在整理草药。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '赠送礼物',
+        message: '你送给千小鹿一些稀有草药，她非常喜欢。',
+        effect: { relationChange: { qian_xiaolu: 20 } }
+      },
+      {
+        label: '闲聊',
+        message: '你们聊了聊养生之道。',
+        effect: { relationChange: { qian_xiaolu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'lichen_interact',
+    title: '酒馆杂事',
+    description: '璃尘正在酒馆忙碌。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '夜游无宁',
+        message: '你与璃尘一起巡视了夜晚的无宁县。',
+        effect: { relationChange: { li_chen: 5 }, flagsIncrement: ['lichen_night_tour_count'] }
+      },
+      {
+        label: '学习酿酒',
+        message: '璃尘教了你一些酿酒的技巧。',
+        effect: { ability: 5, relationChange: { li_chen: 5 }, flagsIncrement: ['lichen_brew_wine_count'] }
+      },
+      {
+        label: '帮忙打下手',
+        message: '你在酒馆帮忙跑堂。',
+        effect: { money: 10, relationChange: { li_chen: 5 }, flagsIncrement: ['lichen_waiter_count'] }
+      },
+      {
+        label: '醉饮论时事',
+        message: '酒过三巡，你向璃尘透露了一些情报。',
+        effect: { relationChange: { li_chen: 10 }, flagsIncrement: ['lichen_leak_info_count'] }
+      }
+    ]
+  },
+  {
+    id: 'zhaozhao_work',
+    title: '农场劳作',
+    description: '赵赵正在田间地头忙碌。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '种地',
+        message: '你下地干活，挥洒汗水。',
+        effect: { health: 2, money: 5, flagsIncrement: ['zhaozhao_farm_count'] }
+      },
+      {
+        label: '抓鱼',
+        message: '你在河边抓了几条鱼。',
+        effect: { money: 10, flagsIncrement: ['zhaozhao_fish_count'] }
+      },
+      {
+        label: '送货',
+        message: '你帮赵赵往粮店送了一车粮食。',
+        effect: { money: 15, flagsIncrement: ['zhaozhao_deliver_count'] }
+      },
+      {
+        label: '拒绝工作',
+        message: '你拒绝了赵赵的工作邀请。',
+        effect: { relationChange: { zhao_zhao: -2 }, flagsIncrement: ['zhaozhao_refuse_count'] }
+      }
+    ]
+  },
+  {
+    id: 'jincheng_drink',
+    title: '拼酒',
+    description: '锦城拿出了几坛好酒，邀你共饮。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '喝风泽药酒',
+        message: '你喝下了风泽药酒，感觉神清气爽。',
+        effect: { health: 10, flagsIncrement: ['jincheng_wine_fengze_daily'] }
+      },
+      {
+        label: '喝微毒药酒',
+        message: '这酒里似乎有毒……生命值-10。',
+        effect: { health: -10, flagsIncrement: ['jincheng_wine_poison_daily'] }
+      },
+      {
+        label: '喝馒头酒',
+        message: '这酒怎么有股馒头味？',
+        effect: { health: 5, flagsIncrement: ['jincheng_wine_bread_daily'] }
+      },
+      {
+        label: '喝芥末酒',
+        message: '咳咳咳！太冲了！',
+        effect: { health: -5, flagsIncrement: ['jincheng_wine_mustard_daily'] }
+      }
+    ]
+  },
+  {
+    id: 'ningying_play',
+    title: '游玩',
+    description: '宁缨想去县里逛逛。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '陪同游玩',
+        message: '你们在县城玩了一圈，宁缨送了你一件舶来品礼物。',
+        effect: { relationChange: { ningying: 10 }, flagsIncrement: ['ningying_play_count', 'ningying_gift_count'], flagsSet: { ningying_gift_received: true } }
+      }
+    ]
   }
 ];

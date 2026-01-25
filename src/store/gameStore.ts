@@ -487,7 +487,7 @@ export const useGameStore = create<GameStore>()(
                         [npcId]: (prev.npcRelations[npcId] || 0) - 1
                     }
                  }));
-                 return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。' };
+                 return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。(好感度 -1)' };
             }
 
             // Normal chat
@@ -497,17 +497,32 @@ export const useGameStore = create<GameStore>()(
                     [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
                 },
                 dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
-                // Chat logic for relation gain handled in UI/Logic component usually, 
-                // but here we just update limits. 
-                // Assuming +2 relation for normal chat is handled by caller or we add it here?
-                // The original implementation likely handled it. 
-                // We'll update relation here to centralize.
                 npcRelations: {
                     ...prev.npcRelations,
                     [npcId]: (prev.npcRelations[npcId] || 0) + 2
                 }
             }));
-            return { success: true, message: '你们愉快地聊了一会儿。' };
+
+            // Get NPC specific dialogue
+            const npc = npcs.find(n => n.id === npcId);
+            const relation = (state.npcRelations[npcId] || 0) + 2; // Current relation after update
+            let dialogues: string[] = [];
+
+            if (npc?.chatDialogues) {
+                if (relation >= 100 && npc.chatDialogues.high?.length) {
+                    dialogues = npc.chatDialogues.high;
+                } else if (relation >= 40 && npc.chatDialogues.medium?.length) {
+                    dialogues = npc.chatDialogues.medium;
+                } else if (npc.chatDialogues.low?.length) {
+                    dialogues = npc.chatDialogues.low;
+                }
+            }
+
+            const chatMessage = dialogues.length > 0 
+                ? dialogues[Math.floor(Math.random() * dialogues.length)]
+                : '你们愉快地聊了一会儿。';
+
+            return { success: true, message: `${chatMessage} (好感度 +2)` };
         } 
         else if (type === 'gift') {
             if (npcState.dailyGiftCount >= 20) {
@@ -775,6 +790,14 @@ export const useGameStore = create<GameStore>()(
             'snow_heavy': '大雪'
           };
 
+          // Reset daily flags
+          const newFlags = { ...state.flags };
+          Object.keys(newFlags).forEach(key => {
+            if (key.endsWith('_daily')) {
+              delete newFlags[key];
+            }
+          });
+
           const logs = [recoveryMessage, ...state.logs];
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
@@ -796,6 +819,7 @@ export const useGameStore = create<GameStore>()(
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
             marketPrices: newMarketPrices,
             fortuneLevel: undefined, // Reset daily fortune
+            flags: newFlags, // Apply reset flags
           };
         });
         get().addLog(`第 ${get().day} 天`);
@@ -942,6 +966,12 @@ export const useGameStore = create<GameStore>()(
             }
 
             const newFlags = { ...state.flags, ...effect.flagsSet };
+
+            if (effect.flagsIncrement) {
+                effect.flagsIncrement.forEach(key => {
+                    newFlags[key] = (newFlags[key] || 0) + 1;
+                });
+            }
 
             return {
                playerStats: newPlayerStats,

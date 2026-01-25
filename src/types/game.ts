@@ -26,6 +26,7 @@ export interface Achievement {
   description: string;
   rewardExp: number;
   isHidden?: boolean; // If true, description is hidden until unlocked
+  provider?: string; // The person who provided this achievement idea
 }
 
 export interface Good {
@@ -144,6 +145,7 @@ export interface Effect {
   reputation?: number;
   ability?: number;
   health?: number;
+  experience?: number;
   // Flat county stats
   economy?: number;
   order?: number;
@@ -153,6 +155,7 @@ export interface Effect {
   itemsAdd?: string[];
   itemsRemove?: string[];
   flagsSet?: Record<string, any>;
+  flagsIncrement?: string[];
   relationChange?: Record<string, number>;
 }
 
@@ -200,9 +203,18 @@ export interface NPC {
   id: string;
   name: string;
   title: string;
+  identityCode?: string; // NPC Identity Number
   description: string;
   background: string;
+  danqing?: string; // Danqing portrait description or image URL
+  dailyLife?: string; // Daily life description (县居日常)
   avatar?: string;
+  chatDialogues?: {
+    high?: string[];
+    medium?: string[];
+    low?: string[];
+  };
+  interactionEventIds?: string[]; // IDs of events that can be triggered manually via interaction
 }
 
 export interface Task {

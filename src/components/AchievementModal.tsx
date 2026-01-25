@@ -71,8 +71,9 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
                       {isUnlocked ? ach.description : '???'}
                     </p>
                     {isUnlocked && (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        奖励: {ach.rewardExp} 阅历
+                      <div className="mt-1 text-xs text-muted-foreground flex gap-4">
+                        <span>奖励: {ach.rewardExp} 阅历</span>
+                        {ach.provider && <span>提供人: {ach.provider}</span>}
                       </div>
                     )}
                   </div>

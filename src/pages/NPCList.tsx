@@ -2,18 +2,19 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-19 22:18:57
+ * @LastEditTime: 2026-01-25 12:25:12
  * @FilePath: \textgame\src\pages\NPCList.tsx
  * @Description: 
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gift, MessageCircle } from 'lucide-react';
+import React from 'react';import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Gift, MessageCircle, Sparkles } from 'lucide-react';
 import { npcs } from '@/data/npcs';
+import { npcEvents } from '@/data/events';
 import { useGameStore } from '@/store/gameStore';
 import { LogPanel } from '@/components/LogPanel';
+import { EventModal } from '@/components/EventModal';
 
 export const NPCList: React.FC = () => {
   const navigate = useNavigate();
@@ -26,12 +27,25 @@ export const NPCList: React.FC = () => {
     giftFailureCounts,
     incrementGiftFailure,
     resetGiftFailure,
-    interactWithNPC
+    interactWithNPC,
+    currentEvent,
+    triggerSpecificEvent
   } = useGameStore();
 
-  const handleInteraction = (npcId: string, type: 'talk' | 'gift') => {
+  const handleOptionSelect = (index: number) => {
+    if (!currentEvent) return;
+    const option = currentEvent.options[index];
+    handleEventOption(option.effect, option.message);
+  };
+
+  const handleInteraction = (npcId: string, type: 'talk' | 'gift' | 'event', eventId?: string) => {
     const npc = npcs.find(n => n.id === npcId);
     if (!npc) return;
+
+    if (type === 'event' && eventId) {
+      triggerSpecificEvent(eventId);
+      return;
+    }
 
     if (type === 'talk') {
       const result = interactWithNPC(npcId, 'chat');
@@ -86,7 +100,7 @@ export const NPCList: React.FC = () => {
             {npcs.map(npc => {
               const relation = npcRelations[npc.id] || 0;
               return (
-                <div key={npc.id} className="p-4 space-y-3 rounded-lg border bg-card">
+                <div key={npc.id} className="p-4 space-y-3 rounded-lg border transition-colors cursor-pointer bg-card hover:border-primary/50" onClick={() => navigate(`/npcs/${npc.id}`)}>
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="flex gap-2 items-center text-lg font-bold">
@@ -99,9 +113,15 @@ export const NPCList: React.FC = () => {
                       </h3>
                       <p className="mt-1 text-sm text-muted-foreground">{npc.description}</p>
                       
-                      {relation >= 80 && (
+                      {npc.identityCode && (
+                        <div className="mt-1 font-mono text-xs text-muted-foreground/70">
+                          编号: {npc.identityCode}
+                        </div>
+                      )}
+                      
+                      {relation >= 80 && npc.dailyLife && (
                           <div className="p-2 mt-2 text-xs rounded bg-secondary/50 text-muted-foreground">
-                              <strong>县居日常:</strong> 经常在集市和茶馆出没，喜欢收集古玩字画。
+                              <strong>县居日常:</strong> {npc.dailyLife}
                           </div>
                       )}
                       
@@ -117,21 +137,37 @@ export const NPCList: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-border/50">
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
                     <button 
                       onClick={() => handleInteraction(npc.id, 'talk')}
-                      className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors bg-secondary hover:bg-secondary/80"
+                      className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors bg-secondary hover:bg-secondary/80 min-w-[80px]"
                     >
                       <MessageCircle size={16} />
                       <span>闲聊</span>
                     </button>
                     <button 
                       onClick={() => handleInteraction(npc.id, 'gift')}
-                      className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors bg-secondary hover:bg-secondary/80"
+                      className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors bg-secondary hover:bg-secondary/80 min-w-[80px]"
                     >
                       <Gift size={16} />
-                      <span>送礼 (-50金)</span>
+                      <span>送礼</span>
                     </button>
+                    
+                    {npc.interactionEventIds?.map(eventId => {
+                      const event = npcEvents.find(e => e.id === eventId);
+                      if (!event) return null;
+                      return (
+                        <button
+                          key={eventId}
+                          onClick={() => handleInteraction(npc.id, 'event', eventId)}
+                          className="flex flex-1 gap-2 justify-center items-center py-2 text-sm font-medium rounded transition-colors bg-primary/10 text-primary hover:bg-primary/20 min-w-[80px]"
+                          title={event.description}
+                        >
+                          <Sparkles size={16} />
+                          <span>{event.title}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -144,6 +180,10 @@ export const NPCList: React.FC = () => {
           <LogPanel logs={logs} />
         </div>
       </div>
+      
+      {currentEvent && (
+        <EventModal event={currentEvent} onOptionSelect={handleOptionSelect} />
+      )}
     </div>
   );
 };
