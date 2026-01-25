@@ -520,8 +520,9 @@ export const useGameStore = create<GameStore>()(
             const npc = npcs.find(n => n.id === npcId);
             let message = '';
             
-            if (npc && npc.chatDialogues && npc.chatDialogues[level] && npc.chatDialogues[level].length > 0) {
-                const dialogues = npc.chatDialogues[level];
+            const dialogues = npc?.chatDialogues?.[level];
+
+            if (dialogues && dialogues.length > 0) {
                 message = dialogues[Math.floor(Math.random() * dialogues.length)];
             } else {
                 if (level === 'high') message = '你们相谈甚欢，仿佛有说不完的话题！';
