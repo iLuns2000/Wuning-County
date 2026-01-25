@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 
+
 // Fortune Teller Component
 const FortuneTeller: React.FC = () => {
   const { playerStats, dailyCounts, divineFortune } = useGameStore();

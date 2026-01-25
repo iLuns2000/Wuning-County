@@ -427,5 +427,43 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 200,
     provider: '宁缨',
     condition: (state) => (state.npcRelations['ningying'] || 0) >= 60 && (state.flags['ningying_gift_count'] || 0) >= 50
+  },
+  {
+    id: 'down_the_mountain',
+    name: '下山',
+    description: '江湖险恶，你孤身一人须有宝物护身',
+    rewardExp: 300,
+    condition: (state) => 
+      state.inventory.includes('wolf_claw') &&
+      state.inventory.includes('goose_feather') &&
+      state.inventory.includes('holy_water')
+  },
+  {
+    id: 'blacksmith_beginner',
+    name: '铸造初学者',
+    description: '你已经初步掌握铁匠技能了',
+    rewardExp: 100,
+    condition: (state) => (state.flags['blacksmith_count'] || 0) >= 10
+  },
+  {
+    id: 'blacksmith_master',
+    name: '铸造精通者',
+    description: '你已经深入掌握铁匠技能了',
+    rewardExp: 300,
+    condition: (state) => (state.flags['blacksmith_count'] || 0) >= 30
+  },
+  {
+    id: 'spear_beginner',
+    name: '枪术初学者',
+    description: '你已经初步掌握边关枪术了',
+    rewardExp: 100,
+    condition: (state) => (state.flags['spear_count'] || 0) >= 10
+  },
+  {
+    id: 'spear_master',
+    name: '枪术精通者',
+    description: '你已经深入掌握边关枪术了',
+    rewardExp: 300,
+    condition: (state) => (state.flags['spear_count'] || 0) >= 30
   }
 ];

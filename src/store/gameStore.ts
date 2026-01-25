@@ -491,6 +491,46 @@ export const useGameStore = create<GameStore>()(
             }
 
             // Normal chat
+            const currentRelation = state.npcRelations[npcId] || 0;
+            const roll = Math.random();
+            let level: 'high' | 'medium' | 'low' = 'low';
+            let relationChange = 1;
+            
+            // Probabilities based on intimacy level
+            if (currentRelation < 50) {
+                if (roll < 0.01) level = 'high';      // 1%
+                else if (roll < 0.11) level = 'medium'; // 10%
+                else level = 'low';                     // 89%
+            } else if (currentRelation <= 100) {
+                if (roll < 0.03) level = 'high';      // 3%
+                else if (roll < 0.18) level = 'medium'; // 15%
+                else level = 'low';                     // 82%
+            } else {
+                if (roll < 0.05) level = 'high';      // 5%
+                else if (roll < 0.25) level = 'medium'; // 20%
+                else level = 'low';                     // 75%
+            }
+
+            // Determine relation gain based on interaction level
+            if (level === 'high') relationChange = 5;
+            else if (level === 'medium') relationChange = 3;
+            else relationChange = 1;
+
+            // Determine message
+            const npc = npcs.find(n => n.id === npcId);
+            let message = '';
+            
+            if (npc && npc.chatDialogues && npc.chatDialogues[level] && npc.chatDialogues[level].length > 0) {
+                const dialogues = npc.chatDialogues[level];
+                message = dialogues[Math.floor(Math.random() * dialogues.length)];
+            } else {
+                if (level === 'high') message = '你们相谈甚欢，仿佛有说不完的话题！';
+                else if (level === 'medium') message = '你们愉快地聊了一会儿，气氛融洽。';
+                else message = '你们聊了一些家常琐事。';
+            }
+            
+            message += ` (亲密度 +${relationChange})`;
+
             set(prev => ({
                 npcInteractionStates: {
                     ...prev.npcInteractionStates,
@@ -499,30 +539,10 @@ export const useGameStore = create<GameStore>()(
                 dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
                 npcRelations: {
                     ...prev.npcRelations,
-                    [npcId]: (prev.npcRelations[npcId] || 0) + 2
+                    [npcId]: (prev.npcRelations[npcId] || 0) + relationChange
                 }
             }));
-
-            // Get NPC specific dialogue
-            const npc = npcs.find(n => n.id === npcId);
-            const relation = (state.npcRelations[npcId] || 0) + 2; // Current relation after update
-            let dialogues: string[] = [];
-
-            if (npc?.chatDialogues) {
-                if (relation >= 100 && npc.chatDialogues.high?.length) {
-                    dialogues = npc.chatDialogues.high;
-                } else if (relation >= 40 && npc.chatDialogues.medium?.length) {
-                    dialogues = npc.chatDialogues.medium;
-                } else if (npc.chatDialogues.low?.length) {
-                    dialogues = npc.chatDialogues.low;
-                }
-            }
-
-            const chatMessage = dialogues.length > 0 
-                ? dialogues[Math.floor(Math.random() * dialogues.length)]
-                : '你们愉快地聊了一会儿。';
-
-            return { success: true, message: `${chatMessage} (好感度 +2)` };
+            return { success: true, message };
         } 
         else if (type === 'gift') {
             if (npcState.dailyGiftCount >= 20) {
