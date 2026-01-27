@@ -19,6 +19,7 @@ import { EstateModal } from '@/components/EstateModal';
 import { InventoryModal } from '@/components/InventoryModal';
 import { ExploreModal } from '@/components/ExploreModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
+import { MobileLogToast } from '@/components/MobileLogToast';
 import { Settings, Backpack, Compass } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 
@@ -522,6 +523,8 @@ export const Game: React.FC = () => {
           onClose={dismissAchievementPopup} 
         />
       )}
+      
+      <MobileLogToast />
     </div>
   );
 };

@@ -72,6 +72,7 @@ export interface DailyActionCounts {
 export interface NPCInteractionState {
   dailyGiftCount: number;
   dailyChatCount: number;
+  dailyActionCount: number;
 }
 
 export interface Scroll {

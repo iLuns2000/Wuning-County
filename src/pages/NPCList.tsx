@@ -43,7 +43,12 @@ export const NPCList: React.FC = () => {
     if (!npc) return;
 
     if (type === 'event' && eventId) {
-      triggerSpecificEvent(eventId);
+      const result = interactWithNPC(npcId, 'action');
+      if (result.success) {
+        triggerSpecificEvent(eventId);
+      } else {
+        addLog(result.message);
+      }
       return;
     }
 

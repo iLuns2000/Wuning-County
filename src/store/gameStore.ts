@@ -108,7 +108,7 @@ interface GameStore extends GameState {
   checkAchievements: () => void;
   
   // NPC Interaction Methods
-  interactWithNPC: (npcId: string, type: 'gift' | 'chat') => { success: boolean; message: string };
+  interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
   
   // Profile Methods
@@ -515,7 +515,7 @@ export const useGameStore = create<GameStore>()(
 
       interactWithNPC: (npcId, type) => {
         const state = get();
-        const npcState = state.npcInteractionStates[npcId] || { dailyGiftCount: 0, dailyChatCount: 0 };
+        const npcState = state.npcInteractionStates[npcId] || { dailyGiftCount: 0, dailyChatCount: 0, dailyActionCount: 0 };
         
         if (type === 'chat') {
             if (state.isVoiceLost) {
@@ -628,6 +628,23 @@ export const useGameStore = create<GameStore>()(
             }));
             
             return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
+        }
+        else if (type === 'action') {
+            const currentActionCount = npcState.dailyActionCount || 0;
+            if (currentActionCount >= 5) {
+                return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
+            }
+            
+            set(prev => ({
+                npcInteractionStates: {
+                    ...prev.npcInteractionStates,
+                    [npcId]: { 
+                        ...npcState, 
+                        dailyActionCount: currentActionCount + 1 
+                    }
+                }
+            }));
+            return { success: true, message: '' };
         }
 
         return { success: false, message: '未知操作' };
