@@ -806,7 +806,7 @@ export const useGameStore = create<GameStore>()(
                 if (effect.reputation) newPlayerStats.reputation += effect.reputation;
                 
                 // Clamp player stats
-                newPlayerStats.reputation = Math.min(1000, Math.max(0, newPlayerStats.reputation));
+                newPlayerStats.reputation = Math.min(10000, Math.max(0, newPlayerStats.reputation));
              }
           }
 
