@@ -130,6 +130,7 @@ interface GameStore extends GameState {
 
   // Save/Load Methods
   exportSave: () => void;
+  exportSaveString: () => string; // New method for clipboard export
   importSave: (data: string) => boolean;
 
   // Sound Settings
@@ -1166,6 +1167,23 @@ export const useGameStore = create<GameStore>()(
 
       exportSave: () => {
         const state = get();
+        const saveData = get().exportSaveString();
+        
+        const blob = new Blob([saveData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        get().addLog('【系统】存档导出成功！');
+      },
+
+      exportSaveString: () => {
+        const state = get();
         const saveData = {
           role: state.role,
           day: state.day,
@@ -1198,18 +1216,7 @@ export const useGameStore = create<GameStore>()(
           timestamp: Date.now(),
           version: '1.0.0'
         };
-        
-        const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0,10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        get().addLog('【系统】存档导出成功！');
+        return JSON.stringify(saveData, null, 2);
       },
 
       importSave: (dataStr: string) => {
