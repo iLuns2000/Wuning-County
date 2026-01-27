@@ -91,8 +91,8 @@ const GamblingHouse: React.FC = () => {
     }
 
     // --- New Gambling Logic ---
-    // 1. Base win rate: 40% (User requested)
-    let winChance = 0.40;
+    // 1. Base win rate: 35% (User requested)
+    let winChance = 0.35;
 
     // 2. Fortune Modifier
     if (fortuneLevel === 'great_blessing') winChance += 0.15;
@@ -106,6 +106,14 @@ const GamblingHouse: React.FC = () => {
     // Max +5% from ability (at 100 ability)
     const abilityBonus = Math.min(0.05, (playerStats.ability / 100) * 0.05);
     winChance += abilityBonus;
+
+    // 4. Black-hearted Banker Modifier (High stakes penalty)
+    // Base 100, -1% win rate for every additional 100 bet
+    if (amount > 100) {
+        const penalty = Math.floor((amount - 100) / 100) * 0.01;
+        winChance -= penalty;
+        // console.log(`Bet: ${amount}, Penalty: ${penalty}, WinChance: ${winChance}`);
+    }
 
     // Clamp win chance
     winChance = Math.max(0.1, Math.min(0.9, winChance));

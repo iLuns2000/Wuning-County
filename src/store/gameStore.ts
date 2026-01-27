@@ -844,7 +844,7 @@ export const useGameStore = create<GameStore>()(
                 if (effect.reputation) newPlayerStats.reputation += effect.reputation;
                 
                 // Clamp player stats
-                newPlayerStats.reputation = Math.min(10000, Math.max(0, newPlayerStats.reputation));
+                newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
              }
           }
 
@@ -1091,8 +1091,8 @@ export const useGameStore = create<GameStore>()(
             const fitnessLevel = state.talents['fitness'] || 0;
             const maxHealth = 100 + fitnessLevel * 10;
 
-            newPlayerStats.reputation = Math.min(1000, Math.max(0, newPlayerStats.reputation));
-            newPlayerStats.ability = Math.min(100, Math.max(0, newPlayerStats.ability));
+            newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
+            newPlayerStats.ability = Math.min(120, Math.max(0, newPlayerStats.ability));
             newPlayerStats.health = Math.min(maxHealth, Math.max(0, newPlayerStats.health));
 
             newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy));
