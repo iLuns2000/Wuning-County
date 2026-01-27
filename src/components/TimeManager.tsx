@@ -18,12 +18,33 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
     triggerSpecificEvent,
     day,
     flags,
-    updateStats // Needed to update flags manually
+    updateStats, // Needed to update flags manually
+    hasInteractedToday,
+    markInteraction
   } = useGameStore();
 
   const [timeLeft, setTimeLeft] = useState(timeSettings.dayDurationSeconds);
   const [showSettings, setShowSettings] = useState(false);
   const [durationInput, setDurationInput] = useState(timeSettings.dayDurationSeconds / 60);
+
+  // Track user interaction
+  useEffect(() => {
+    if (!timeSettings.isTimeFlowEnabled || !!currentEvent) return;
+
+    const handleInteraction = () => {
+        if (!hasInteractedToday) {
+            markInteraction();
+        }
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    return () => {
+        window.removeEventListener('click', handleInteraction);
+        window.removeEventListener('keydown', handleInteraction);
+    };
+  }, [timeSettings.isTimeFlowEnabled, currentEvent, hasInteractedToday, markInteraction]);
 
   // Effect to handle timer tick
   useEffect(() => {
@@ -43,8 +64,9 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
 
         if (remaining <= 0) {
             // Check for slacking off condition
-            // Condition: All daily actions are 0 AND not already triggered today
-            const isIdle = dailyCounts.work === 0 && 
+            // Condition: All daily actions are 0 AND no interaction (clicks/keys) detected
+            const isIdle = !hasInteractedToday &&
+                           dailyCounts.work === 0 && 
                            dailyCounts.rest === 0 && 
                            dailyCounts.chatTotal === 0 && 
                            dailyCounts.fortune === 0;
@@ -66,7 +88,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeSettings, currentEvent, nextDay, onNightWarning, dailyCounts, day, flags, triggerSpecificEvent, updateStats]);
+  }, [timeSettings, currentEvent, nextDay, onNightWarning, dailyCounts, day, flags, triggerSpecificEvent, updateStats, hasInteractedToday]);
 
   // Sync local state when store updates
   useEffect(() => {

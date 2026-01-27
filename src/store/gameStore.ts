@@ -92,6 +92,10 @@ interface GameStore extends GameState {
     message?: string;
   } | null;
 
+  // Interaction State
+  hasInteractedToday: boolean;
+  markInteraction: () => void;
+
   // Market & Economy
   buyGood: (goodId: string, quantity: number) => void;
   sellGood: (goodId: string, quantity: number) => void;
@@ -162,9 +166,17 @@ export const useGameStore = create<GameStore>()(
       latestUnlockedAchievementId: undefined, // Init UI state
       isExploring: false,
       exploreResult: null,
+      hasInteractedToday: false,
       marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
       ownedGoods: {},
       ownedFacilities: {},
+
+      markInteraction: () => {
+        const state = get();
+        if (!state.hasInteractedToday) {
+            set({ hasInteractedToday: true });
+        }
+      },
 
       dismissAchievementPopup: () => set({ latestUnlockedAchievementId: undefined }),
 
@@ -443,6 +455,7 @@ export const useGameStore = create<GameStore>()(
           giftFailureCounts: {},
           talents: {},
           achievements: [],
+          hasInteractedToday: false,
           marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
           ownedGoods: {},
           ownedFacilities: {},
@@ -870,6 +883,7 @@ export const useGameStore = create<GameStore>()(
             day: state.day + 1,
             weather: nextWeather,
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+            hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
             isVoiceLost: isVoiceLost,
@@ -1104,6 +1118,7 @@ export const useGameStore = create<GameStore>()(
           isGameOver: false,
           currentTaskId: undefined,
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+          hasInteractedToday: false,
         });
       },
 
@@ -1223,6 +1238,7 @@ export const useGameStore = create<GameStore>()(
         ownedGoods: state.ownedGoods,
         ownedFacilities: state.ownedFacilities,
         fortuneLevel: state.fortuneLevel,
+        hasInteractedToday: state.hasInteractedToday,
         latestUnlockedAchievementId: state.latestUnlockedAchievementId,
       }), // Save everything except actions
     }
