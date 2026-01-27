@@ -1122,6 +1122,7 @@ export const useGameStore = create<GameStore>()(
         const saveData = {
           role: state.role,
           day: state.day,
+          weather: state.weather,
           playerStats: state.playerStats,
           countyStats: state.countyStats,
           dailyCounts: state.dailyCounts,
@@ -1197,6 +1198,9 @@ export const useGameStore = create<GameStore>()(
       partialize: (state) => ({ 
         role: state.role,
         day: state.day,
+        weather: state.weather,
+        timeSettings: state.timeSettings,
+        playerProfile: state.playerProfile,
         playerStats: state.playerStats,
         countyStats: state.countyStats,
         dailyCounts: state.dailyCounts,
