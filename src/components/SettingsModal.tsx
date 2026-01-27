@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Download, Upload, Settings } from 'lucide-react';
+import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 
 interface SettingsModalProps {
@@ -8,7 +8,16 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { exportSave, importSave } = useGameStore();
+  const { 
+    exportSave, 
+    importSave, 
+    soundEnabled, 
+    volume, 
+    vibrationEnabled,
+    setSoundEnabled, 
+    setVolume,
+    setVibrationEnabled
+  } = useGameStore();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +62,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         <div className="space-y-4">
+          <div className="p-4 bg-muted/30 rounded-lg border border-dashed border-border">
+            <h3 className="font-semibold mb-4">音效设置</h3>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="p-2 bg-background border rounded-full hover:bg-muted transition-colors"
+                title={soundEnabled ? "关闭音效" : "开启音效"}
+              >
+                {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              </button>
+              
+              <div className="flex-1 flex flex-col gap-1">
+                 <div className="flex justify-between text-xs text-muted-foreground">
+                   <span>音量</span>
+                   <span>{Math.round(volume * 100)}%</span>
+                 </div>
+                 <input 
+                   type="range" 
+                   min="0" 
+                   max="1" 
+                   step="0.1" 
+                   value={volume}
+                   onChange={(e) => setVolume(parseFloat(e.target.value))}
+                   disabled={!soundEnabled}
+                   className="w-full accent-primary h-2 bg-muted rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                 />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-muted/30 rounded-lg border border-dashed border-border">
+            <h3 className="font-semibold mb-4">震动反馈</h3>
+            <div className="flex items-center justify-between">
+               <span className="text-sm text-muted-foreground">开启后，部分交互将伴随轻微震动反馈（仅移动端或支持设备生效）</span>
+               <button 
+                onClick={() => setVibrationEnabled(!vibrationEnabled)}
+                className="p-2 bg-background border rounded-full hover:bg-muted transition-colors"
+                title={vibrationEnabled ? "关闭震动" : "开启震动"}
+              >
+                {vibrationEnabled ? <Vibrate size={20} /> : <VibrateOff size={20} />}
+              </button>
+            </div>
+          </div>
+
           <div className="p-4 bg-muted/30 rounded-lg border border-dashed border-border">
             <h3 className="font-semibold mb-2">存档管理</h3>
             <p className="text-sm text-muted-foreground mb-4">

@@ -2,6 +2,7 @@ import React from 'react';
 import { X, TrendingUp, TrendingDown, ShoppingBag, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { goods } from '@/data/goods';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface MarketModalProps {
   onClose: () => void;
@@ -9,6 +10,7 @@ interface MarketModalProps {
 
 export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
   const { marketPrices, ownedGoods, playerStats, buyGood, sellGood } = useGameStore();
+  const vibrate = useGameVibrate();
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -73,14 +75,20 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                   
                   <div className="flex gap-2">
                     <button
-                      onClick={() => sellGood(good.id, 1)}
+                      onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        sellGood(good.id, 1);
+                      }}
                       disabled={owned < 1}
                       className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                     >
                       卖出
                     </button>
                     <button
-                      onClick={() => buyGood(good.id, 1)}
+                      onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        buyGood(good.id, 1);
+                      }}
                       disabled={playerStats.money < currentPrice}
                       className="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                     >
@@ -88,14 +96,20 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                     </button>
                     <div className="w-2"></div>
                     <button
-                      onClick={() => sellGood(good.id, 10)}
+                      onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        sellGood(good.id, 10);
+                      }}
                       disabled={owned < 10}
                       className="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs transition-colors"
                     >
                       卖10
                     </button>
                     <button
-                      onClick={() => buyGood(good.id, 10)}
+                      onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        buyGood(good.id, 10);
+                      }}
                       disabled={playerStats.money < currentPrice * 10}
                       className="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs transition-colors"
                     >

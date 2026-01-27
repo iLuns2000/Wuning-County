@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Trophy, Lock, CheckCircle2 } from 'lucide-react';
 import { achievements } from '@/data/achievements';
 import { useGameStore } from '@/store/gameStore';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface AchievementModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface AchievementModalProps {
 
 export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onClose }) => {
   const { achievements: unlockedIds } = useGameStore();
+  const vibrate = useGameVibrate();
 
   if (!isOpen) return null;
 
@@ -25,7 +27,10 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({ isOpen, onCl
             <Trophy className="w-5 h-5 text-yellow-500" />
             <h2 className="text-xl font-bold">成就</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted">
+          <button onClick={() => {
+              vibrate(VIBRATION_PATTERNS.LIGHT);
+              onClose();
+          }} className="p-2 rounded-full hover:bg-muted">
             <X className="w-5 h-5" />
           </button>
         </div>

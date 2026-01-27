@@ -4,9 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText, FlaskConical } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 import { AlchemyGame } from '@/components/AlchemyGame';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 // Alchemy Facility Component
 const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
+  const vibrate = useGameVibrate();
+  
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
@@ -20,7 +23,10 @@ const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
       
       <div className="flex flex-col gap-4 items-center">
          <button
-            onClick={onEnter}
+            onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                onEnter();
+            }}
             className="flex gap-2 justify-center items-center py-3 w-full font-bold text-white bg-amber-600 rounded-lg transition-all hover:bg-amber-700"
         >
             <FlaskConical size={20} />
@@ -35,6 +41,7 @@ const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
 // Fortune Teller Component
 const FortuneTeller: React.FC = () => {
   const { playerStats, dailyCounts, divineFortune } = useGameStore();
+  const vibrate = useGameVibrate();
 
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
@@ -49,7 +56,10 @@ const FortuneTeller: React.FC = () => {
 
       <div className="flex flex-col gap-4 items-center">
         <button
-            onClick={divineFortune}
+            onClick={() => {
+                vibrate(VIBRATION_PATTERNS.MEDIUM);
+                divineFortune();
+            }}
             disabled={dailyCounts.fortune > 0 || playerStats.money < 5}
             className="flex gap-2 justify-center items-center py-3 w-full text-white bg-purple-600 rounded-lg transition-all hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -66,8 +76,10 @@ const GamblingHouse: React.FC = () => {
   const { playerStats, addLog, handleEventOption, fortuneLevel } = useGameStore();
   const [betAmount, setBetAmount] = useState<string>('10');
   const [lastResult, setLastResult] = useState<{ dice: number[], sum: number, win: boolean, msg?: string } | null>(null);
+  const vibrate = useGameVibrate();
 
   const handleGamble = (choice: 'big' | 'small') => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
     const amount = parseInt(betAmount);
     if (isNaN(amount) || amount <= 0) {
       addLog('请输入有效的赌注金额！');
@@ -163,9 +175,11 @@ const GamblingHouse: React.FC = () => {
 
     let logMsg = '';
     if (finalIsWin) {
+      vibrate(VIBRATION_PATTERNS.SUCCESS);
       logMsg = `【小司赌坊】买${choice === 'big' ? '大' : '小'}中了！掷出 ${d1}+${d2}+${d3}=${sum}点，赢了 ${amount} 文钱。`;
       handleEventOption({ money: amount }, logMsg);
     } else {
+      vibrate(VIBRATION_PATTERNS.MEDIUM); // Failure vibration
       if (finalIsLeopard) {
           logMsg = `【小司赌坊】豹子通吃！掷出 ${d1}+${d2}+${d3} (${d1}围骰)，庄家收走所有筹码，损失 ${amount} 文钱。`;
       } else {
@@ -259,11 +273,13 @@ const ArcheryRange: React.FC = () => {
   const { playerStats, handleEventOption } = useGameStore();
   const [shotResult, setShotResult] = useState<{ hit: boolean, message: string } | null>(null);
   const [consecutiveMisses, setConsecutiveMisses] = useState(0);
+  const vibrate = useGameVibrate();
 
   const COST_MONEY = 10;
   const COST_HEALTH = 5;
 
   const handleShoot = () => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
     if (playerStats.money < COST_MONEY) {
       handleEventOption(undefined, '【箭坊】钱不够，老板不给弓箭。');
       return;
@@ -284,6 +300,7 @@ const ArcheryRange: React.FC = () => {
     const rewardRep = 2;
 
     if (isHit) {
+      vibrate(VIBRATION_PATTERNS.SUCCESS);
       setShotResult({ hit: true, message: '正中靶心！' });
       setConsecutiveMisses(0);
       handleEventOption({
@@ -292,6 +309,7 @@ const ArcheryRange: React.FC = () => {
         reputation: rewardRep
       }, `【箭坊】嗖的一声，正中靶心！赢得彩头 ${rewardMoney} 文，周围人一片叫好。`);
     } else {
+      vibrate(VIBRATION_PATTERNS.MEDIUM); // Miss vibration
       const newConsecutiveMisses = consecutiveMisses + 1;
       setConsecutiveMisses(newConsecutiveMisses);
       setShotResult({ hit: false, message: '脱靶了...' });
@@ -370,6 +388,7 @@ export const Facilities: React.FC = () => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
   const [showAlchemy, setShowAlchemy] = useState(false);
+  const vibrate = useGameVibrate();
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
@@ -379,7 +398,10 @@ export const Facilities: React.FC = () => {
         <div className="flex overflow-y-auto flex-col gap-4 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex gap-4 items-center py-2 shrink-0">
             <button 
-              onClick={() => navigate('/game')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/game');
+              }}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />

@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Building2, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { facilities } from '@/data/facilities';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface EstateModalProps {
   onClose: () => void;
@@ -9,6 +10,7 @@ interface EstateModalProps {
 
 export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
   const { ownedFacilities, playerStats, buyFacility } = useGameStore();
+  const vibrate = useGameVibrate();
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -18,7 +20,10 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
             <Building2 className="w-5 h-5" />
             产业置办
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-indigo-100 rounded-full transition-colors">
+          <button onClick={() => {
+              vibrate(VIBRATION_PATTERNS.LIGHT);
+              onClose();
+          }} className="p-1 hover:bg-indigo-100 rounded-full transition-colors">
             <X className="w-5 h-5 text-indigo-900" />
           </button>
         </div>
@@ -67,7 +72,10 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
 
                 <div className="flex justify-end pt-2">
                     <button
-                      onClick={() => buyFacility(facility.id)}
+                      onClick={() => {
+                          vibrate(VIBRATION_PATTERNS.SUCCESS);
+                          buyFacility(facility.id);
+                      }}
                       disabled={!canBuy}
                       className={`
                         flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all

@@ -122,7 +122,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
   if (!timeSettings.isTimeFlowEnabled) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+    <div className="flex fixed top-4 right-4 z-40 gap-2 items-center">
       {/* Time Display Badge */}
       <div 
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all ${
@@ -132,12 +132,12 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
         }`}
       >
         {isNight ? <Moon size={16} className="text-yellow-200" /> : <Sun size={16} className="text-orange-500" />}
-        <span className="font-mono font-bold text-sm w-12 text-center">
+        <span className="w-12 font-mono text-sm font-bold text-center">
             {currentEvent ? '暂停' : formatTime(timeLeft)}
         </span>
         
         {/* Progress Ring Background */}
-        <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full overflow-hidden rounded-b-full">
+        <div className="overflow-hidden absolute bottom-0 left-0 w-full h-1 rounded-b-full bg-primary/20">
             <div 
                 className={`h-full transition-all duration-1000 ${isNight ? 'bg-indigo-500' : 'bg-orange-500'}`} 
                 style={{ width: `${progress}%` }}
@@ -146,7 +146,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
       </div>
 
       {/* Controls */}
-      <div className="flex gap-1 bg-background rounded-full border shadow-sm p-1">
+      <div className="flex gap-1 p-1 rounded-full border shadow-sm bg-background">
         <button 
             onClick={() => togglePause(!timeSettings.isPaused)}
             disabled={!!currentEvent}
@@ -166,13 +166,13 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="absolute top-12 right-0 w-64 p-4 bg-card border rounded-lg shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
-            <h3 className="font-bold mb-3 flex items-center gap-2">
+        <div className="absolute right-0 top-12 z-50 p-4 w-64 rounded-lg border shadow-xl bg-card animate-in fade-in slide-in-from-top-2">
+            <h3 className="flex gap-2 items-center mb-3 font-bold">
                 <Clock size={16} /> 时间流速设置
             </h3>
             <div className="space-y-4">
                 <div className="space-y-2">
-                    <label className="text-xs text-muted-foreground flex justify-between">
+                    <label className="flex justify-between text-xs text-muted-foreground">
                         <span>一天时长 (分钟)</span>
                         <span className="font-bold">{durationInput} 分钟</span>
                     </label>
@@ -192,7 +192,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
                     </div>
                 </div>
                 
-                <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                <p className="p-2 text-xs rounded text-muted-foreground bg-secondary/50">
                     最后1分钟为“夜晚”，结束后自动进入下一天。
                 </p>
 

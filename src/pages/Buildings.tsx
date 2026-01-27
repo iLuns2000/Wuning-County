@@ -3,12 +3,15 @@ import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Hammer, Sword } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 // Blacksmith Shop Component
 const BlacksmithShop: React.FC = () => {
   const { playerStats, handleEventOption, flags } = useGameStore();
+  const vibrate = useGameVibrate();
 
   const handleStrikeIron = () => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
     if (playerStats.health < 10) {
       handleEventOption(undefined, '【豆沙铁匠铺】体力不足，无法打铁。');
       return;
@@ -23,6 +26,7 @@ const BlacksmithShop: React.FC = () => {
   };
 
   const handleLearnSpear = () => {
+     vibrate(VIBRATION_PATTERNS.MEDIUM);
      if (playerStats.health < 10) {
       handleEventOption(undefined, '【豆沙铁匠铺】体力不足，无法练枪。');
       return;
@@ -76,6 +80,7 @@ const BlacksmithShop: React.FC = () => {
 export const Buildings: React.FC = () => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
+  const vibrate = useGameVibrate();
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
@@ -85,7 +90,10 @@ export const Buildings: React.FC = () => {
         <div className="flex overflow-y-auto flex-col gap-4 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
           <header className="flex gap-4 items-center py-2 shrink-0">
             <button 
-              onClick={() => navigate('/game')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/game');
+              }}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />

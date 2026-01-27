@@ -3,6 +3,7 @@ import { X, Package, Info } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { Item } from '@/types/game';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface InventoryModalProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface InventoryModalProps {
 export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   const { inventory } = useGameStore();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const vibrate = useGameVibrate();
 
   // Map inventory IDs to Item objects
   const inventoryItems = inventory.map(id => items.find(i => i.id === id)).filter((i): i is Item => !!i);
@@ -58,7 +60,10 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
                 {uniqueItems.map(item => (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedItem(item)}
+                    onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        setSelectedItem(item);
+                    }}
                     className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all
                       ${selectedItem?.id === item.id 
                         ? 'bg-primary/10 border-primary ring-1 ring-primary' 

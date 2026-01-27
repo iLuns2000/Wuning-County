@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { X, RefreshCw, Coins, Backpack } from 'lucide-react';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 const ALCHEMY_LEVELS: Record<number, { id: string; name: string; price: number; color: string; textColor?: string }> = {
   2: { id: 'herb_residue', name: '药渣', price: 1, color: 'bg-stone-400', textColor: 'text-white' },
@@ -26,6 +27,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
   const [gameOver, setGameOver] = useState(false);
   const [highestTile, setHighestTile] = useState(0);
   const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
+  const vibrate = useGameVibrate();
 
   // Initialize game
   useEffect(() => {
@@ -104,6 +106,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
     else if (direction === 'down') workingBoard = rotateBoard(rotateBoard(rotateBoard(workingBoard)));
 
     if (moved) {
+      vibrate(VIBRATION_PATTERNS.LIGHT); // Vibrate on move
       addRandomTile(workingBoard);
       setBoard(workingBoard);
       
@@ -117,10 +120,11 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
       setHighestTile(max);
 
       if (checkGameOver(workingBoard)) {
+        vibrate(VIBRATION_PATTERNS.ERROR); // Game over vibration
         setGameOver(true);
       }
     }
-  }, [board, gameOver]);
+  }, [board, gameOver, vibrate]);
 
   const checkGameOver = (b: number[][]) => {
     for (let r = 0; r < 4; r++) {
@@ -175,6 +179,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
   }, [handleKeyDown]);
 
   const handleCashOut = (sell: boolean) => {
+    vibrate(VIBRATION_PATTERNS.SUCCESS);
     const itemData = ALCHEMY_LEVELS[highestTile];
     if (!itemData) {
         onClose();
@@ -199,7 +204,10 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/80">
       <div className="bg-[#f4e4bc] p-6 rounded-xl w-full max-w-md shadow-2xl border-4 border-[#8b5a2b] relative">
         <button 
-          onClick={onClose}
+          onClick={() => {
+            vibrate(VIBRATION_PATTERNS.LIGHT);
+            onClose();
+          }}
           className="absolute top-2 right-2 p-1 rounded-full transition-colors hover:bg-black/10"
         >
           <X size={24} className="text-[#8b5a2b]" />
@@ -278,7 +286,10 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
             
             <div className="text-center">
                 <button 
-                    onClick={initGame}
+                    onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.MEDIUM);
+                        initGame();
+                    }}
                     className="text-xs text-[#8b5a2b]/60 hover:text-[#8b5a2b] flex items-center justify-center gap-1 mx-auto"
                 >
                     <RefreshCw size={12} />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Compass, Coins, Trophy, Package, X } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface ExploreModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface ExploreModalProps {
 export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
   const { exploreResult, performExplore, isExploring } = useGameStore();
   const [showResult, setShowResult] = useState(false);
+  const vibrate = useGameVibrate();
 
   useEffect(() => {
     // Start exploration immediately when mounted
@@ -20,10 +22,16 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
     if (!isExploring && exploreResult) {
       const timer = setTimeout(() => {
         setShowResult(true);
+        // Vibrate based on result
+        if (exploreResult.message) {
+            vibrate(VIBRATION_PATTERNS.MEDIUM); // Failure
+        } else {
+            vibrate(VIBRATION_PATTERNS.SUCCESS); // Success
+        }
       }, 2000); // 2 seconds delay for "exploring" animation
       return () => clearTimeout(timer);
     }
-  }, [isExploring, exploreResult]);
+  }, [isExploring, exploreResult, vibrate]);
 
   const gainedItem = exploreResult?.itemId ? items.find(i => i.id === exploreResult.itemId) : null;
 

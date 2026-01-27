@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Zap, ArrowUp } from 'lucide-react';
 import { talents } from '@/data/talents';
 import { useGameStore } from '@/store/gameStore';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface TalentModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface TalentModalProps {
 
 export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => {
   const { talents: playerTalents, playerStats, upgradeTalent } = useGameStore();
+  const vibrate = useGameVibrate();
 
   if (!isOpen) return null;
 
@@ -60,7 +62,10 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
                   <div className="flex flex-col items-end gap-2">
                     {!isMaxed ? (
                       <button
-                        onClick={() => upgradeTalent(talent.id)}
+                        onClick={() => {
+                          vibrate(VIBRATION_PATTERNS.SUCCESS);
+                          upgradeTalent(talent.id);
+                        }}
                         disabled={!canAfford}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                           canAfford

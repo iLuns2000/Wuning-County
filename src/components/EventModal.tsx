@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameEvent } from '@/types/game';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface EventModalProps {
   event: GameEvent;
@@ -7,6 +8,8 @@ interface EventModalProps {
 }
 
 export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect }) => {
+  const vibrate = useGameVibrate();
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 border animate-in fade-in zoom-in duration-200">
@@ -24,7 +27,10 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect })
           {event.options.map((option, index) => (
             <button
               key={index}
-              onClick={() => onOptionSelect(index)}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.MEDIUM);
+                onOptionSelect(index);
+              }}
               className="w-full p-3 text-left bg-secondary hover:bg-secondary/80 rounded-md transition-colors border border-transparent hover:border-primary/20"
             >
               <div className="font-medium">{option.label}</div>

@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Scroll, Lock } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { useGameStore } from '@/store/gameStore';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 export const NPCDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { npcRelations } = useGameStore();
+  const vibrate = useGameVibrate();
 
   const npc = npcs.find(n => n.id === id);
   const relation = npcRelations[id || ''] || 0;
@@ -21,7 +23,10 @@ export const NPCDetail: React.FC = () => {
     <div className="flex flex-col p-4 min-h-screen bg-background">
       <header className="flex gap-4 items-center py-4 mb-4 border-b">
         <button 
-          onClick={() => navigate('/npcs')}
+          onClick={() => {
+            vibrate(VIBRATION_PATTERNS.LIGHT);
+            navigate('/npcs');
+          }}
           className="p-2 rounded-full hover:bg-secondary"
         >
           <ArrowLeft size={24} />

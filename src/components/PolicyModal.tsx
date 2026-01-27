@@ -12,6 +12,7 @@ import React from 'react';
 import { policies } from '@/data/policies';
 import { useGameStore } from '@/store/gameStore';
 import { X, Check } from 'lucide-react';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface PolicyModalProps {
   activePolicyId?: string;
@@ -27,6 +28,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
   onClose 
 }) => {
   const { playerStats } = useGameStore();
+  const vibrate = useGameVibrate();
 
   return (
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
@@ -79,14 +81,22 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
                     
                     {isActive ? (
                       <button
-                        onClick={() => { onCancel(); onClose(); }}
+                        onClick={() => { 
+                            vibrate(VIBRATION_PATTERNS.MEDIUM);
+                            onCancel(); 
+                            onClose(); 
+                        }}
                         className="px-4 py-2 text-sm rounded-md transition-colors bg-destructive/10 text-destructive hover:bg-destructive/20"
                       >
                         废除政令
                       </button>
                     ) : (
                       <button
-                        onClick={() => { onSelect(policy.id); onClose(); }}
+                        onClick={() => { 
+                            vibrate(VIBRATION_PATTERNS.SUCCESS);
+                            onSelect(policy.id); 
+                            onClose(); 
+                        }}
                         disabled={!canAfford}
                         className="px-4 py-2 text-sm rounded-md transition-colors bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                       >

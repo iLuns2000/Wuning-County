@@ -131,6 +131,16 @@ interface GameStore extends GameState {
   // Save/Load Methods
   exportSave: () => void;
   importSave: (data: string) => boolean;
+
+  // Sound Settings
+  soundEnabled: boolean;
+  volume: number;
+  setSoundEnabled: (enabled: boolean) => void;
+  setVolume: (volume: number) => void;
+
+  // Haptic Settings
+  vibrationEnabled: boolean;
+  setVibrationEnabled: (enabled: boolean) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -139,6 +149,11 @@ export const useGameStore = create<GameStore>()(
       role: null,
       day: 1,
       weather: 'sunny', // Default weather
+      // Sound Defaults
+      soundEnabled: true,
+      volume: 0.5,
+      // Haptic Defaults
+      vibrationEnabled: true,
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -1222,10 +1237,14 @@ export const useGameStore = create<GameStore>()(
           get().addLog('【系统】存档导入失败，文件可能已损坏。');
           return false;
         }
-      }
-    }),
-    {
-      name: 'textgame-storage', // name of the item in the storage (must be unique)
+      },
+
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+       setVolume: (volume) => set({ volume }),
+       setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
+     }),
+     {
+       name: 'textgame-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
       partialize: (state) => ({ 
         role: state.role,
@@ -1257,6 +1276,9 @@ export const useGameStore = create<GameStore>()(
         fortuneLevel: state.fortuneLevel,
         hasInteractedToday: state.hasInteractedToday,
         latestUnlockedAchievementId: state.latestUnlockedAchievementId,
+        soundEnabled: state.soundEnabled,
+        volume: state.volume,
+        vibrationEnabled: state.vibrationEnabled,
       }), // Save everything except actions
     }
   )

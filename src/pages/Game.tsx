@@ -21,9 +21,11 @@ import { ExploreModal } from '@/components/ExploreModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
 import { Settings, Backpack, Compass } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
+  const vibrate = useGameVibrate();
   const [showPolicies, setShowPolicies] = React.useState(false);
   const [showProfileModal, setShowProfileModal] = React.useState(false);
   const [showTalents, setShowTalents] = React.useState(false);
@@ -105,6 +107,7 @@ export const Game: React.FC = () => {
   };
 
   const handleWork = () => {
+    vibrate(VIBRATION_PATTERNS.LIGHT);
     if (dailyCounts.work >= MAX_DAILY_WORK) {
       addLog('今天的工作已经够多了，要注意劳逸结合。');
       return;
@@ -138,6 +141,7 @@ export const Game: React.FC = () => {
   };
 
   const handleRest = () => {
+     vibrate(VIBRATION_PATTERNS.LIGHT);
      if (dailyCounts.rest >= MAX_DAILY_REST) {
        addLog('你今天已经休息过了，不宜太过懒散。');
        return;
@@ -159,6 +163,7 @@ export const Game: React.FC = () => {
   };
 
   const handleSpecialAbility = () => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
     if (playerStats.health < 15) {
       addLog('体力不足，无法使用技能！');
       return;
@@ -228,18 +233,25 @@ export const Game: React.FC = () => {
         
         {/* Left Column: Stats */}
         <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
-          <header className="flex justify-between items-center py-2 shrink-0">
+          <header className="flex justify-between items-center py-10 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <div className="flex gap-2">
               <button 
-                onClick={() => setShowSettings(true)}
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  setShowSettings(true);
+                }}
                 className="p-1 text-muted-foreground hover:text-foreground"
                 title="系统设置"
               >
                 <Settings size={20} />
               </button>
               <button 
-                onClick={() => { resetGame(); navigate('/'); }}
+                onClick={() => { 
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  resetGame(); 
+                  navigate('/'); 
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground"
                 title="退出游戏"
               >
@@ -279,7 +291,10 @@ export const Game: React.FC = () => {
                 
                 {currentTask.specialAction && (
                   <button
-                    onClick={handleTaskAction}
+                    onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        handleTaskAction();
+                    }}
                     disabled={!!currentEvent}
                     className="flex gap-2 justify-center items-center p-2 mt-2 w-full text-sm font-medium rounded border transition-colors bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 disabled:opacity-50"
                   >
@@ -318,7 +333,10 @@ export const Game: React.FC = () => {
             {role === 'magistrate' && (
                <div className="flex flex-col col-span-2 gap-2">
                  <button 
-                   onClick={() => setShowPolicies(true)}
+                   onClick={() => {
+                     vibrate(VIBRATION_PATTERNS.LIGHT);
+                     setShowPolicies(true);
+                   }}
                    disabled={!!currentEvent}
                    className="flex justify-between items-center p-4 w-full rounded-lg border transition-colors bg-card border-primary/20 hover:bg-primary/5 disabled:opacity-50"
                  >
@@ -356,7 +374,10 @@ export const Game: React.FC = () => {
               </p>
             </div>
             <button 
-              onClick={() => navigate('/npcs')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/npcs');
+              }}
               disabled={!!currentEvent || isHeavySnow}
               className="flex relative gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法出行" : ""}
@@ -370,7 +391,10 @@ export const Game: React.FC = () => {
               )}
             </button>
             <button 
-              onClick={() => navigate('/tasks')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/tasks');
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
@@ -379,7 +403,10 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => setShowMarket(true)}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowMarket(true);
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 text-amber-900 bg-amber-100 rounded-lg transition-colors hover:bg-amber-200 disabled:opacity-50"
             >
@@ -388,7 +415,10 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => setShowEstates(true)}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowEstates(true);
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 text-indigo-900 bg-indigo-100 rounded-lg transition-colors hover:bg-indigo-200 disabled:opacity-50"
             >
@@ -396,7 +426,10 @@ export const Game: React.FC = () => {
               <span>产业置办</span>
             </button>
             <button 
-              onClick={() => navigate('/facilities')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/facilities');
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
@@ -405,7 +438,10 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => navigate('/buildings')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/buildings');
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
@@ -414,7 +450,10 @@ export const Game: React.FC = () => {
             </button>
             
             <button 
-              onClick={() => setShowExplore(true)}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowExplore(true);
+              }}
               disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || dailyCounts.rest >= MAX_DAILY_REST || isHeavySnow}
               className="flex relative gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法探险" : ""}
@@ -429,7 +468,10 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => navigate('/collection')}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/collection');
+              }}
               disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
@@ -438,7 +480,10 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => setShowInventory(true)}
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowInventory(true);
+              }}
               disabled={!!currentEvent}
               className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
             >
@@ -448,7 +493,10 @@ export const Game: React.FC = () => {
           </div>
 
           <button
-            onClick={nextDay}
+            onClick={() => {
+              vibrate(VIBRATION_PATTERNS.MEDIUM);
+              nextDay();
+            }}
             disabled={!!currentEvent}
             className="flex gap-2 justify-center items-center p-4 w-full text-lg font-bold rounded-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >

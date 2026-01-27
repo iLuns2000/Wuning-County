@@ -1,13 +1,25 @@
+/*
+ * @Author: xyZhan
+ * @Date: 2026-01-27 19:29:55
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-01-27 19:57:49
+ * @FilePath: \textgame\src\pages\Home.tsx
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+ */
 import React from 'react';
 import { roles } from '@/data/roles';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
 import { User, Briefcase, Sword } from 'lucide-react';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 export const Home: React.FC = () => {
   const startGame = useGameStore(state => state.startGame);
   const role = useGameStore(state => state.role);
   const navigate = useNavigate();
+  const vibrate = useGameVibrate();
 
   React.useEffect(() => {
     if (role) {
@@ -16,6 +28,7 @@ export const Home: React.FC = () => {
   }, [role, navigate]);
 
   const handleRoleSelect = (roleId: any) => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
     startGame(roleId);
     navigate('/game');
   };

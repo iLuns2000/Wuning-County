@@ -15,9 +15,11 @@ import { npcEvents } from '@/data/events';
 import { useGameStore } from '@/store/gameStore';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
+import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 export const NPCList: React.FC = () => {
   const navigate = useNavigate();
+  const vibrate = useGameVibrate();
   const { 
     npcRelations, 
     handleEventOption, 
@@ -39,6 +41,9 @@ export const NPCList: React.FC = () => {
   };
 
   const handleInteraction = (npcId: string, type: 'talk' | 'gift' | 'event', eventId?: string) => {
+    // 统一添加轻微震动反馈
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+
     const npc = npcs.find(n => n.id === npcId);
     if (!npc) return;
 
