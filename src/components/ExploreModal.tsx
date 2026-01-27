@@ -28,14 +28,14 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
   const gainedItem = exploreResult?.itemId ? items.find(i => i.id === exploreResult.itemId) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="bg-card w-full max-w-md rounded-xl shadow-2xl border border-border overflow-hidden flex flex-col relative">
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-300 bg-black/80 animate-in fade-in">
+      <div className="flex overflow-hidden relative flex-col w-full max-w-md rounded-xl border shadow-2xl bg-card border-border">
         
         {/* Close button (only when done) */}
         {showResult && (
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 hover:bg-secondary rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 z-10 p-1 rounded-full transition-colors hover:bg-secondary"
           >
             <X size={20} />
           </button>
@@ -44,59 +44,78 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
         <div className="p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
           
           {!showResult ? (
-            <div className="flex flex-col items-center gap-6 animate-pulse">
+            <div className="flex flex-col gap-6 items-center animate-pulse">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-ping" />
+                <div className="absolute inset-0 rounded-full blur-xl animate-ping bg-primary/20" />
                 <Compass size={64} className="text-primary animate-spin-slow" />
               </div>
               <h2 className="text-2xl font-bold">正在探险中...</h2>
               <p className="text-muted-foreground">翻山越岭，寻觅奇珍异宝</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-6 animate-in zoom-in duration-300 w-full">
-              <h2 className="text-2xl font-bold text-primary">探险归来</h2>
-              
-              <div className="w-full bg-secondary/30 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between p-2 bg-card rounded border border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Coins className="text-yellow-500" size={20} />
-                    <span>获得金钱</span>
+            <div className="flex flex-col gap-6 items-center w-full duration-300 animate-in zoom-in">
+              {exploreResult?.message ? (
+                <>
+                  <h2 className="text-2xl font-bold text-destructive">探险失败</h2>
+                  <div className="p-6 w-full text-center rounded-lg bg-destructive/10">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {exploreResult.message}
+                    </p>
                   </div>
-                  <span className="font-bold">+{exploreResult?.money}</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-2 bg-card rounded border border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="text-purple-500" size={20} />
-                    <span>获得声望</span>
-                  </div>
-                  <span className="font-bold">+{exploreResult?.reputation}</span>
-                </div>
-
-                {gainedItem ? (
-                  <div className="flex flex-col gap-2 p-3 bg-primary/5 rounded border border-primary/20 mt-2 animate-in slide-in-from-bottom-4">
-                    <div className="flex items-center gap-2 text-primary font-bold">
-                      <Package size={20} />
-                      <span>获得物品</span>
+                  <button 
+                    onClick={onClose}
+                    className="py-3 w-full font-bold rounded-lg transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                  >
+                    灰溜溜回家
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold text-primary">探险归来</h2>
+                  
+                  <div className="p-4 space-y-3 w-full rounded-lg bg-secondary/30">
+                    <div className="flex justify-between items-center p-2 rounded border bg-card border-border/50">
+                      <div className="flex gap-2 items-center">
+                        <Coins className="text-yellow-500" size={20} />
+                        <span>获得金钱</span>
+                      </div>
+                      <span className="font-bold">+{exploreResult?.money}</span>
                     </div>
-                    <div className="flex flex-col items-center p-2">
-                      <span className="text-lg font-bold">{gainedItem.name}</span>
-                      <p className="text-xs text-muted-foreground mt-1">{gainedItem.description}</p>
+                    
+                    <div className="flex justify-between items-center p-2 rounded border bg-card border-border/50">
+                      <div className="flex gap-2 items-center">
+                        <Trophy className="text-purple-500" size={20} />
+                        <span>获得声望</span>
+                      </div>
+                      <span className="font-bold">+{exploreResult?.reputation}</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-2 text-sm text-muted-foreground italic">
-                    本次探险未发现特殊物品
-                  </div>
-                )}
-              </div>
 
-              <button 
-                onClick={onClose}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
-              >
-                收下奖励
-              </button>
+                    {gainedItem ? (
+                      <div className="flex flex-col gap-2 p-3 mt-2 rounded border bg-primary/5 border-primary/20 animate-in slide-in-from-bottom-4">
+                        <div className="flex gap-2 items-center font-bold text-primary">
+                          <Package size={20} />
+                          <span>获得物品</span>
+                        </div>
+                        <div className="flex flex-col items-center p-2">
+                          <span className="text-lg font-bold">{gainedItem.name}</span>
+                          <p className="mt-1 text-xs text-muted-foreground">{gainedItem.description}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-2 text-sm italic text-muted-foreground">
+                        本次探险未发现特殊物品
+                      </div>
+                    )}
+                  </div>
+
+                  <button 
+                    onClick={onClose}
+                    className="py-3 w-full font-bold rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    收下奖励
+                  </button>
+                </>
+              )}
             </div>
           )}
 

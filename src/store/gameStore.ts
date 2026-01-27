@@ -89,6 +89,7 @@ interface GameStore extends GameState {
     money: number;
     reputation: number;
     itemId?: string;
+    message?: string;
   } | null;
 
   // Market & Economy
@@ -170,6 +171,45 @@ export const useGameStore = create<GameStore>()(
       performExplore: () => {
         set({ isExploring: true, exploreResult: null });
         
+        const state = get();
+        let failChance = 0.15;
+        
+        // Ability reduction: 1 point = 0.01% = 0.0001
+        failChance -= state.playerStats.ability * 0.0001;
+        
+        // Fortune modifier
+        if (state.fortuneLevel === 'great_blessing') {
+            failChance = 0;
+        } else if (state.fortuneLevel === 'blessing') {
+            failChance -= 0.05;
+        } else if (state.fortuneLevel === 'bad_luck') {
+            failChance += 0.05;
+        } else if (state.fortuneLevel === 'terrible_luck') {
+            failChance += 0.10;
+        }
+        
+        failChance = Math.max(0, Math.min(1, failChance));
+        
+        if (Math.random() < failChance) {
+             const failMessage = '你在出城探险的路上掉入了一个莫名其妙的洞，上面写着惊鹊的盗洞…………费了九牛二虎之力爬上去之后灰溜溜的回家了，嘴里喊着下次别让我碰到！不然让我烤了你';
+             get().addLog('【探险】出师不利，空手而归。');
+             
+             set(state => ({
+                dailyCounts: { 
+                    ...state.dailyCounts, 
+                    work: 100, 
+                    rest: 100 
+                },
+                exploreResult: { money: 0, reputation: 0, message: failMessage },
+             }));
+             
+             // Simulate delay same as success
+             setTimeout(() => {
+                 set({ isExploring: false });
+             }, 2000);
+             return;
+        }
+
         // Random rewards
         const money = Math.floor(Math.random() * 50) + 10; // 10-60 money
         const reputation = Math.floor(Math.random() * 10) + 5; // 5-15 reputation
@@ -208,7 +248,6 @@ export const useGameStore = create<GameStore>()(
         // Let's check `weather === 'rain_heavy'`.
         // And we need to add the item `cursed_sword` if achievement conditions met.
         
-        const state = get();
         if (state.weather === 'rain_heavy') {
             // Assume it's "night" enough or add randomness? 
             // Or just grant it if it's heavy rain for now as per "night rain" theme.
