@@ -21,6 +21,8 @@ import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
 
+import { MobileLogToast } from '@/components/MobileLogToast';
+
 const Router = HashRouter;
 
 function App() {
@@ -38,6 +40,7 @@ function App() {
         <Route path="/credits" element={<Credits />} />
         <Route path="/developer" element={<Developer />} />
       </Routes>
+      <MobileLogToast />
       <Watermark />
       <div className="fixed bottom-2 left-0 w-full text-center z-40 text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
         <a 

@@ -25,6 +25,10 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: true, // Listen on all local IPs
+    port: 5173,
+  },
   build: {
     target: "esnext",
     assetsInlineLimit: 100000000,
