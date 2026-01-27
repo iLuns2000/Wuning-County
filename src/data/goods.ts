@@ -34,6 +34,6 @@ export const goods: Good[] = [
     name: '古董',
     description: '盛世的收藏品，价格极不稳定。',
     basePrice: 1000,
-    volatility: 0.6,
+    volatility: 1.0,
   },
 ];

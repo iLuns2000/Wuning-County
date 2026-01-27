@@ -92,7 +92,9 @@ interface GameStore extends GameState {
     message?: string;
   } | null;
 
-  // Interaction State
+  // Market Price Locks
+  priceLocks: Record<string, { endDay: number, minPriceMultiplier: number }>;
+  dailyPurchasedGoods: string[]; // Track goods bought today
   hasInteractedToday: boolean;
   markInteraction: () => void;
 
@@ -182,6 +184,8 @@ export const useGameStore = create<GameStore>()(
       latestUnlockedAchievementId: undefined, // Init UI state
       isExploring: false,
       exploreResult: null,
+      priceLocks: {},
+      dailyPurchasedGoods: [],
       hasInteractedToday: false,
       marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
       ownedGoods: {},
@@ -331,6 +335,7 @@ export const useGameStore = create<GameStore>()(
         
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+          dailyPurchasedGoods: state.dailyPurchasedGoods.includes(goodId) ? state.dailyPurchasedGoods : [...state.dailyPurchasedGoods, goodId],
           ownedGoods: {
             ...state.ownedGoods,
             [goodId]: (state.ownedGoods[goodId] || 0) + quantity
@@ -858,10 +863,47 @@ export const useGameStore = create<GameStore>()(
 
           // Market Fluctuation
           const newMarketPrices = { ...state.marketPrices };
+          // Clean up expired price locks
+          const currentPriceLocks = { ...state.priceLocks };
+          const nextDayNum = state.day + 1;
+          Object.keys(currentPriceLocks).forEach(key => {
+              if (currentPriceLocks[key].endDay < nextDayNum) {
+                  delete currentPriceLocks[key];
+              }
+          });
+
           goods.forEach(good => {
              const fluctuation = (Math.random() * 2 - 1) * good.volatility;
              let newPrice = Math.floor(good.basePrice * (1 + fluctuation));
-             newPrice = Math.max(Math.floor(good.basePrice * 0.5), Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+             
+             // Check for Price Lock
+             if (currentPriceLocks[good.id]) {
+                 const minLockedPrice = Math.floor(good.basePrice * currentPriceLocks[good.id].minPriceMultiplier);
+                 // Ensure price is at least the locked multiplier
+                 if (newPrice < minLockedPrice) {
+                     // Generate a random price between minLockedPrice (1.5x) and Max (2.0x)
+                     // Formula: min + random * (max - min)
+                     const maxPrice = Math.floor(good.basePrice * 2.0);
+                     newPrice = Math.floor(minLockedPrice + Math.random() * (maxPrice - minLockedPrice));
+                 }
+             }
+             
+             // Check if good was purchased yesterday (dailyPurchasedGoods)
+             // If purchased, limit fluctuation to +/- 20% of YESTERDAY's price
+             if (state.dailyPurchasedGoods.includes(good.id)) {
+                 const oldPrice = state.marketPrices[good.id];
+                 const minAllowed = Math.floor(oldPrice * 0.8);
+                 const maxAllowed = Math.ceil(oldPrice * 1.2);
+                 newPrice = Math.max(minAllowed, Math.min(maxAllowed, newPrice));
+             }
+
+             // Special logic for Antique: Min 0, Max 200% (2.0)
+             if (good.id === 'antique') {
+                 newPrice = Math.max(0, Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+             } else {
+                 newPrice = Math.max(Math.floor(good.basePrice * 0.5), Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+             }
+             
              newMarketPrices[good.id] = newPrice;
           });
 
@@ -925,6 +967,7 @@ export const useGameStore = create<GameStore>()(
             logs: logs.slice(0, 50),
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
             marketPrices: newMarketPrices,
+            priceLocks: currentPriceLocks,
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
           };
@@ -1211,7 +1254,9 @@ export const useGameStore = create<GameStore>()(
           marketPrices: state.marketPrices,
           ownedGoods: state.ownedGoods,
           ownedFacilities: state.ownedFacilities,
-          fortuneLevel: state.fortuneLevel, // Export fortune level
+          priceLocks: state.priceLocks,
+        dailyPurchasedGoods: state.dailyPurchasedGoods,
+        fortuneLevel: state.fortuneLevel, // Export fortune level
           latestUnlockedAchievementId: state.latestUnlockedAchievementId, // Export achievement UI state
           timestamp: Date.now(),
           version: '1.0.0'
