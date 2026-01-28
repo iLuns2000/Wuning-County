@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -19,11 +19,16 @@ import { EstateModal } from '@/components/EstateModal';
 import { InventoryModal } from '@/components/InventoryModal';
 import { ExploreModal } from '@/components/ExploreModal';
 import { SnackStreetModal } from '@/components/SnackStreetModal';
+import { TreasureModal } from '@/components/TreasureModal';
+import { CharityModal } from '@/components/CharityModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
 import { Settings, Backpack, Compass, Leaf, Utensils } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
+import { PlayStreetModal } from '@/components/PlayStreetModal';
+import { items } from '@/data/items';
+import { Effect, StyleTag } from '@/types/game';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +44,9 @@ export const Game: React.FC = () => {
   const [showExplore, setShowExplore] = React.useState(false);
   const [showSnackStreet, setShowSnackStreet] = React.useState(false);
   const [showLeekGarden, setShowLeekGarden] = React.useState(false);
+  const [showTreasure, setShowTreasure] = React.useState(false);
+  const [showCharity, setShowCharity] = React.useState(false);
+  const [showPlayStreet, setShowPlayStreet] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
   const [showTeaPopup, setShowTeaPopup] = React.useState(false);
 
@@ -65,7 +73,9 @@ export const Game: React.FC = () => {
     cancelPolicy,
     flags,
     latestUnlockedAchievementId,
-    dismissAchievementPopup
+    dismissAchievementPopup,
+    equippedApparel,
+    equippedAccessories
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -104,10 +114,85 @@ export const Game: React.FC = () => {
 
   if (!role) return null;
 
+  const getItemScore = (price?: number) => {
+    const base = 10 + Math.floor((price || 0) / 200);
+    return Math.min(30, Math.max(8, base));
+  };
+
+  const computeStyleScores = (preferred?: StyleTag[]) => {
+    const styleScores: Record<StyleTag, number> = { 清雅: 0, 华贵: 0, 英气: 0, 俏皮: 0, 典雅: 0 };
+    const equippedIds = [
+      ...Object.values(equippedApparel).filter((id): id is string => !!id),
+      ...equippedAccessories
+    ];
+    const equippedItems = equippedIds.map(id => items.find(i => i.id === id)).filter((i): i is typeof items[number] => !!i);
+    let totalScore = 0;
+    equippedItems.forEach(item => {
+      if (!item.style) return;
+      const score = getItemScore(item.price);
+      styleScores[item.style] += score;
+      totalScore += score;
+    });
+    const matchScore = preferred ? preferred.reduce((sum, style) => sum + (styleScores[style] || 0), 0) : 0;
+    const ratio = totalScore > 0 ? matchScore / totalScore : 0;
+    let tier: 'none' | 'normal' | 'good' | 'excellent' = 'none';
+    let bonusPercent = 0;
+    if (matchScore >= 40 && ratio >= 0.7) {
+      tier = 'excellent';
+      bonusPercent = 20;
+    } else if (matchScore >= 25 && ratio >= 0.45) {
+      tier = 'good';
+      bonusPercent = 12;
+    } else if (matchScore >= 15 && ratio >= 0.25) {
+      tier = 'normal';
+      bonusPercent = 6;
+    }
+    return { styleScores, totalScore, matchScore, tier, bonusPercent };
+  };
+
+  const applyStyleBonus = (effect?: Effect, bonusPercent?: number): Effect | undefined => {
+    if (!effect || !bonusPercent) return effect;
+    const factor = 1 + bonusPercent / 100;
+    const scale = (value?: number) => (value && value > 0 ? Math.floor(value * factor) : value);
+    const next: Effect = { ...effect };
+    if (effect.playerStats) {
+      next.playerStats = {
+        money: scale(effect.playerStats.money),
+        reputation: scale(effect.playerStats.reputation),
+        ability: scale(effect.playerStats.ability),
+        health: scale(effect.playerStats.health),
+        experience: scale(effect.playerStats.experience)
+      };
+    }
+    if (effect.countyStats) {
+      next.countyStats = {
+        economy: scale(effect.countyStats.economy),
+        order: scale(effect.countyStats.order),
+        culture: scale(effect.countyStats.culture),
+        livelihood: scale(effect.countyStats.livelihood)
+      };
+    }
+    next.money = scale(effect.money);
+    next.reputation = scale(effect.reputation);
+    next.ability = scale(effect.ability);
+    next.health = scale(effect.health);
+    next.experience = scale(effect.experience);
+    next.economy = scale(effect.economy);
+    next.order = scale(effect.order);
+    next.culture = scale(effect.culture);
+    next.livelihood = scale(effect.livelihood);
+    return next;
+  };
+
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
-    handleEventOption(option.effect, option.message);
+    const preferred = currentEvent.stylePreference?.preferred;
+    const match = computeStyleScores(preferred);
+    const boostedEffect = applyStyleBonus(option.effect, match.bonusPercent);
+    const baseMessage = option.message || '';
+    const message = match.bonusPercent > 0 ? `${baseMessage}${baseMessage ? ' ' : ''}穿搭加成${match.bonusPercent}%` : baseMessage;
+    handleEventOption(boostedEffect, message);
   };
 
   const handleWork = () => {
@@ -273,6 +358,8 @@ export const Game: React.FC = () => {
             onEditProfile={() => setShowProfileModal(true)}
             onOpenTalents={() => setShowTalents(true)}
             onOpenAchievements={() => setShowAchievements(true)}
+            equippedApparel={equippedApparel}
+            equippedAccessories={equippedAccessories}
           />
         </div>
 
@@ -433,6 +520,18 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowPlayStreet(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 text-amber-900 bg-amber-100 rounded-lg transition-colors hover:bg-amber-200 disabled:opacity-50"
+            >
+              <ShoppingBag size={20} />
+              <span>游乐街</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowLeekGarden(true);
               }}
               disabled={!!currentEvent}
@@ -452,6 +551,30 @@ export const Game: React.FC = () => {
             >
               <Building2 size={20} />
               <span>产业置办</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowTreasure(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 text-purple-900 bg-purple-100 rounded-lg transition-colors hover:bg-purple-200 disabled:opacity-50"
+            >
+              <Gem size={20} />
+              <span>珍宝阁</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowCharity(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 text-rose-900 bg-rose-100 rounded-lg transition-colors hover:bg-rose-200 disabled:opacity-50"
+            >
+              <Heart size={20} />
+              <span>善行义举</span>
             </button>
             <button 
               onClick={() => {
@@ -541,7 +664,21 @@ export const Game: React.FC = () => {
       </div>
 
       {currentEvent && (
-        <EventModal event={currentEvent} onOptionSelect={handleOptionSelect} />
+        <EventModal
+          event={currentEvent}
+          onOptionSelect={handleOptionSelect}
+          styleMatch={(() => {
+            const preferred = currentEvent.stylePreference?.preferred || [];
+            const match = computeStyleScores(preferred);
+            return {
+              preferred,
+              totalScore: match.totalScore,
+              matchScore: match.matchScore,
+              tier: match.tier,
+              bonusPercent: match.bonusPercent
+            };
+          })()}
+        />
       )}
 
       {showPolicies && role === 'magistrate' && (
@@ -570,6 +707,9 @@ export const Game: React.FC = () => {
       {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
       {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
       {showLeekGarden && <LeekGardenModal onClose={() => setShowLeekGarden(false)} />}
+      {showPlayStreet && <PlayStreetModal onClose={() => setShowPlayStreet(false)} />}
+      {showTreasure && <TreasureModal onClose={() => setShowTreasure(false)} />}
+      {showCharity && <CharityModal onClose={() => setShowCharity(false)} />}
       
       {showTeaPopup && (
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">

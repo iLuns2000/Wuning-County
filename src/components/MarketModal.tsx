@@ -9,8 +9,34 @@ interface MarketModalProps {
 }
 
 export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
-  const { marketPrices, ownedGoods, playerStats, buyGood, sellGood } = useGameStore();
+  const { marketPrices, ownedGoods, playerStats, buyGood, sellGood, marketState, flags, npcRelations } = useGameStore();
   const vibrate = useGameVibrate();
+
+  const getEffectivePrices = (goodId: string, basePrice: number) => {
+    const marketPrice = marketPrices[goodId] || basePrice;
+    
+    // Calculate Buy Price
+    let buyPrice = marketPrice;
+    if (marketState === 'cooperative') {
+        buyPrice = Math.ceil(buyPrice * 1.1);
+    }
+    if (flags.group_buy_active_daily) {
+        buyPrice = Math.floor(buyPrice * 0.8);
+    }
+    const highRelationsCount = Object.values(npcRelations || {}).filter(r => r > 50).length;
+    const discount = Math.min(0.2, highRelationsCount * 0.02);
+    buyPrice = Math.floor(buyPrice * (1 - discount));
+
+    // Calculate Sell Price
+    let sellPrice = marketPrice;
+    if (marketState === 'undercut') {
+        sellPrice = Math.floor(sellPrice * 0.7);
+    } else if (marketState === 'cooperative') {
+        sellPrice = Math.floor(sellPrice * 1.1);
+    }
+
+    return { buyPrice, sellPrice };
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -38,6 +64,7 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
         <div className="overflow-y-auto p-4 space-y-4 bg-stone-50 flex-1">
           {goods.map((good) => {
             const currentPrice = marketPrices[good.id] || good.basePrice;
+            const { buyPrice, sellPrice } = getEffectivePrices(good.id, good.basePrice);
             const owned = ownedGoods[good.id] || 0;
             const priceRatio = currentPrice / good.basePrice;
             
@@ -65,6 +92,12 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                       {trendIcon}
                     </div>
                     <div className="text-xs text-stone-400">基准: {good.basePrice} 文</div>
+                    {buyPrice !== currentPrice && (
+                        <div className="text-xs text-amber-600">实购: {buyPrice} 文</div>
+                    )}
+                    {sellPrice !== currentPrice && (
+                        <div className="text-xs text-blue-600">实卖: {sellPrice} 文</div>
+                    )}
                   </div>
                 </div>
 
@@ -82,18 +115,20 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                       disabled={owned < 1}
                       className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                     >
-                      卖出
+                      卖出 ({sellPrice})
                     </button>
+                    {good.id !== 'leek' && (
                     <button
                       onClick={() => {
                         vibrate(VIBRATION_PATTERNS.LIGHT);
                         buyGood(good.id, 1);
                       }}
-                      disabled={playerStats.money < currentPrice}
+                      disabled={playerStats.money < buyPrice}
                       className="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                     >
-                      买入
+                      买入 ({buyPrice})
                     </button>
+                    )}
                     <div className="w-2"></div>
                     <button
                       onClick={() => {
@@ -105,16 +140,18 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                     >
                       卖10
                     </button>
+                    {good.id !== 'leek' && (
                     <button
                       onClick={() => {
                         vibrate(VIBRATION_PATTERNS.LIGHT);
                         buyGood(good.id, 10);
                       }}
-                      disabled={playerStats.money < currentPrice * 10}
+                      disabled={playerStats.money < buyPrice * 10}
                       className="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed text-xs transition-colors"
                     >
                       买10
                     </button>
+                    )}
                   </div>
                 </div>
               </div>

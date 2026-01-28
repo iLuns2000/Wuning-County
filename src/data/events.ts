@@ -7,6 +7,7 @@ export const randomEvents: GameEvent[] = [
     title: '县城集市',
     description: '县城集市开张，各种商品琳琅满目。',
     type: 'daily',
+    stylePreference: { preferred: ['清雅', '俏皮'] },
     triggerCondition: { probability: 1.0 }, // simplified
     options: [
       {
@@ -26,6 +27,7 @@ export const randomEvents: GameEvent[] = [
     title: '节日庆典',
     description: '县城举办节日庆典，到处张灯结彩。',
     type: 'daily',
+    stylePreference: { preferred: ['华贵', '俏皮'] },
     triggerCondition: { probability: 0.1 }, // Monthly approx
     options: [
       {
@@ -45,6 +47,7 @@ export const randomEvents: GameEvent[] = [
     title: '商机出现',
     description: '市场上出现了一批紧俏的货物。',
     type: 'opportunity',
+    stylePreference: { preferred: ['典雅', '清雅'] },
     triggerCondition: { probability: 0.2 }, // Weekly approx
     options: [
       {
@@ -63,6 +66,7 @@ export const randomEvents: GameEvent[] = [
     title: '贵人相助',
     description: '你在茶馆遇到一位谈吐不凡的长者。',
     type: 'opportunity',
+    stylePreference: { preferred: ['典雅', '清雅'] },
     triggerCondition: { probability: 0.05 },
     options: [
       {
@@ -81,6 +85,7 @@ export const randomEvents: GameEvent[] = [
     title: '宝藏发现',
     description: '传闻城郊的古庙里藏有宝物。',
     type: 'opportunity',
+    stylePreference: { preferred: ['英气', '华贵'] },
     triggerCondition: { probability: 0.02 },
     options: [
       {
@@ -100,6 +105,7 @@ export const randomEvents: GameEvent[] = [
     title: '小偷出现',
     description: '你在街上走着，突然发现钱包不见了。',
     type: 'challenge',
+    stylePreference: { preferred: ['英气'] },
     triggerCondition: { probability: 0.15 },
     options: [
       {
@@ -119,6 +125,7 @@ export const randomEvents: GameEvent[] = [
     title: '强盗来袭',
     description: '一伙强盗在城外叫嚣，威胁县城安全。',
     type: 'challenge',
+    stylePreference: { preferred: ['英气'] },
     triggerCondition: { probability: 0.05 },
     options: [
       {
@@ -159,6 +166,7 @@ export const randomEvents: GameEvent[] = [
     title: '开设分店',
     description: '你在城南发现了一个绝佳的铺面，非常适合开设新的分店。',
     type: 'opportunity',
+    stylePreference: { preferred: ['典雅', '华贵'] },
     triggerCondition: { probability: 0.1, requiredRole: 'merchant' },
     options: [
       {
@@ -178,6 +186,7 @@ export const randomEvents: GameEvent[] = [
     title: '县城规划',
     description: '新的一季度开始了，县城需要确定未来的发展方向。',
     type: 'daily',
+    stylePreference: { preferred: ['典雅'] },
     triggerCondition: { probability: 0.1, requiredRole: 'magistrate' },
     options: [
       {
@@ -203,6 +212,7 @@ export const randomEvents: GameEvent[] = [
     title: '江湖悬赏令',
     description: '官府发布了悬赏令，通缉一名流窜至此的江洋大盗。',
     type: 'challenge',
+    stylePreference: { preferred: ['英气'] },
     triggerCondition: { probability: 0.1, requiredRole: 'hero' },
     options: [
       {
@@ -222,6 +232,7 @@ export const randomEvents: GameEvent[] = [
     title: '武林大会',
     description: '五年一度的武林大会召开了，各路高手云集。以你现在的武学修为，完全有资格去争夺盟主之位。',
     type: 'opportunity',
+    stylePreference: { preferred: ['英气', '华贵'] },
     triggerCondition: { probability: 0.2, requiredRole: 'hero', minAbility: 60 },
     options: [
       {

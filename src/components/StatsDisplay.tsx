@@ -1,7 +1,8 @@
 import React from 'react';
-import { PlayerStats, CountyStats, PlayerProfile, WeatherType } from '@/types/game';
+import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot } from '@/types/game';
 import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun } from 'lucide-react';
 import { getDateInfo } from '@/store/gameStore';
+import { items } from '@/data/items';
 
 interface StatsDisplayProps {
   playerStats: PlayerStats;
@@ -12,6 +13,8 @@ interface StatsDisplayProps {
   onEditProfile?: () => void;
   onOpenTalents?: () => void;
   onOpenAchievements?: () => void;
+  equippedApparel: Partial<Record<ApparelSlot, string>>;
+  equippedAccessories: string[];
 }
 
 const StatItem = ({ icon: Icon, value, label, color }: any) => (
@@ -42,9 +45,37 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   playerProfile, 
   onEditProfile,
   onOpenTalents,
-  onOpenAchievements
+  onOpenAchievements,
+  equippedApparel,
+  equippedAccessories
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
+  const itemMap = new Map(items.map(item => [item.id, item]));
+  const getItemScore = (price?: number) => {
+    const base = 10 + Math.floor((price || 0) / 200);
+    return Math.min(30, Math.max(8, base));
+  };
+  const equippedIds = [
+    ...Object.values(equippedApparel).filter((id): id is string => !!id),
+    ...equippedAccessories
+  ];
+  const equippedItems = equippedIds.map(id => itemMap.get(id)).filter((i): i is typeof items[number] => !!i);
+  const styleScores = { 清雅: 0, 华贵: 0, 英气: 0, 俏皮: 0, 典雅: 0 };
+  let totalStyleScore = 0;
+  equippedItems.forEach(item => {
+    if (!item.style) return;
+    const score = getItemScore(item.price);
+    styleScores[item.style] += score;
+    totalStyleScore += score;
+  });
+  const apparelSummary = [
+    { label: '发型', id: equippedApparel.hair },
+    { label: '上衣', id: equippedApparel.top },
+    { label: '下装', id: equippedApparel.bottom },
+    { label: '外披', id: equippedApparel.outer },
+    { label: '鞋履', id: equippedApparel.shoes }
+  ];
+  const accessorySummary = equippedAccessories.map(id => itemMap.get(id)?.name).filter((name): name is string => !!name);
 
   return (
     <div className="flex flex-col gap-4 bg-card p-4 rounded-lg shadow-sm border text-card-foreground">
@@ -108,6 +139,41 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
                 <span className="text-sm font-medium">成就</span>
              </button>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">当前搭配</h3>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {apparelSummary.map(slot => (
+            <div key={slot.label} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md">
+              <span className="text-muted-foreground">{slot.label}</span>
+              <span className="font-medium">
+                {slot.id ? itemMap.get(slot.id)?.name : '未装备'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="text-muted-foreground">首饰</span>
+          {accessorySummary.length > 0 ? (
+            accessorySummary.map(name => (
+              <span key={name} className="px-2 py-1 rounded bg-secondary/50">
+                {name}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground">未佩戴</span>
+          )}
+        </div>
+        <div className="grid grid-cols-5 gap-2 text-[11px]">
+          {Object.entries(styleScores).map(([style, score]) => (
+            <div key={style} className="bg-secondary/50 p-2 rounded text-center">
+              <div className="text-muted-foreground">{style}</div>
+              <div className="font-medium">{score}</div>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground">风格总分 {totalStyleScore}</div>
       </div>
 
       <div className="space-y-2">

@@ -32,13 +32,6 @@ export const goods: Good[] = [
     volatility: 0.4,
   },
   {
-    id: 'antique',
-    name: '古董',
-    description: '盛世的收藏品，价格极不稳定。',
-    basePrice: 1000,
-    volatility: 1.0,
-  },
-  {
     id: 'leek',
     name: '鲜韭',
     description: '鲜韭，价格受季节与需求影响。',

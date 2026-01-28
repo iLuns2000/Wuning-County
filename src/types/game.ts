@@ -39,12 +39,23 @@ export interface Good {
   spoilageRate?: number; // 0-1, percentage of stock lost per day
 }
 
+export type ItemType = 'consumable' | 'material' | 'quest' | 'misc' | 'treasure' | 'apparel' | 'accessory';
+
+export type ApparelSlot = 'hair' | 'top' | 'bottom' | 'outer' | 'shoes';
+
+export type AccessorySlot = 'ear' | 'neck' | 'hand' | 'waist' | 'head';
+
+export type StyleTag = '清雅' | '华贵' | '英气' | '俏皮' | '典雅';
+
 export interface Item {
   id: string;
   name: string;
   description: string;
-  type: 'consumable' | 'material' | 'quest' | 'misc';
-  effect?: Effect; // Optional effect if used
+  type: ItemType;
+  effect?: Effect;
+  price?: number;
+  slot?: ApparelSlot | AccessorySlot;
+  style?: StyleTag;
 }
 
 export interface Facility {
@@ -119,6 +130,8 @@ export interface GameState {
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
   inventory: string[];
+  equippedApparel: Partial<Record<ApparelSlot, string>>;
+  equippedAccessories: string[];
   flags: Record<string, any>;
   npcRelations: Record<string, number>;
   logs: string[];
@@ -188,6 +201,9 @@ export interface GameEvent {
   title: string;
   description: string;
   type: 'daily' | 'opportunity' | 'challenge' | 'npc' | 'random';
+  stylePreference?: {
+    preferred: StyleTag[];
+  };
   triggerCondition?: {
     minReputation?: number;
     minMoney?: number;

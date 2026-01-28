@@ -10,9 +10,11 @@
  */
 import { Item } from '@/types/game';
 import { snacks } from './snacks';
+import { treasures } from './treasures';
 
 export const items: Item[] = [
   ...snacks,
+  ...treasures,
   {
     id: 'bamboo_basket',
     name: '精制竹篮',
@@ -92,6 +94,294 @@ export const items: Item[] = [
     effect: {
       health: 20
     }
+  },
+  {
+    id: 'clo_apricot_ruqun',
+    name: '杏色襦裙',
+    description: '温柔杏色襦裙，裙摆轻盈，适合日常雅会。',
+    type: 'apparel',
+    price: 520,
+    slot: 'top',
+    style: '清雅'
+  },
+  {
+    id: 'clo_moon_shenyi',
+    name: '月白深衣',
+    description: '月白色深衣，线脚简洁，带出清雅气质。',
+    type: 'apparel',
+    price: 1280,
+    slot: 'outer',
+    style: '典雅'
+  },
+  {
+    id: 'clo_bixia_changqun',
+    name: '碧霞长裙',
+    description: '碧霞色长裙，色泽柔和，行走间若云影流动。',
+    type: 'apparel',
+    price: 880,
+    slot: 'bottom',
+    style: '清雅'
+  },
+  {
+    id: 'clo_cloud_cloak',
+    name: '云纹披风',
+    description: '披风绣有云纹，既能挡风，也添几分端雅。',
+    type: 'apparel',
+    price: 1280,
+    slot: 'outer',
+    style: '典雅'
+  },
+  {
+    id: 'clo_qingling_changshan',
+    name: '青绫长衫',
+    description: '青绫长衫裁剪合体，低调而不失气度。',
+    type: 'apparel',
+    price: 560,
+    slot: 'top',
+    style: '典雅'
+  },
+  {
+    id: 'clo_hemp_duanru',
+    name: '细麻短褂',
+    description: '细麻短褂透气舒适，适合轻便出行。',
+    type: 'apparel',
+    price: 260,
+    slot: 'top',
+    style: '清雅'
+  },
+  {
+    id: 'clo_misty_outer',
+    name: '烟岚外袍',
+    description: '烟岚色外袍层次分明，远观若雾。',
+    type: 'apparel',
+    price: 1380,
+    slot: 'outer',
+    style: '典雅'
+  },
+  {
+    id: 'clo_crane_sleeve',
+    name: '鹤影大袖',
+    description: '大袖宽阔，袖缘有鹤影暗纹。',
+    type: 'apparel',
+    price: 1580,
+    slot: 'outer',
+    style: '华贵'
+  },
+  {
+    id: 'clo_pine_zhi_duo',
+    name: '松青直裰',
+    description: '松青直裰挺括耐穿，适合正式场合。',
+    type: 'apparel',
+    price: 980,
+    slot: 'top',
+    style: '典雅'
+  },
+  {
+    id: 'clo_ink_doupeng',
+    name: '墨影斗篷',
+    description: '墨色斗篷垂坠感强，添几分英气。',
+    type: 'apparel',
+    price: 1480,
+    slot: 'outer',
+    style: '英气'
+  },
+  {
+    id: 'clo_snow_duanru',
+    name: '雪羽短襦',
+    description: '短襦轻巧，衣缘似雪羽，清丽可人。',
+    type: 'apparel',
+    price: 420,
+    slot: 'top',
+    style: '清雅'
+  },
+  {
+    id: 'clo_lotus_baizhe',
+    name: '莲纹百褶裙',
+    description: '裙摆起落如莲花绽放，步伐更显婉约。',
+    type: 'apparel',
+    price: 860,
+    slot: 'bottom',
+    style: '俏皮'
+  },
+  {
+    id: 'clo_yulin_duanda',
+    name: '羽林短打',
+    description: '短打利落，行动自如，适合轻快活动。',
+    type: 'apparel',
+    price: 600,
+    slot: 'top',
+    style: '英气'
+  },
+  {
+    id: 'clo_river_blue_pants',
+    name: '江蓝长裤',
+    description: '江蓝长裤裁剪利落，搭配外袍更显稳重。',
+    type: 'apparel',
+    price: 540,
+    slot: 'bottom',
+    style: '典雅'
+  },
+  {
+    id: 'clo_cyan_embroidery_shoes',
+    name: '黛青绣履',
+    description: '黛青绣履针脚细密，穿着舒适耐看。',
+    type: 'apparel',
+    price: 360,
+    slot: 'shoes',
+    style: '清雅'
+  },
+  {
+    id: 'acc_haitang_earring',
+    name: '海棠耳坠',
+    description: '耳坠形似海棠花蕊，摇曳生姿。',
+    type: 'accessory',
+    price: 610,
+    slot: 'ear',
+    style: '华贵'
+  },
+  {
+    id: 'acc_jade_bi_pendant',
+    name: '玉璧颈饰',
+    description: '玉璧温润，佩于颈间更添端庄。',
+    type: 'accessory',
+    price: 1480,
+    slot: 'neck',
+    style: '典雅'
+  },
+  {
+    id: 'acc_silver_bangle',
+    name: '素银镯',
+    description: '银镯素雅，光泽柔和，适合日常佩戴。',
+    type: 'accessory',
+    price: 420,
+    slot: 'hand',
+    style: '清雅'
+  },
+  {
+    id: 'acc_gold_bracelet',
+    name: '鎏金手环',
+    description: '鎏金手环光华内敛，庄重而不张扬。',
+    type: 'accessory',
+    price: 980,
+    slot: 'hand',
+    style: '华贵'
+  },
+  {
+    id: 'acc_cloud_hairpin',
+    name: '流云簪',
+    description: '发簪轻巧，簪头似流云凝结。',
+    type: 'accessory',
+    price: 520,
+    slot: 'head',
+    style: '清雅'
+  },
+  {
+    id: 'acc_pearl_hairpin',
+    name: '明珠步摇',
+    description: '步摇垂珠微晃，行走间更显灵动。',
+    type: 'accessory',
+    price: 1280,
+    slot: 'head',
+    style: '华贵'
+  },
+  {
+    id: 'acc_lotus_ring',
+    name: '莲纹指环',
+    description: '指环刻莲纹，雅致清净。',
+    type: 'accessory',
+    price: 380,
+    slot: 'hand',
+    style: '清雅'
+  },
+  {
+    id: 'acc_gourd_pendant',
+    name: '葫芦佩',
+    description: '葫芦形佩饰寓意平安喜乐。',
+    type: 'accessory',
+    price: 460,
+    slot: 'waist',
+    style: '俏皮'
+  },
+  {
+    id: 'acc_coral_beads',
+    name: '珊瑚串',
+    description: '珊瑚串色泽温暖，佩戴更显华贵。',
+    type: 'accessory',
+    price: 1380,
+    slot: 'neck',
+    style: '华贵'
+  },
+  {
+    id: 'acc_jade_belt',
+    name: '玉扣腰佩',
+    description: '玉扣腰佩稳妥大方，搭配外袍更显层次。',
+    type: 'accessory',
+    price: 720,
+    slot: 'waist',
+    style: '典雅'
+  },
+  {
+    id: 'acc_lantern_earring',
+    name: '灯影耳坠',
+    description: '耳坠形似小灯，微光灵动。',
+    type: 'accessory',
+    price: 560,
+    slot: 'ear',
+    style: '俏皮'
+  },
+  {
+    id: 'acc_bamboo_jade',
+    name: '竹节玉佩',
+    description: '竹节玉佩清瘦挺拔，寓意节节高升。',
+    type: 'accessory',
+    price: 680,
+    slot: 'waist',
+    style: '典雅'
+  },
+  {
+    id: 'acc_cloud_necklace',
+    name: '云纹项圈',
+    description: '项圈细致雕云纹，端雅稳重。',
+    type: 'accessory',
+    price: 920,
+    slot: 'neck',
+    style: '典雅'
+  },
+  {
+    id: 'acc_plum_blossom_pin',
+    name: '梅影簪',
+    description: '簪头梅影点点，冷艳含香。',
+    type: 'accessory',
+    price: 840,
+    slot: 'head',
+    style: '典雅'
+  },
+  {
+    id: 'acc_silk_tassel',
+    name: '丝穗挂饰',
+    description: '丝穗垂落，随步轻扬，增添灵动感。',
+    type: 'accessory',
+    price: 500,
+    slot: 'waist',
+    style: '俏皮'
+  },
+  {
+    id: 'acc_amber_beads',
+    name: '琥珀手串',
+    description: '琥珀色泽温润，佩戴舒心。',
+    type: 'accessory',
+    price: 760,
+    slot: 'hand',
+    style: '典雅'
+  },
+  {
+    id: 'acc_jade_lock',
+    name: '福纹玉锁',
+    description: '玉锁刻福纹，寓意护佑平安。',
+    type: 'accessory',
+    price: 880,
+    slot: 'neck',
+    style: '典雅'
   },
   // Alchemy Items (2048 Minigame)
   { id: 'alc_residue', name: '药渣', description: '炼丹失败的产物，虽无大用，但这灰烬中似乎还残留着一丝药性。', type: 'material' },

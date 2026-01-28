@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -13,6 +13,8 @@ import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
 import { items } from '@/data/items';
+import { treasurePrices } from '@/data/treasures';
+import { charities } from '@/data/charities';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -163,6 +165,14 @@ interface GameStore extends GameState {
   // Item Methods
   buyItem: (itemId: string, cost: number) => void;
   useItem: (itemId: string) => void;
+  equipApparel: (slot: ApparelSlot, itemId: string) => void;
+  unequipApparel: (slot: ApparelSlot) => void;
+  equipAccessory: (itemId: string) => void;
+  unequipAccessory: (itemId: string) => void;
+
+  // Gold Sinks
+  buyTreasure: (treasureId: string) => void;
+  performCharity: (charityId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -190,6 +200,8 @@ export const useGameStore = create<GameStore>()(
       isVoiceLost: false,
       collectedScrolls: [],
       inventory: [],
+      equippedApparel: {},
+      equippedAccessories: [],
       flags: {},
       npcRelations: {},
       logs: [],
@@ -612,6 +624,52 @@ export const useGameStore = create<GameStore>()(
         get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
       },
 
+      buyTreasure: (treasureId) => {
+          const state = get();
+          const cost = treasurePrices[treasureId];
+          if (!cost) return;
+
+          if (state.playerStats.money < cost) {
+              get().addLog('资金不足，无法购买此珍宝。');
+              return;
+          }
+
+          if (state.inventory.includes(treasureId)) {
+               get().addLog('你已经拥有此珍宝了。');
+               return;
+          }
+
+          const treasure = items.find(i => i.id === treasureId);
+          if (!treasure) return;
+
+          set(state => ({
+              playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+              inventory: [...state.inventory, treasureId]
+          }));
+
+          get().addLog(`【珍宝阁】挥金如土！花费 ${cost} 文购得了稀世珍宝【${treasure.name}】。`);
+          // Buying treasures increases reputation slightly as a hidden bonus
+          get().handleEventOption({ reputation: 5, culture: 2 }, ''); 
+      },
+
+      performCharity: (charityId) => {
+          const state = get();
+          const charity = charities.find(c => c.id === charityId);
+          if (!charity) return;
+
+          if (state.playerStats.money < charity.cost) {
+              get().addLog('囊中羞涩，无法行善。');
+              return;
+          }
+
+          set(state => ({
+              playerStats: { ...state.playerStats, money: state.playerStats.money - charity.cost }
+          }));
+          
+          get().handleEventOption(charity.effect, '');
+          get().addLog(`【善行】${charity.logMessage}`);
+      },
+
       useItem: (itemId) => {
         const state = get();
         const itemIndex = state.inventory.indexOf(itemId);
@@ -627,6 +685,65 @@ export const useGameStore = create<GameStore>()(
         const newInventory = [...state.inventory];
         newInventory.splice(itemIndex, 1);
         set({ inventory: newInventory });
+      },
+
+      equipApparel: (slot, itemId) => {
+        const state = get();
+        const item = items.find(i => i.id === itemId);
+        if (!item || item.type !== 'apparel' || item.slot !== slot) {
+          get().addLog('此物不可用于该衣装部位。');
+          return;
+        }
+        if (!state.inventory.includes(itemId)) {
+          get().addLog('行囊中没有此衣装。');
+          return;
+        }
+        set(s => ({
+          equippedApparel: { ...s.equippedApparel, [slot]: itemId }
+        }));
+        get().addLog(`已更换${item.name}。`);
+      },
+
+      unequipApparel: (slot) => {
+        const state = get();
+        if (!state.equippedApparel[slot]) return;
+        set(s => ({
+          equippedApparel: { ...s.equippedApparel, [slot]: undefined }
+        }));
+      },
+
+      equipAccessory: (itemId) => {
+        const state = get();
+        const item = items.find(i => i.id === itemId);
+        if (!item || item.type !== 'accessory') {
+          get().addLog('此物不可作为首饰佩戴。');
+          return;
+        }
+        if (!state.inventory.includes(itemId)) {
+          get().addLog('行囊中没有此首饰。');
+          return;
+        }
+        if (state.equippedAccessories.includes(itemId)) {
+          return;
+        }
+        const slot = item.slot;
+        let nextAccessories = [...state.equippedAccessories];
+        if (slot) {
+          nextAccessories = nextAccessories.filter(id => items.find(i => i.id === id)?.slot !== slot);
+        }
+        if (nextAccessories.length >= 3) {
+          get().addLog('首饰最多佩戴三件。');
+          return;
+        }
+        nextAccessories.push(itemId);
+        set({ equippedAccessories: nextAccessories });
+        get().addLog(`已佩戴${item.name}。`);
+      },
+
+      unequipAccessory: (itemId) => {
+        const state = get();
+        if (!state.equippedAccessories.includes(itemId)) return;
+        set({ equippedAccessories: state.equippedAccessories.filter(id => id !== itemId) });
       },
 
       updateTimeSettings: (settings) => {
@@ -709,6 +826,8 @@ export const useGameStore = create<GameStore>()(
           collectedScrolls: [],
           activePolicyId: undefined,
           inventory: [],
+          equippedApparel: {},
+          equippedAccessories: [],
           flags: {},
           npcRelations: {},
           logs: [`开始游戏，身份：${roleConfig.name}`],
@@ -1300,6 +1419,14 @@ export const useGameStore = create<GameStore>()(
               newPlayerStats.debt += interest;
           }
 
+          // Tax Mechanism: 10% tax if money > 1,000,000
+          let taxMessage = '';
+          if (newPlayerStats.money > 1000000) {
+              const tax = Math.floor(newPlayerStats.money * 0.1);
+              newPlayerStats.money -= tax;
+              taxMessage = `【税收】由于家产丰厚（超过100万文），官府强制征收了 10% 的财产税，扣除 ${tax} 文。`;
+          }
+
           // Weather Generation
           const nextDayVal = state.day + 1;
           const { seasonIndex, dayOfSeason } = getDateInfo(nextDayVal);
@@ -1341,6 +1468,7 @@ export const useGameStore = create<GameStore>()(
           if (marketStateMessage) logs.unshift(marketStateMessage);
           if (mowerHarvestCount > 0) logs.unshift(`【自动收割】割草机自动收割了 ${mowerHarvestCount} 捆韭菜。`);
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
+          if (taxMessage) logs.unshift(taxMessage);
           
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1688,6 +1816,8 @@ export const useGameStore = create<GameStore>()(
           currentTaskId: undefined,
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
           hasInteractedToday: false,
+          equippedApparel: {},
+          equippedAccessories: [],
         });
       },
 
@@ -1728,6 +1858,8 @@ export const useGameStore = create<GameStore>()(
           countyStats: state.countyStats,
           dailyCounts: state.dailyCounts,
           inventory: state.inventory,
+          equippedApparel: state.equippedApparel,
+          equippedAccessories: state.equippedAccessories,
           flags: state.flags,
           npcRelations: state.npcRelations,
           logs: state.logs,
@@ -1804,6 +1936,8 @@ export const useGameStore = create<GameStore>()(
         countyStats: state.countyStats,
         dailyCounts: state.dailyCounts,
         inventory: state.inventory,
+        equippedApparel: state.equippedApparel,
+        equippedAccessories: state.equippedAccessories,
         flags: state.flags,
         npcRelations: state.npcRelations,
         logs: state.logs,

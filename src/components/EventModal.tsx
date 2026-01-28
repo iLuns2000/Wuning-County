@@ -5,9 +5,16 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 interface EventModalProps {
   event: GameEvent;
   onOptionSelect: (optionIndex: number) => void;
+  styleMatch?: {
+    preferred: string[];
+    totalScore: number;
+    matchScore: number;
+    tier: 'none' | 'normal' | 'good' | 'excellent';
+    bonusPercent: number;
+  };
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect }) => {
+export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect, styleMatch }) => {
   const vibrate = useGameVibrate();
   
   return (
@@ -22,6 +29,21 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect })
         <p className="text-muted-foreground mb-6 leading-relaxed">
           {event.description}
         </p>
+
+        {styleMatch && styleMatch.preferred.length > 0 && (
+          <div className="mb-6 p-3 rounded-md border bg-secondary/40 text-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>场景偏好：{styleMatch.preferred.join('、')}</span>
+              <span>风格评分：{styleMatch.matchScore}/{styleMatch.totalScore}</span>
+            </div>
+            <div className="mt-2 font-medium">
+              {styleMatch.tier === 'excellent' && `穿搭契合：极佳（加成 ${styleMatch.bonusPercent}%）`}
+              {styleMatch.tier === 'good' && `穿搭契合：良好（加成 ${styleMatch.bonusPercent}%）`}
+              {styleMatch.tier === 'normal' && `穿搭契合：一般（加成 ${styleMatch.bonusPercent}%）`}
+              {styleMatch.tier === 'none' && '穿搭契合：不足（无加成）'}
+            </div>
+          </div>
+        )}
         
         <div className="space-y-3">
           {event.options.map((option, index) => (
