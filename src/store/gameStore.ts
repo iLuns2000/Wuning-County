@@ -144,6 +144,14 @@ interface GameStore extends GameState {
   // Haptic Settings
   vibrationEnabled: boolean;
   setVibrationEnabled: (enabled: boolean) => void;
+
+  plantLeek: (plotId: number, variety: { id: string; growthTicks: number; baseYield: number; baseQuality: number }) => void;
+  waterLeek: (plotId: number) => void;
+  fertilizeLeek: (plotId: number) => void;
+  harvestLeek: (plotId: number) => void;
+  buyLeekFacility: (id: string, cost: number) => void;
+  processLeek: () => void;
+  submitLeekOrder: (orderId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -190,6 +198,13 @@ export const useGameStore = create<GameStore>()(
       marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
       ownedGoods: {},
       ownedFacilities: {},
+      leekPlots: [
+        { id: 1, pest: 0, ready: false, fertility: 100 },
+        { id: 2, pest: 0, ready: false, fertility: 100 },
+        { id: 3, pest: 0, ready: false, fertility: 100 },
+      ],
+      leekFacilities: {},
+      leekOrders: [],
 
       markInteraction: () => {
         const state = get();
@@ -384,6 +399,136 @@ export const useGameStore = create<GameStore>()(
           }
         }));
         get().addLog(`【产业】花费 ${facility.cost} 文置办了 ${facility.name}。`);
+      },
+
+      plantLeek: (plotId, variety) => {
+        set(state => {
+          const plots = (state.leekPlots || []).map(p => {
+            if (p.id === plotId) {
+              if ((p.fertility || 0) <= 0) {
+                 get().addLog('【韭菜园】该地块土地贫瘠，无法种植，请休耕恢复。');
+                 return p;
+              }
+              return {
+                ...p,
+                varietyId: variety.id,
+                growthProgress: 0,
+                growthTarget: variety.growthTicks,
+                watered: false,
+                fertilized: false,
+                pest: 0,
+                quality: variety.baseQuality,
+                ready: false,
+              };
+            }
+            return p;
+          });
+          return { leekPlots: plots };
+        });
+        get().addLog('【韭菜园】种下新韭。');
+      },
+      waterLeek: (plotId) => {
+        set(state => {
+          const plots = (state.leekPlots || []).map(p => p.id === plotId ? { ...p, watered: true, quality: Math.min(100, (p.quality || 0) + 2) } : p);
+          return { leekPlots: plots };
+        });
+        get().addLog('【韭菜园】完成浇水。');
+      },
+      fertilizeLeek: (plotId) => {
+        set(state => {
+          const plots = (state.leekPlots || []).map(p => p.id === plotId ? { ...p, fertilized: true, quality: Math.min(100, (p.quality || 0) + 4) } : p);
+          return { leekPlots: plots };
+        });
+        get().addLog('【韭菜园】施下肥料。');
+      },
+      harvestLeek: (plotId) => {
+        const state = get();
+        const plot = (state.leekPlots || []).find(p => p.id === plotId);
+        if (!plot || !plot.ready || !plot.varietyId) return;
+        
+        // Fertility penalty
+        const currentFertility = plot.fertility || 100;
+        let baseYield = Math.max(1, plot.growthTarget || 3);
+        if (currentFertility < 30) {
+            baseYield = Math.max(1, Math.floor(baseYield * 0.5));
+            get().addLog('【韭菜园】土地贫瘠，收成大减。');
+        }
+
+        const qualityBonus = Math.floor((plot.quality || 0) / 10);
+        const pestPenalty = Math.floor((plot.pest || 0) / 20);
+        const qty = Math.max(1, baseYield + qualityBonus - pestPenalty);
+        
+        set(s => ({
+          ownedGoods: { ...s.ownedGoods, leek: (s.ownedGoods['leek'] || 0) + qty },
+          leekPlots: (s.leekPlots || []).map(p => p.id === plotId ? { id: plotId, pest: 0, ready: false, fertility: Math.max(0, currentFertility - 10) } : p),
+        }));
+        get().addLog(`【韭菜园】收获鲜韭 ${qty} 把。`);
+      },
+      buyLeekFacility: (id, cost) => {
+        const state = get();
+        if (state.playerStats.money < cost) {
+            get().addLog('资金不足。');
+            return;
+        }
+        set(s => ({
+            playerStats: { ...s.playerStats, money: s.playerStats.money - cost },
+            leekFacilities: { ...s.leekFacilities, [id]: true }
+        }));
+        get().addLog(`【韭菜园】成功添置设施。`);
+      },
+      processLeek: () => {
+        const state = get();
+        const leekCount = state.ownedGoods['leek'] || 0;
+        if (leekCount < 2) {
+            get().addLog('鲜韭不足（需2把）。');
+            return;
+        }
+        if (state.playerStats.money < 2) {
+            get().addLog('加工资金不足（需2文）。');
+            return;
+        }
+        // Check facilities? For now let's assume manual processing or basic facility unlocked by default/cheap.
+        // Let's require a "Processing Table" (id: processor) if we want to be strict, but for now let's make it basic.
+        // Or check if user has bought "processing_table" facility.
+        // Simplified: Can always process, but maybe slower/more expensive without facility?
+        // Let's just consume resources.
+        
+        set(s => ({
+            playerStats: { ...s.playerStats, money: s.playerStats.money - 2 },
+            ownedGoods: { 
+                ...s.ownedGoods, 
+                leek: (s.ownedGoods['leek'] || 0) - 2,
+                leek_box: (s.ownedGoods['leek_box'] || 0) + 1
+            }
+        }));
+        get().addLog('【加工】制作了1个香喷喷的韭菜盒子。');
+      },
+      submitLeekOrder: (orderId) => {
+        const state = get();
+        const order = (state.leekOrders || []).find(o => o.id === orderId);
+        if (!order) return;
+        
+        // We don't track quality per item in inventory (simplified model), so we assume inventory quality meets requirement?
+        // Or we just check quantity.
+        // To support "Quality Threshold", we might need to store avg quality in inventory or just assume player's skill check.
+        // Let's simplify: Check quantity only, but maybe check a global "Garden Reputation" or just assume quality is OK if user accepts.
+        // OR: We check if `ownedGoods` has enough.
+        
+        const currentQty = state.ownedGoods['leek'] || 0;
+        if (currentQty < order.quantity) {
+            get().addLog('库存不足以交付此订单。');
+            return;
+        }
+        
+        const basePrice = goods.find(g => g.id === 'leek')?.basePrice || 3;
+        const totalReward = Math.floor(basePrice * order.quantity * order.priceMultiplier);
+        
+        set(s => ({
+            ownedGoods: { ...s.ownedGoods, leek: currentQty - order.quantity },
+            playerStats: { ...s.playerStats, money: s.playerStats.money + totalReward },
+            leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId)
+        }));
+        get().addLog(`【订单】交付订单，获得 ${totalReward} 文。`);
       },
 
       updateTimeSettings: (settings) => {
@@ -970,6 +1115,60 @@ export const useGameStore = create<GameStore>()(
             priceLocks: currentPriceLocks,
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
+            leekPlots: (state.leekPlots || []).map(p => {
+              // 1. Recover fertility if idle
+              if (!p.varietyId) {
+                return { ...p, fertility: Math.min(100, (p.fertility || 0) + 5) };
+              }
+
+              // 2. Growth logic
+              const hasSprinkler = state.leekFacilities?.['sprinkler'];
+              const hasLamp = state.leekFacilities?.['pest_lamp'];
+
+              // Auto water
+              let watered = p.watered;
+              if (hasSprinkler) {
+                 watered = true; // Auto water
+              }
+
+              let gp = (p.growthProgress || 0) + 1 + (p.fertilized ? 1 : 0);
+              const target = p.growthTarget || 3;
+              const heavySnowPenalty = nextWeather === 'snow_heavy' ? -1 : 0;
+              gp = Math.max(0, gp + heavySnowPenalty);
+              
+              // Pest
+              let pestChance = 0.3;
+              if (hasLamp) pestChance = 0.05; // Significant reduction
+              const pestRise = Math.random() < pestChance ? 5 : 0;
+              
+              const wateredBonus = watered ? 1 : 0;
+              const quality = Math.max(0, Math.min(100, (p.quality || 0) + wateredBonus - (pestRise > 0 ? 1 : 0)));
+              const pest = Math.min(100, (p.pest || 0) + pestRise);
+              const ready = gp >= target;
+              
+              // Consume fertility daily
+              const newFertility = Math.max(0, (p.fertility || 100) - 2);
+
+              return { 
+                ...p, 
+                growthProgress: gp, 
+                watered: false, // Reset watered status for next day manual (sprinkler applies next night)
+                fertilized: false, 
+                pest, 
+                quality, 
+                ready,
+                fertility: newFertility
+              };
+            }),
+            // Generate Orders
+            leekOrders: Math.random() < 0.5 ? [] : (state.leekOrders || []).concat({
+                id: `order_${Date.now()}`,
+                description: '合作社收购优质鲜韭',
+                minQuality: 60,
+                quantity: Math.floor(Math.random() * 5) + 3,
+                priceMultiplier: 1.5,
+                expiresIn: 1
+            }).slice(0, 3) // Max 3 orders
           };
         });
         get().addLog(`第 ${get().day} 天`);
@@ -1255,9 +1454,12 @@ export const useGameStore = create<GameStore>()(
           ownedGoods: state.ownedGoods,
           ownedFacilities: state.ownedFacilities,
           priceLocks: state.priceLocks,
-        dailyPurchasedGoods: state.dailyPurchasedGoods,
-        fortuneLevel: state.fortuneLevel, // Export fortune level
-          latestUnlockedAchievementId: state.latestUnlockedAchievementId, // Export achievement UI state
+          dailyPurchasedGoods: state.dailyPurchasedGoods,
+          fortuneLevel: state.fortuneLevel,
+          latestUnlockedAchievementId: state.latestUnlockedAchievementId,
+          leekPlots: state.leekPlots,
+          leekFacilities: state.leekFacilities,
+          leekOrders: state.leekOrders,
           timestamp: Date.now(),
           version: '1.0.0'
         };
@@ -1331,6 +1533,9 @@ export const useGameStore = create<GameStore>()(
         soundEnabled: state.soundEnabled,
         volume: state.volume,
         vibrationEnabled: state.vibrationEnabled,
+        leekPlots: state.leekPlots,
+        leekFacilities: state.leekFacilities,
+        leekOrders: state.leekOrders,
       }), // Save everything except actions
     }
   )

@@ -36,4 +36,18 @@ export const goods: Good[] = [
     basePrice: 1000,
     volatility: 1.0,
   },
+  {
+    id: 'leek',
+    name: '鲜韭',
+    description: '鲜韭，价格受季节与需求影响。',
+    basePrice: 3,
+    volatility: 0.3,
+  },
+  {
+    id: 'leek_box',
+    name: '韭菜盒子',
+    description: '香喷喷的韭菜盒子，深受欢迎。',
+    basePrice: 10,
+    volatility: 0.1,
+  },
 ];

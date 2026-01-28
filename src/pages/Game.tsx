@@ -19,9 +19,10 @@ import { EstateModal } from '@/components/EstateModal';
 import { InventoryModal } from '@/components/InventoryModal';
 import { ExploreModal } from '@/components/ExploreModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
-import { Settings, Backpack, Compass } from 'lucide-react';
+import { Settings, Backpack, Compass, Leaf } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { LeekGardenModal } from '@/components/LeekGardenModal';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export const Game: React.FC = () => {
   const [showEstates, setShowEstates] = React.useState(false);
   const [showInventory, setShowInventory] = React.useState(false);
   const [showExplore, setShowExplore] = React.useState(false);
+  const [showLeekGarden, setShowLeekGarden] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
   const [showTeaPopup, setShowTeaPopup] = React.useState(false);
 
@@ -417,6 +419,18 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowLeekGarden(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50"
+            >
+              <Leaf size={20} />
+              <span>韭菜园</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowEstates(true);
               }}
               disabled={!!currentEvent}
@@ -540,6 +554,7 @@ export const Game: React.FC = () => {
       {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
       {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
       {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
+      {showLeekGarden && <LeekGardenModal onClose={() => setShowLeekGarden(false)} />}
       
       {showTeaPopup && (
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">

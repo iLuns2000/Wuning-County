@@ -136,6 +136,20 @@ export interface GameState {
   
   // Daily Fortune
   fortuneLevel?: 'great_blessing' | 'blessing' | 'normal' | 'bad_luck' | 'terrible_luck';
+
+  // Leek Garden
+  leekPlots?: LeekPlot[];
+  leekFacilities?: Record<string, boolean>; // id -> owned
+  leekOrders?: LeekOrder[];
+}
+
+export interface LeekOrder {
+  id: string;
+  description: string;
+  minQuality: number;
+  quantity: number;
+  priceMultiplier: number; // 1.2x, 1.5x etc.
+  expiresIn: number; // days
 }
 
 export interface Effect {
@@ -234,4 +248,25 @@ export interface Task {
     costText: string;
     handler: (state: GameState) => { success: boolean; message: string; effect?: Effect };
   };
+}
+
+export interface LeekVariety {
+  id: string;
+  name: string;
+  growthTicks: number;
+  baseYield: number;
+  baseQuality: number;
+}
+
+export interface LeekPlot {
+  id: number;
+  varietyId?: string;
+  growthProgress?: number;
+  growthTarget?: number;
+  watered?: boolean;
+  fertilized?: boolean;
+  pest?: number;
+  quality?: number;
+  ready?: boolean;
+  fertility?: number; // 0-100
 }
