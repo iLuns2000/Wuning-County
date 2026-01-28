@@ -7,6 +7,7 @@ export const goods: Good[] = [
     description: '民以食为天，价格随季节和战事波动。',
     basePrice: 10,
     volatility: 0.3,
+    spoilageRate: 0.05,
   },
   {
     id: 'cloth',
@@ -21,6 +22,7 @@ export const goods: Good[] = [
     description: '文人雅士的最爱，品质决定价格。',
     basePrice: 120,
     volatility: 0.25,
+    spoilageRate: 0.02,
   },
   {
     id: 'iron',
@@ -42,6 +44,7 @@ export const goods: Good[] = [
     description: '鲜韭，价格受季节与需求影响。',
     basePrice: 3,
     volatility: 0.3,
+    spoilageRate: 0.2,
   },
   {
     id: 'leek_box',
@@ -49,5 +52,6 @@ export const goods: Good[] = [
     description: '香喷喷的韭菜盒子，深受欢迎。',
     basePrice: 10,
     volatility: 0.1,
+    spoilageRate: 0.1,
   },
 ];

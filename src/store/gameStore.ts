@@ -11,6 +11,7 @@ import { achievements } from '@/data/achievements';
 import { npcs } from '@/data/npcs';
 import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
+import { leekFacilities } from '@/data/leekFacilities';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -63,6 +64,7 @@ const generateWeather = (seasonIndex: number): WeatherType => {
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
   isGameOver: boolean;
+  marketState: 'normal' | 'undercut' | 'cooperative';
 
   startGame: (roleId: RoleType) => void;
   nextDay: () => void;
@@ -104,13 +106,18 @@ interface GameStore extends GameState {
   
   // Facility Methods
   buyFacility: (facilityId: string) => void;
+  buyLeekFacility: (id: string, cost?: number) => void;
+
+  // Loan Methods
+  loan: (amount: number) => void;
+  repayLoan: (amount: number) => void;
   
   // Talent & Achievement Methods
   upgradeTalent: (talentId: string) => void;
   checkAchievements: () => void;
   
   // NPC Interaction Methods
-  interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action') => { success: boolean; message: string };
+  interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'bargain' | 'work' | 'group_buy') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
   
   // Profile Methods
@@ -145,11 +152,10 @@ interface GameStore extends GameState {
   vibrationEnabled: boolean;
   setVibrationEnabled: (enabled: boolean) => void;
 
-  plantLeek: (plotId: number, variety: { id: string; growthTicks: number; baseYield: number; baseQuality: number }) => void;
+  plantLeek: (plotId: number, variety: { id: string; growthTicks: number; baseYield: number; baseQuality: number; toughness?: number }) => void;
   waterLeek: (plotId: number) => void;
   fertilizeLeek: (plotId: number) => void;
   harvestLeek: (plotId: number) => void;
-  buyLeekFacility: (id: string, cost: number) => void;
   processLeek: () => void;
   submitLeekOrder: (orderId: string) => void;
 }
@@ -172,7 +178,7 @@ export const useGameStore = create<GameStore>()(
         isPaused: false,
       },
       playerProfile: { name: '无名', avatar: '' },
-      playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0 },
+      playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
       dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
       npcInteractionStates: {},
@@ -184,6 +190,7 @@ export const useGameStore = create<GameStore>()(
       logs: [],
       currentEvent: null,
       isGameOver: false,
+      marketState: 'normal',
       currentTaskId: undefined,
       completedTaskIds: [],
       giftFailureCounts: {},
@@ -340,14 +347,21 @@ export const useGameStore = create<GameStore>()(
 
       buyGood: (goodId, quantity) => {
         const state = get();
-        const price = state.marketPrices[goodId];
+        let price = state.marketPrices[goodId];
+        if (state.marketState === 'cooperative') {
+            price = Math.ceil(price * 1.1);
+        }
+        if (state.flags.group_buy_active) {
+            price = Math.floor(price * 0.8);
+        }
+        const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
+        const discount = Math.min(0.2, highRelationsCount * 0.02);
+        price = Math.floor(price * (1 - discount));
         const cost = price * quantity;
-        
         if (state.playerStats.money < cost) {
           state.addLog('资金不足，无法购买。');
           return;
         }
-        
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
           dailyPurchasedGoods: state.dailyPurchasedGoods.includes(goodId) ? state.dailyPurchasedGoods : [...state.dailyPurchasedGoods, goodId],
@@ -368,7 +382,13 @@ export const useGameStore = create<GameStore>()(
           return;
         }
         
-        const price = state.marketPrices[goodId];
+        let price = state.marketPrices[goodId];
+        if (state.marketState === 'undercut') {
+            price = Math.floor(price * 0.7);
+            get().addLog('【市集】遭遇商贩恶意压价，售价大跌。');
+        } else if (state.marketState === 'cooperative') {
+            price = Math.floor(price * 1.1);
+        }
         const earnings = price * quantity;
         
         set(state => ({
@@ -401,6 +421,57 @@ export const useGameStore = create<GameStore>()(
         get().addLog(`【产业】花费 ${facility.cost} 文置办了 ${facility.name}。`);
       },
 
+      buyLeekFacility: (id, cost) => {
+        const state = get();
+        let finalCost = cost ?? (leekFacilities.find(f => f.id === id)?.cost ?? 0);
+        if (state.playerStats.money < finalCost) {
+            state.addLog('资金不足。');
+            return;
+        }
+        if (state.leekFacilities?.[id]) {
+            state.addLog('你已经拥有此设施。');
+            return;
+        }
+        set(s => ({
+            playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
+            leekFacilities: { ...s.leekFacilities, [id]: true }
+        }));
+        get().addLog('【韭菜园】成功添置设施。');
+      },
+
+      loan: (amount) => {
+          if (amount <= 0) return;
+          set(state => ({
+              playerStats: { 
+                  ...state.playerStats, 
+                  money: state.playerStats.money + amount,
+                  debt: (state.playerStats.debt || 0) + amount
+              },
+              logs: [`向钱庄借款 ${amount} 文。`, ...state.logs]
+          }));
+      },
+
+      repayLoan: (amount) => {
+          const state = get();
+          const currentDebt = state.playerStats.debt || 0;
+          if (currentDebt <= 0) return;
+          
+          const actualRepay = Math.min(amount, currentDebt);
+          if (state.playerStats.money < actualRepay) {
+              state.addLog('资金不足，无法还款。');
+              return;
+          }
+
+          set(state => ({
+              playerStats: {
+                  ...state.playerStats,
+                  money: state.playerStats.money - actualRepay,
+                  debt: currentDebt - actualRepay
+              },
+              logs: [`归还借款 ${actualRepay} 文。`, ...state.logs]
+          }));
+      },
+
       plantLeek: (plotId, variety) => {
         set(state => {
           const plots = (state.leekPlots || []).map(p => {
@@ -418,6 +489,8 @@ export const useGameStore = create<GameStore>()(
                 fertilized: false,
                 pest: 0,
                 quality: variety.baseQuality,
+                baseYield: variety.baseYield,
+                toughness: variety.toughness || 0,
                 ready: false,
               };
             }
@@ -448,7 +521,7 @@ export const useGameStore = create<GameStore>()(
         
         // Fertility penalty
         const currentFertility = plot.fertility || 100;
-        let baseYield = Math.max(1, plot.growthTarget || 3);
+        let baseYield = Math.max(1, (plot as any).baseYield || plot.growthTarget || 3);
         if (currentFertility < 30) {
             baseYield = Math.max(1, Math.floor(baseYield * 0.5));
             get().addLog('【韭菜园】土地贫瘠，收成大减。');
@@ -463,18 +536,6 @@ export const useGameStore = create<GameStore>()(
           leekPlots: (s.leekPlots || []).map(p => p.id === plotId ? { id: plotId, pest: 0, ready: false, fertility: Math.max(0, currentFertility - 10) } : p),
         }));
         get().addLog(`【韭菜园】收获鲜韭 ${qty} 把。`);
-      },
-      buyLeekFacility: (id, cost) => {
-        const state = get();
-        if (state.playerStats.money < cost) {
-            get().addLog('资金不足。');
-            return;
-        }
-        set(s => ({
-            playerStats: { ...s.playerStats, money: s.playerStats.money - cost },
-            leekFacilities: { ...s.leekFacilities, [id]: true }
-        }));
-        get().addLog(`【韭菜园】成功添置设施。`);
       },
       processLeek: () => {
         const state = get();
@@ -795,12 +856,44 @@ export const useGameStore = create<GameStore>()(
             
             return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
         }
-        else if (type === 'action') {
+        else if (['action', 'loan', 'bargain', 'work', 'group_buy'].includes(type)) {
             const currentActionCount = npcState.dailyActionCount || 0;
             if (currentActionCount >= 5) {
                 return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
             }
             
+            let message = '';
+            let success = true;
+
+            if (type === 'loan') {
+                get().loan(500);
+                message = '对方借给你 500 文应急。';
+            } else if (type === 'bargain') {
+                set(prev => ({ flags: { ...prev.flags, bargain_bonus_daily: true } }));
+                message = '经过一番讨价还价，你觉得明天的行情会对你有利。';
+            } else if (type === 'work') {
+                if (state.playerStats.health < 20) {
+                    return { success: false, message: '体力不足，无法帮工。' };
+                }
+                set(prev => ({ 
+                    playerStats: { 
+                        ...prev.playerStats, 
+                        money: prev.playerStats.money + 50,
+                        health: prev.playerStats.health - 20
+                    } 
+                }));
+                message = '你帮对方干了一些杂活，获得 50 文报酬。';
+            } else if (type === 'group_buy') {
+                if (state.playerStats.money < 100) {
+                     return { success: false, message: '资金不足，无法参与拼单（需100文）。' };
+                }
+                set(prev => ({
+                    playerStats: { ...prev.playerStats, money: prev.playerStats.money - 100 },
+                    flags: { ...prev.flags, group_buy_active: true }
+                }));
+                message = '你参与了团购拼单，今日在市集购物将享受八折优惠！';
+            }
+
             set(prev => ({
                 npcInteractionStates: {
                     ...prev.npcInteractionStates,
@@ -810,7 +903,7 @@ export const useGameStore = create<GameStore>()(
                     }
                 }
             }));
-            return { success: true, message: '' };
+            return { success, message };
         }
 
         return { success: false, message: '未知操作' };
@@ -1008,6 +1101,22 @@ export const useGameStore = create<GameStore>()(
 
           // Market Fluctuation
           const newMarketPrices = { ...state.marketPrices };
+          
+          // Randomize Market State (80% Normal, 10% Undercut, 10% Cooperative)
+          const marketRoll = Math.random();
+          let newMarketState: 'normal' | 'undercut' | 'cooperative' = 'normal';
+          let marketStateMessage = '';
+          
+          if (marketRoll < 0.1) {
+              newMarketState = 'undercut';
+              marketStateMessage = '【市场】今日有商贩恶意压价，市场动荡不安。';
+          } else if (marketRoll < 0.2) {
+              newMarketState = 'cooperative';
+              marketStateMessage = '【市场】商会推行稳价协议，市场价格平稳。';
+          } else {
+              newMarketState = 'normal';
+          }
+
           // Clean up expired price locks
           const currentPriceLocks = { ...state.priceLocks };
           const nextDayNum = state.day + 1;
@@ -1042,6 +1151,15 @@ export const useGameStore = create<GameStore>()(
                  newPrice = Math.max(minAllowed, Math.min(maxAllowed, newPrice));
              }
 
+             // Bargain bonus for specific goods (applies next day)
+             if (state.flags['bargain_bonus_daily']) {
+                 if (good.id === 'leek') {
+                     newPrice = Math.floor(newPrice * 1.2);
+                 } else if (good.id === 'leek_box') {
+                     newPrice = Math.floor(newPrice * 1.1);
+                 }
+             }
+
              // Special logic for Antique: Min 0, Max 200% (2.0)
              if (good.id === 'antique') {
                  newPrice = Math.max(0, Math.min(Math.floor(good.basePrice * 2.0), newPrice));
@@ -1070,9 +1188,81 @@ export const useGameStore = create<GameStore>()(
               facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
 
+          // Mower Logic
+          const hasMower = state.leekFacilities?.['mower'];
+          const mowerHarvestedPlots = new Set<number>();
+          let mowerHarvestCount = 0;
+          
+          if (hasMower) {
+             (state.leekPlots || []).forEach(p => {
+                 const target = p.growthTarget || 3;
+                 if (p.varietyId && ((p.ready) || ((p.growthProgress || 0) >= target))) {
+                     const quality = p.quality || 0;
+                     const base = (p as any).baseYield || 3;
+                     const yieldAmount = base + Math.floor(quality / 25);
+                     mowerHarvestCount += yieldAmount;
+                     mowerHarvestedPlots.add(p.id);
+                 }
+             });
+          }
+
+          // Inventory Spoilage Logic
+          const newOwnedGoods = { ...state.ownedGoods };
+          if (mowerHarvestCount > 0) {
+              newOwnedGoods['leek'] = (newOwnedGoods['leek'] || 0) + mowerHarvestCount;
+          }
+
+          let spoilageMessage = '';
+          const spoiledItems: string[] = [];
+          
+          const hasColdStorage = state.leekFacilities?.['cold_storage'];
+          const hasProcessingTable = state.leekFacilities?.['processing_table'];
+
+          goods.forEach(good => {
+             const count = newOwnedGoods[good.id] || 0;
+             if (count > 0 && good.spoilageRate && good.spoilageRate > 0) {
+                 let rate = good.spoilageRate;
+                 if (hasColdStorage) rate *= 0.5;
+                 if (good.id === 'leek_box' && hasProcessingTable) rate = 0.01; // Minimal spoilage
+
+                 const exactSpoilage = count * rate;
+                 let finalSpoilage = Math.floor(exactSpoilage);
+                 if (Math.random() < (exactSpoilage - finalSpoilage)) {
+                     finalSpoilage += 1;
+                 }
+
+                 if (finalSpoilage > 0) {
+                     newOwnedGoods[good.id] = Math.max(0, count - finalSpoilage);
+                     spoiledItems.push(`${good.name} ${finalSpoilage} ${good.id === 'grain' ? '石' : '个'}`);
+                 }
+             }
+          });
+
+          if (spoiledItems.length > 0) {
+              spoilageMessage = `【损耗】物资变质：${spoiledItems.join('，')}。`;
+          }
+          
+          // Debt Interest
+          if (newPlayerStats.debt && newPlayerStats.debt > 0) {
+              const interest = Math.ceil(newPlayerStats.debt * 0.001); // 0.1% daily
+              newPlayerStats.debt += interest;
+          }
+
           // Weather Generation
           const nextDayVal = state.day + 1;
-          const { seasonIndex } = getDateInfo(nextDayVal);
+          const { seasonIndex, dayOfSeason } = getDateInfo(nextDayVal);
+          
+          // Maintenance (Season Change)
+          let maintenanceMessage = '';
+          if (dayOfSeason === 1 && state.day > 1) {
+              let cost = 0;
+              if (state.leekFacilities?.['drip_irrigation']) cost += 10;
+              if (cost > 0) {
+                  newPlayerStats.money -= cost;
+                  maintenanceMessage = `【维护】支付设施维护费 ${cost} 文。`;
+              }
+          }
+
           const nextWeather = generateWeather(seasonIndex);
           const weatherNames: Record<string, string> = {
             'sunny': '晴',
@@ -1095,6 +1285,10 @@ export const useGameStore = create<GameStore>()(
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
           if (facilityMessage) logs.unshift(facilityMessage);
+          if (spoilageMessage) logs.unshift(spoilageMessage);
+          if (marketStateMessage) logs.unshift(marketStateMessage);
+          if (mowerHarvestCount > 0) logs.unshift(`【自动收割】割草机自动收割了 ${mowerHarvestCount} 捆韭菜。`);
+          if (maintenanceMessage) logs.unshift(maintenanceMessage);
           
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1102,6 +1296,7 @@ export const useGameStore = create<GameStore>()(
           return { 
             day: state.day + 1,
             weather: nextWeather,
+            marketState: newMarketState,
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
@@ -1115,15 +1310,32 @@ export const useGameStore = create<GameStore>()(
             priceLocks: currentPriceLocks,
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
+            ownedGoods: newOwnedGoods, // Apply spoilage & harvest
             leekPlots: (state.leekPlots || []).map(p => {
+              // 0. Handle Mower Reset
+              if (mowerHarvestedPlots.has(p.id)) {
+                  return {
+                      ...p,
+                      varietyId: undefined,
+                      growthProgress: 0,
+                      watered: false,
+                      fertilized: false,
+                      pest: 0,
+                      quality: 0,
+                      ready: false,
+                      fertility: Math.max(0, (p.fertility || 100) - 5)
+                  };
+              }
+
               // 1. Recover fertility if idle
               if (!p.varietyId) {
                 return { ...p, fertility: Math.min(100, (p.fertility || 0) + 5) };
               }
 
               // 2. Growth logic
-              const hasSprinkler = state.leekFacilities?.['sprinkler'];
+              const hasSprinkler = state.leekFacilities?.['sprinkler'] || state.leekFacilities?.['drip_irrigation'];
               const hasLamp = state.leekFacilities?.['pest_lamp'];
+              const hasBreedingShed = state.leekFacilities?.['breeding_shed'];
 
               // Auto water
               let watered = p.watered;
@@ -1133,16 +1345,19 @@ export const useGameStore = create<GameStore>()(
 
               let gp = (p.growthProgress || 0) + 1 + (p.fertilized ? 1 : 0);
               const target = p.growthTarget || 3;
-              const heavySnowPenalty = nextWeather === 'snow_heavy' ? -1 : 0;
+              const heavySnowPenalty = nextWeather === 'snow_heavy' ? ((p as any).toughness && (p as any).toughness >= 75 ? 0 : -1) : 0;
               gp = Math.max(0, gp + heavySnowPenalty);
               
               // Pest
               let pestChance = 0.3;
-              if (hasLamp) pestChance = 0.05; // Significant reduction
+              if (hasLamp) pestChance = 0.05;
+              const tough = (p as any).toughness || 0;
+              pestChance = Math.max(0, Math.min(1, pestChance * (1 - tough / 200)));
               const pestRise = Math.random() < pestChance ? 5 : 0;
               
               const wateredBonus = watered ? 1 : 0;
-              const quality = Math.max(0, Math.min(100, (p.quality || 0) + wateredBonus - (pestRise > 0 ? 1 : 0)));
+              const breedingBonus = hasBreedingShed ? 1 : 0;
+              const quality = Math.max(0, Math.min(100, (p.quality || 0) + wateredBonus + breedingBonus - (pestRise > 0 ? 1 : 0)));
               const pest = Math.min(100, (p.pest || 0) + pestRise);
               const ready = gp >= target;
               
@@ -1160,15 +1375,41 @@ export const useGameStore = create<GameStore>()(
                 fertility: newFertility
               };
             }),
-            // Generate Orders
-            leekOrders: Math.random() < 0.5 ? [] : (state.leekOrders || []).concat({
-                id: `order_${Date.now()}`,
-                description: '合作社收购优质鲜韭',
-                minQuality: 60,
-                quantity: Math.floor(Math.random() * 5) + 3,
-                priceMultiplier: 1.5,
-                expiresIn: 1
-            }).slice(0, 3) // Max 3 orders
+            // Generate Orders with relationship-driven priority and hedge on undercut days
+            leekOrders: (() => {
+                const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
+                const baseChance = 0.5;
+                const relationBonus = Math.min(0.4, highRelationsCount * 0.1); // up to +40%
+                const hedgeBonus = newMarketState === 'undercut' ? 0.2 : 0; // more likely when market is undercut
+                const orderChance = Math.min(0.95, baseChance + relationBonus + hedgeBonus);
+
+                const willGenerate = Math.random() < orderChance;
+                const existing = state.leekOrders || [];
+                if (!willGenerate) return existing;
+
+                const relationFactor = Math.min(5, highRelationsCount);
+                const baseQty = Math.floor(Math.random() * 5) + 3; // 3-7
+                const quantity = Math.max(1, baseQty - Math.floor(relationFactor / 2)); // reduce requirement up to -2
+                const minQuality = 60 - relationFactor * 2; // slightly lower threshold with trust
+                const priceMultiplier = 1.5 + relationFactor * 0.05; // up to +0.25
+                const expiresIn = relationFactor >= 3 ? 2 : 1; // priority/longer window
+
+                const newOrder = {
+                    id: `order_${Date.now()}`,
+                    description: '合作社收购优质鲜韭',
+                    minQuality: Math.max(0, minQuality),
+                    quantity,
+                    priceMultiplier,
+                    expiresIn
+                };
+
+                const list = [newOrder, ...existing].slice(0, 3);
+                if (newMarketState === 'undercut') {
+                    // Log hedge info when undercut day and order exists
+                    get().addLog('【订单】合作社稳价对冲压价，订单价格不受市场压价影响。');
+                }
+                return list;
+            })()
           };
         });
         get().addLog(`第 ${get().day} 天`);

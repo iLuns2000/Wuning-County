@@ -11,6 +11,8 @@ interface LeekGardenModalProps {
 const VARIETIES = [
   { id: 'regular', name: '常规韭菜', growthTicks: 3, baseYield: 3, baseQuality: 60 },
   { id: 'fast', name: '快熟韭菜', growthTicks: 2, baseYield: 2, baseQuality: 55 },
+  { id: 'fragrant', name: '高香韭菜', growthTicks: 2, baseYield: 5, baseQuality: 75, toughness: 55 },
+  { id: 'cold_resistant', name: '耐寒韭菜', growthTicks: 2, baseYield: 6, baseQuality: 60, toughness: 80 },
 ];
 
 const FACILITIES = [

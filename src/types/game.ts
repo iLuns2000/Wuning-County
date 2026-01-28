@@ -8,6 +8,7 @@ export interface PlayerStats {
   ability: number;
   health: number;
   experience: number;
+  debt: number; // New field for bank loans
 }
 
 export interface Talent {
@@ -35,6 +36,7 @@ export interface Good {
   description: string;
   basePrice: number;
   volatility: number;
+  spoilageRate?: number; // 0-1, percentage of stock lost per day
 }
 
 export interface Item {
