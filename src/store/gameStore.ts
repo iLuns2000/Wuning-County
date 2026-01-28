@@ -191,6 +191,7 @@ export const useGameStore = create<GameStore>()(
       currentEvent: null,
       isGameOver: false,
       marketState: 'normal',
+      dailyBargainGroupBuyCount: 0,
       currentTaskId: undefined,
       completedTaskIds: [],
       giftFailureCounts: {},
@@ -351,7 +352,7 @@ export const useGameStore = create<GameStore>()(
         if (state.marketState === 'cooperative') {
             price = Math.ceil(price * 1.1);
         }
-        if (state.flags.group_buy_active) {
+        if (state.flags.group_buy_active_daily) {
             price = Math.floor(price * 0.8);
         }
         const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
@@ -862,6 +863,17 @@ export const useGameStore = create<GameStore>()(
                 return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
             }
             
+            // Bargain and Group Buy Checks
+            if (type === 'bargain' || type === 'group_buy') {
+                const npc = npcs.find(n => n.id === npcId);
+                if (!npc?.canBargain) {
+                    return { success: false, message: '这位NPC不进行谈价或拼单交易。' };
+                }
+                if (state.dailyBargainGroupBuyCount >= 3) {
+                    return { success: false, message: '今日谈价/拼单次数已达上限（3次），请明日再来。' };
+                }
+            }
+
             let message = '';
             let success = true;
 
@@ -869,7 +881,10 @@ export const useGameStore = create<GameStore>()(
                 get().loan(500);
                 message = '对方借给你 500 文应急。';
             } else if (type === 'bargain') {
-                set(prev => ({ flags: { ...prev.flags, bargain_bonus_daily: true } }));
+                set(prev => ({ 
+                    flags: { ...prev.flags, bargain_bonus_daily: true },
+                    dailyBargainGroupBuyCount: prev.dailyBargainGroupBuyCount + 1 
+                }));
                 message = '经过一番讨价还价，你觉得明天的行情会对你有利。';
             } else if (type === 'work') {
                 if (state.playerStats.health < 20) {
@@ -889,7 +904,8 @@ export const useGameStore = create<GameStore>()(
                 }
                 set(prev => ({
                     playerStats: { ...prev.playerStats, money: prev.playerStats.money - 100 },
-                    flags: { ...prev.flags, group_buy_active: true }
+                    flags: { ...prev.flags, group_buy_active_daily: true },
+                    dailyBargainGroupBuyCount: prev.dailyBargainGroupBuyCount + 1
                 }));
                 message = '你参与了团购拼单，今日在市集购物将享受八折优惠！';
             }
@@ -1300,6 +1316,7 @@ export const useGameStore = create<GameStore>()(
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
+            dailyBargainGroupBuyCount: 0, // Reset bargain/group buy count
             currentEvent: null,
             isVoiceLost: isVoiceLost,
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Leaf, Droplets, FlaskConical, Scissors, Coins, Hammer, Utensils, ClipboardList, Lightbulb, HelpCircle } from 'lucide-react';
+import { X, Leaf, Droplets, FlaskConical, Scissors, Coins, Hammer, Utensils, ClipboardList, Lightbulb, HelpCircle, Snowflake } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenHelpModal } from './LeekGardenHelpModal';
@@ -16,8 +16,12 @@ const VARIETIES = [
 ];
 
 const FACILITIES = [
-  { id: 'sprinkler', name: '滴灌系统', cost: 200, desc: '自动浇水，稳定提升品质', icon: Droplets },
+  { id: 'drip_irrigation', name: '滴灌系统', cost: 200, desc: '自动浇水，稳定提升品质', icon: Droplets },
   { id: 'pest_lamp', name: '杀虫灯', cost: 300, desc: '大幅降低虫害发生率', icon: Lightbulb },
+  { id: 'mower', name: '自动收割机', cost: 300, desc: '成熟即自动收割入库', icon: Scissors },
+  { id: 'cold_storage', name: '冷库', cost: 800, desc: '显著降低库存腐损率', icon: Snowflake },
+  { id: 'breeding_shed', name: '育种棚', cost: 1000, desc: '提升每日品质增幅', icon: FlaskConical },
+  { id: 'processing_table', name: '精加工台', cost: 600, desc: '降低成品腐损，提高效率', icon: Utensils },
 ];
 
 export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => {
