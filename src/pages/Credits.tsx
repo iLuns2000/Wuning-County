@@ -38,6 +38,11 @@ export const Credits: React.FC = () => {
               </div>
 
               <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">人物志收集灵感提供</h3>
+                <p className="text-lg font-medium">蘑菇🍄老师（户籍主任）</p>
+              </div>
+
+              <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">小吃街小吃名单贡献者</h3>
                 <p className="text-lg font-medium">翟光老师</p>
               </div>

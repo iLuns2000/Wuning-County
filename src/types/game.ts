@@ -56,6 +56,8 @@ export interface Item {
   price?: number;
   slot?: ApparelSlot | AccessorySlot;
   style?: StyleTag;
+  color?: string;
+  textColor?: string;
 }
 
 export interface Facility {

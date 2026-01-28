@@ -384,17 +384,17 @@ export const items: Item[] = [
     style: '典雅'
   },
   // Alchemy Items (2048 Minigame)
-  { id: 'alc_residue', name: '药渣', description: '炼丹失败的产物，虽无大用，但这灰烬中似乎还残留着一丝药性。', type: 'material' },
-  { id: 'alc_herb', name: '甘草', description: '寻常可见的草药，药性温和，是炼丹的基础材料。', type: 'material' },
-  { id: 'alc_powder', name: '灵芝粉', description: '将灵芝研磨成粉，散发着淡淡的清香。', type: 'material' },
-  { id: 'alc_pill_qi', name: '凝气丹', description: '初级丹药，服用后可略微调理气息。', type: 'consumable', effect: { health: 5 } },
-  { id: 'alc_liquid', name: '聚灵液', description: '萃取草木精华而成的灵液，晶莹剔透。', type: 'material' },
-  { id: 'alc_pill_marrow', name: '洗髓丹', description: '伐毛洗髓，脱胎换骨。', type: 'consumable', effect: { ability: 2, health: -5 } },
-  { id: 'alc_pill_foundation', name: '筑基丹', description: '修仙者筑基必备之物，凡人服之可延年益寿。', type: 'consumable', effect: { ability: 5, health: 10 } },
-  { id: 'alc_pill_gold', name: '金元丹', description: '色泽金黄，隐约有流光转动。', type: 'consumable', effect: { money: 100 } }, // Special: sell for money or consume? Let's say consume gives nothing but description says valuable.
-  { id: 'alc_fruit', name: '元婴果', description: '形似婴孩的奇异果实，蕴含庞大生机。', type: 'consumable', effect: { health: 100 } },
-  { id: 'alc_water_spirit', name: '化神水', description: '一滴便可化腐朽为神奇的神水。', type: 'consumable', effect: { ability: 20 } },
-  { id: 'alc_pill_immortal', name: '长生不老丹', description: '传说中可让人长生不老的仙丹，价值连城。', type: 'consumable', effect: { health: 999, ability: 50, reputation: 100 } }
+  { id: 'herb_residue', name: '药渣', description: '炼丹失败的产物，虽无大用，但这灰烬中似乎还残留着一丝药性。', type: 'material', price: 1, color: 'bg-stone-400', textColor: 'text-white' },
+  { id: 'herb_licorice', name: '甘草', description: '寻常可见的草药，药性温和，是炼丹的基础材料。', type: 'material', price: 2, color: 'bg-green-600', textColor: 'text-white' },
+  { id: 'herb_peel', name: '陈皮', description: '晒干的橘皮，气味芳香，能理气健脾。', type: 'material', price: 5, color: 'bg-orange-600', textColor: 'text-white' },
+  { id: 'herb_honeysuckle', name: '金银花', description: '花初开为白，后转为黄，故名金银花，清热解毒。', type: 'material', price: 15, color: 'bg-yellow-500', textColor: 'text-white' },
+  { id: 'herb_angelica', name: '当归', description: '补血活血，调经止痛，润肠通便。', type: 'material', price: 40, color: 'bg-amber-800', textColor: 'text-white' },
+  { id: 'herb_pearl', name: '珍珠粉', description: '研磨细腻的珍珠粉，有安神定惊、明目消翳之效。', type: 'material', price: 100, color: 'bg-slate-500', textColor: 'text-white' },
+  { id: 'herb_ganoderma', name: '紫灵芝', description: '紫色的灵芝，极其罕见，延年益寿的上品。', type: 'material', price: 250, color: 'bg-purple-700', textColor: 'text-white' },
+  { id: 'herb_cordyceps', name: '冬虫夏草', description: '冬天是虫，夏天是草，神奇的滋补药材。', type: 'material', price: 600, color: 'bg-amber-900', textColor: 'text-white' },
+  { id: 'herb_ambergris', name: '龙涎香', description: '大海中异兽的珍宝，异香扑鼻，价值连城。', type: 'material', price: 1500, color: 'bg-gray-600', textColor: 'text-white' },
+  { id: 'herb_snow_lotus', name: '天山雪莲', description: '生长在极寒之地的雪莲，能解百毒。', type: 'material', price: 4000, color: 'bg-cyan-600', textColor: 'text-white' },
+  { id: 'herb_ginseng_king', name: '千年人参', description: '吸收了千年日精月华的人参，已有灵性。', type: 'material', price: 10000, color: 'bg-red-700', textColor: 'text-white' },
 ];
 
 export const getItemById = (id: string): Item | undefined => {
