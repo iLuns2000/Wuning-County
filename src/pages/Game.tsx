@@ -18,8 +18,9 @@ import { MarketModal } from '@/components/MarketModal';
 import { EstateModal } from '@/components/EstateModal';
 import { InventoryModal } from '@/components/InventoryModal';
 import { ExploreModal } from '@/components/ExploreModal';
+import { SnackStreetModal } from '@/components/SnackStreetModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
-import { Settings, Backpack, Compass, Leaf } from 'lucide-react';
+import { Settings, Backpack, Compass, Leaf, Utensils } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
@@ -36,6 +37,7 @@ export const Game: React.FC = () => {
   const [showEstates, setShowEstates] = React.useState(false);
   const [showInventory, setShowInventory] = React.useState(false);
   const [showExplore, setShowExplore] = React.useState(false);
+  const [showSnackStreet, setShowSnackStreet] = React.useState(false);
   const [showLeekGarden, setShowLeekGarden] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
   const [showTeaPopup, setShowTeaPopup] = React.useState(false);
@@ -419,6 +421,18 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowSnackStreet(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-2 justify-center items-center p-4 text-orange-900 bg-orange-100 rounded-lg transition-colors hover:bg-orange-200 disabled:opacity-50"
+            >
+              <Utensils size={20} />
+              <span>小吃街</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowLeekGarden(true);
               }}
               disabled={!!currentEvent}
@@ -551,6 +565,7 @@ export const Game: React.FC = () => {
       <AchievementModal isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       {showMarket && <MarketModal onClose={() => setShowMarket(false)} />}
+      {showSnackStreet && <SnackStreetModal onClose={() => setShowSnackStreet(false)} />}
       {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
       {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
       {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}

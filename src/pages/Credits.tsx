@@ -37,6 +37,11 @@ export const Credits: React.FC = () => {
                 <p className="text-lg font-medium">云雀老师</p>
               </div>
 
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">小吃街小吃名单贡献者</h3>
+                <p className="text-lg font-medium">翟光老师</p>
+              </div>
+
               {/* Add more sections here as needed */}
               <div className="pt-6 border-t border-border/50 text-sm text-muted-foreground">
                 感谢所有为无宁县建设添砖加瓦的伙伴们！

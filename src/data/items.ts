@@ -9,8 +9,10 @@
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
 import { Item } from '@/types/game';
+import { snacks } from './snacks';
 
 export const items: Item[] = [
+  ...snacks,
   {
     id: 'bamboo_basket',
     name: '精制竹篮',

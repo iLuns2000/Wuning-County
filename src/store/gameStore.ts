@@ -12,6 +12,7 @@ import { npcs } from '@/data/npcs';
 import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
+import { items } from '@/data/items';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -158,6 +159,10 @@ interface GameStore extends GameState {
   harvestLeek: (plotId: number) => void;
   processLeek: () => void;
   submitLeekOrder: (orderId: string) => void;
+  
+  // Item Methods
+  buyItem: (itemId: string, cost: number) => void;
+  useItem: (itemId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -591,6 +596,37 @@ export const useGameStore = create<GameStore>()(
             leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId)
         }));
         get().addLog(`【订单】交付订单，获得 ${totalReward} 文。`);
+      },
+
+      buyItem: (itemId, cost) => {
+        const state = get();
+        if (state.playerStats.money < cost) {
+            get().addLog('资金不足。');
+            return;
+        }
+        set(state => ({
+            playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+            inventory: [...state.inventory, itemId]
+        }));
+        const itemName = items.find(i => i.id === itemId)?.name || '物品';
+        get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
+      },
+
+      useItem: (itemId) => {
+        const state = get();
+        const itemIndex = state.inventory.indexOf(itemId);
+        if (itemIndex === -1) return;
+
+        const item = items.find(i => i.id === itemId);
+        if (item && item.effect) {
+             get().handleEventOption(item.effect, `使用了 ${item.name}`);
+        } else {
+             get().addLog(`使用了 ${item?.name || '物品'}，但是什么也没发生。`);
+        }
+
+        const newInventory = [...state.inventory];
+        newInventory.splice(itemIndex, 1);
+        set({ inventory: newInventory });
       },
 
       updateTimeSettings: (settings) => {
