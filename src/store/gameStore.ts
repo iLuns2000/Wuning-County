@@ -120,7 +120,7 @@ interface GameStore extends GameState {
   checkAchievements: () => void;
   
   // NPC Interaction Methods
-  interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'bargain' | 'work' | 'group_buy') => { success: boolean; message: string };
+  interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'work') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
   
   // Profile Methods
@@ -208,7 +208,6 @@ export const useGameStore = create<GameStore>()(
       currentEvent: null,
       isGameOver: false,
       marketState: 'normal',
-      dailyBargainGroupBuyCount: 0,
       currentTaskId: undefined,
       completedTaskIds: [],
       giftFailureCounts: {},
@@ -368,9 +367,6 @@ export const useGameStore = create<GameStore>()(
         let price = state.marketPrices[goodId];
         if (state.marketState === 'cooperative') {
             price = Math.ceil(price * 1.1);
-        }
-        if (state.flags.group_buy_active_daily) {
-            price = Math.floor(price * 0.8);
         }
         const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
         const discount = Math.min(0.2, highRelationsCount * 0.02);
@@ -1012,35 +1008,18 @@ export const useGameStore = create<GameStore>()(
             
             return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
         }
-        else if (['action', 'loan', 'bargain', 'work', 'group_buy'].includes(type)) {
+        else if (['action', 'loan', 'work'].includes(type)) {
             const currentActionCount = npcState.dailyActionCount || 0;
             if (currentActionCount >= 5) {
                 return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
             }
             
-            // Bargain and Group Buy Checks
-            if (type === 'bargain' || type === 'group_buy') {
-                const npc = npcs.find(n => n.id === npcId);
-                if (!npc?.canBargain) {
-                    return { success: false, message: '这位NPC不进行谈价或拼单交易。' };
-                }
-                if (state.dailyBargainGroupBuyCount >= 3) {
-                    return { success: false, message: '今日谈价/拼单次数已达上限（3次），请明日再来。' };
-                }
-            }
-
             let message = '';
             let success = true;
 
             if (type === 'loan') {
                 get().loan(500);
                 message = '对方借给你 500 文应急。';
-            } else if (type === 'bargain') {
-                set(prev => ({ 
-                    flags: { ...prev.flags, bargain_bonus_daily: true },
-                    dailyBargainGroupBuyCount: prev.dailyBargainGroupBuyCount + 1 
-                }));
-                message = '经过一番讨价还价，你觉得明天的行情会对你有利。';
             } else if (type === 'work') {
                 if (state.playerStats.health < 20) {
                     return { success: false, message: '体力不足，无法帮工。' };
@@ -1053,16 +1032,6 @@ export const useGameStore = create<GameStore>()(
                     } 
                 }));
                 message = '你帮对方干了一些杂活，获得 50 文报酬。';
-            } else if (type === 'group_buy') {
-                if (state.playerStats.money < 100) {
-                     return { success: false, message: '资金不足，无法参与拼单（需100文）。' };
-                }
-                set(prev => ({
-                    playerStats: { ...prev.playerStats, money: prev.playerStats.money - 100 },
-                    flags: { ...prev.flags, group_buy_active_daily: true },
-                    dailyBargainGroupBuyCount: prev.dailyBargainGroupBuyCount + 1
-                }));
-                message = '你参与了团购拼单，今日在市集购物将享受八折优惠！';
             }
 
             set(prev => ({
@@ -1322,15 +1291,6 @@ export const useGameStore = create<GameStore>()(
                  newPrice = Math.max(minAllowed, Math.min(maxAllowed, newPrice));
              }
 
-             // Bargain bonus for specific goods (applies next day)
-             if (state.flags['bargain_bonus_daily']) {
-                 if (good.id === 'leek') {
-                     newPrice = Math.floor(newPrice * 1.2);
-                 } else if (good.id === 'leek_box') {
-                     newPrice = Math.floor(newPrice * 1.1);
-                 }
-             }
-
              // Special logic for Antique: Min 0, Max 200% (2.0)
              if (good.id === 'antique') {
                  newPrice = Math.max(0, Math.min(Math.floor(good.basePrice * 2.0), newPrice));
@@ -1480,7 +1440,6 @@ export const useGameStore = create<GameStore>()(
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
-            dailyBargainGroupBuyCount: 0, // Reset bargain/group buy count
             currentEvent: null,
             isVoiceLost: isVoiceLost,
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },

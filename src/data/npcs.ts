@@ -27,7 +27,6 @@ export const npcs: NPC[] = [
         "没看我正忙着吗？别在这碍手碍脚的。"
       ]
     },
-    "canBargain": true
   },
   {
     "id": "lao_zhang",
@@ -36,7 +35,6 @@ export const npcs: NPC[] = [
     "description": "老实本分的庄稼汉，独自抚养女儿长大。",
     "background": "地地道道的农民，性格隐忍。年轻时曾救起过落水的孩童却从未向人提起。虽然看着木讷，但为了女儿什么苦都能吃。和隔壁老李是几十年的老邻居，两人相爱相杀。",
     "dailyLife": "",
-    "canBargain": true
   },
   {
     "id": "jun_ziyan",
@@ -58,7 +56,6 @@ export const npcs: NPC[] = [
         "欢迎下次再来"
       ]
     },
-    "canBargain": true
   },
   {
     "id": "wuyan",
@@ -83,8 +80,7 @@ export const npcs: NPC[] = [
     "interactionEventIds": [
       "wuyan_forge",
       "wuyan_interact"
-    ],
-    "canBargain": true
+    ]
   },
   {
     "id": "mzfeee",
@@ -115,7 +111,6 @@ export const npcs: NPC[] = [
       "mzfeee_info",
       "mzfeee_snacks"
     ],
-    "canBargain": true
   },
   {
     "id": "lin_jian",
@@ -203,7 +198,6 @@ export const npcs: NPC[] = [
     "name": "豆沙",
     "title": "商",
     "identityCode": "9210310600",
-    "canBargain": true,
     "description": "豆沙铁匠铺老板",
     "background": "退伍老兵，来到无宁县开了铁匠铺，并曾以匠人身份再次赴边关打铁三年，回宁后继续开铁匠铺。",
     "danqing": "一个身材高大言语很多的匠人，立在砧前像半截铁砧，右手握着锤柄的位置，结着一层蜡质般的厚茧，指节嶙峋突起，仿佛本身就是一件趁手的打铁工具。",

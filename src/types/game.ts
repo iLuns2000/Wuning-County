@@ -158,7 +158,6 @@ export interface GameState {
   leekPlots?: LeekPlot[];
   leekFacilities?: Record<string, boolean>; // id -> owned
   leekOrders?: LeekOrder[];
-  dailyBargainGroupBuyCount: number; // Daily limit for bargain and group buy interactions
 }
 
 export interface LeekOrder {
@@ -251,7 +250,6 @@ export interface NPC {
     low?: string[];
   };
   interactionEventIds?: string[]; // IDs of events that can be triggered manually via interaction
-  canBargain?: boolean; // Whether this NPC supports bargaining and group buying
 }
 
 export interface Task {

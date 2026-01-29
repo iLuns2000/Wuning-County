@@ -9,7 +9,7 @@
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
 import React from 'react';import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gift, MessageCircle, Sparkles, Handshake, Tags } from 'lucide-react';
+import { ArrowLeft, Gift, MessageCircle, Sparkles } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { npcEvents } from '@/data/events';
 import { useGameStore } from '@/store/gameStore';
@@ -31,8 +31,7 @@ export const NPCList: React.FC = () => {
     resetGiftFailure,
     interactWithNPC,
     currentEvent,
-    triggerSpecificEvent,
-    dailyBargainGroupBuyCount
+    triggerSpecificEvent
   } = useGameStore();
 
   const handleOptionSelect = (index: number) => {
@@ -106,9 +105,6 @@ export const NPCList: React.FC = () => {
             </button>
             <div className="flex flex-col">
               <h1 className="text-xl font-bold">拜访 NPC</h1>
-              <span className="text-xs text-muted-foreground">
-                今日谈价/拼单: {dailyBargainGroupBuyCount}/3
-              </span>
             </div>
           </header>
 
@@ -168,46 +164,6 @@ export const NPCList: React.FC = () => {
                       <Gift size={16} />
                       <span>送礼</span>
                     </button>
-
-                    {/* 谈价 */}
-                    {npc.canBargain && (
-                      <button 
-                        onClick={() => {
-                          const res = interactWithNPC(npc.id, 'bargain');
-                          if (res.message) addLog(res.message);
-                        }}
-                        disabled={dailyBargainGroupBuyCount >= 3}
-                        className={`flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors min-w-[80px] ${
-                          dailyBargainGroupBuyCount >= 3 
-                            ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed' 
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                        title="提升次日韭菜相关价格"
-                      >
-                        <Tags size={16} />
-                        <span>谈价</span>
-                      </button>
-                    )}
-
-                    {/* 拼单 */}
-                    {npc.canBargain && (
-                      <button 
-                        onClick={() => {
-                          const res = interactWithNPC(npc.id, 'group_buy');
-                          if (res.message) addLog(res.message);
-                        }}
-                        className={`flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors min-w-[80px] ${
-                          dailyBargainGroupBuyCount >= 3 || playerStats.money < 100
-                            ? 'bg-secondary/50 text-muted-foreground cursor-not-allowed'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                        title="当日市集购物八折（需100文）"
-                        disabled={dailyBargainGroupBuyCount >= 3 || playerStats.money < 100}
-                      >
-                        <Handshake size={16} />
-                        <span>拼单</span>
-                      </button>
-                    )}
                     
                     {npc.interactionEventIds?.map(eventId => {
                       const event = npcEvents.find(e => e.id === eventId);
