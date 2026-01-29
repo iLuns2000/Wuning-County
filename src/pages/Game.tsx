@@ -496,25 +496,29 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
-                setShowMarket(true);
+                setShowSnackStreet(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-amber-900 bg-amber-100 rounded-lg transition-colors hover:bg-amber-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <ShoppingBag size={20} />
-              <span>西市集</span>
+              <div className="p-2 text-orange-600 bg-orange-100 rounded-lg transition-transform dark:bg-orange-950/30 dark:text-orange-400 group-hover:scale-110">
+                <Utensils size={18} />
+              </div>
+              <span className="text-sm font-medium">小吃街</span>
             </button>
 
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
-                setShowSnackStreet(true);
+                setShowMarket(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-orange-900 bg-orange-100 rounded-lg transition-colors hover:bg-orange-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Utensils size={20} />
-              <span>小吃街</span>
+              <div className="p-2 text-amber-600 bg-amber-100 rounded-lg transition-transform dark:bg-amber-950/30 dark:text-amber-400 group-hover:scale-110">
+                <ShoppingBag size={18} />
+              </div>
+              <span className="text-sm font-medium">西市集</span>
             </button>
 
             <button 
@@ -523,10 +527,12 @@ export const Game: React.FC = () => {
                 setShowPlayStreet(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-amber-900 bg-amber-100 rounded-lg transition-colors hover:bg-amber-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <ShoppingBag size={20} />
-              <span>游乐街</span>
+              <div className="p-2 text-pink-600 bg-pink-100 rounded-lg transition-transform dark:bg-pink-950/30 dark:text-pink-400 group-hover:scale-110">
+                <ShoppingBag size={18} />
+              </div>
+              <span className="text-sm font-medium">游乐街</span>
             </button>
 
             <button 
@@ -535,10 +541,12 @@ export const Game: React.FC = () => {
                 setShowLeekGarden(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Leaf size={20} />
-              <span>韭菜园</span>
+              <div className="p-2 text-emerald-600 bg-emerald-100 rounded-lg transition-transform dark:bg-emerald-950/30 dark:text-emerald-400 group-hover:scale-110">
+                <Leaf size={18} />
+              </div>
+              <span className="text-sm font-medium">韭菜园</span>
             </button>
 
             <button 
@@ -547,10 +555,12 @@ export const Game: React.FC = () => {
                 setShowEstates(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-indigo-900 bg-indigo-100 rounded-lg transition-colors hover:bg-indigo-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Building2 size={20} />
-              <span>产业置办</span>
+              <div className="p-2 text-indigo-600 bg-indigo-100 rounded-lg transition-transform dark:bg-indigo-950/30 dark:text-indigo-400 group-hover:scale-110">
+                <Building2 size={18} />
+              </div>
+              <span className="text-sm font-medium">产业置办</span>
             </button>
 
             <button 
@@ -559,10 +569,12 @@ export const Game: React.FC = () => {
                 setShowTreasure(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-purple-900 bg-purple-100 rounded-lg transition-colors hover:bg-purple-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Gem size={20} />
-              <span>珍宝阁</span>
+              <div className="p-2 text-purple-600 bg-purple-100 rounded-lg transition-transform dark:bg-purple-950/30 dark:text-purple-400 group-hover:scale-110">
+                <Gem size={18} />
+              </div>
+              <span className="text-sm font-medium">珍宝阁</span>
             </button>
 
             <button 
@@ -571,10 +583,12 @@ export const Game: React.FC = () => {
                 setShowCharity(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 text-rose-900 bg-rose-100 rounded-lg transition-colors hover:bg-rose-200 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Heart size={20} />
-              <span>善行义举</span>
+              <div className="p-2 text-rose-600 bg-rose-100 rounded-lg transition-transform dark:bg-rose-950/30 dark:text-rose-400 group-hover:scale-110">
+                <Heart size={18} />
+              </div>
+              <span className="text-sm font-medium">善行义举</span>
             </button>
             <button 
               onClick={() => {
@@ -582,10 +596,12 @@ export const Game: React.FC = () => {
                 navigate('/facilities');
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Dices size={20} />
-              <span>游乐坊</span>
+              <div className="p-2 text-cyan-600 bg-cyan-100 rounded-lg transition-transform dark:bg-cyan-950/30 dark:text-cyan-400 group-hover:scale-110">
+                <Dices size={18} />
+              </div>
+              <span className="text-sm font-medium">游乐坊</span>
             </button>
 
             <button 
@@ -594,10 +610,12 @@ export const Game: React.FC = () => {
                 navigate('/buildings');
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Landmark size={20} />
-              <span>建筑阁</span>
+              <div className="p-2 rounded-lg transition-transform bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 group-hover:scale-110">
+                <Landmark size={18} />
+              </div>
+              <span className="text-sm font-medium">建筑阁</span>
             </button>
             
             <button 
@@ -606,11 +624,13 @@ export const Game: React.FC = () => {
                 setShowExplore(true);
               }}
               disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || dailyCounts.rest >= MAX_DAILY_REST || isHeavySnow}
-              className="flex relative gap-2 justify-center items-center p-4 text-emerald-900 bg-emerald-100 rounded-lg transition-colors hover:bg-emerald-200 disabled:opacity-50 group/btn"
+              className="flex relative gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法探险" : ""}
             >
-              <Compass size={20} />
-              <span>外出探险</span>
+              <div className="p-2 text-teal-600 bg-teal-100 rounded-lg transition-transform dark:bg-teal-950/30 dark:text-teal-400 group-hover:scale-110">
+                <Compass size={18} />
+              </div>
+              <span className="text-sm font-medium">外出探险</span>
               {isHeavySnow && (
                 <div className="flex absolute inset-0 justify-center items-center text-xs font-bold rounded-lg opacity-0 transition-opacity bg-background/80 text-foreground group-hover/btn:opacity-100">
                   无法探险
@@ -624,10 +644,12 @@ export const Game: React.FC = () => {
                 navigate('/collection');
               }}
               disabled={!!currentEvent}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Scroll size={20} />
-              <span>藏珍匣</span>
+              <div className="p-2 text-yellow-600 bg-yellow-100 rounded-lg transition-transform dark:bg-yellow-950/30 dark:text-yellow-400 group-hover:scale-110">
+                <Scroll size={18} />
+              </div>
+              <span className="text-sm font-medium">藏珍匣</span>
             </button>
 
             <button 
@@ -636,10 +658,12 @@ export const Game: React.FC = () => {
                 setShowInventory(true);
               }}
               disabled={!!currentEvent}
-              className="flex col-span-2 gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className="flex col-span-2 gap-3 justify-center items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
             >
-              <Backpack size={20} />
-              <span>行囊</span>
+              <div className="p-2 rounded-lg transition-transform bg-primary/10 text-primary group-hover:scale-110">
+                <Backpack size={18} />
+              </div>
+              <span className="text-sm font-medium">行囊</span>
             </button>
           </div>
 

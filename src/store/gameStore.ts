@@ -67,7 +67,7 @@ const generateWeather = (seasonIndex: number): WeatherType => {
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
   isGameOver: boolean;
-  marketState: 'normal' | 'undercut' | 'cooperative';
+  marketState: 'normal' | 'undercut' | 'cooperative' | 'boom' | 'crash';
 
   startGame: (roleId: RoleType) => void;
   nextDay: () => void;
@@ -220,6 +220,7 @@ export const useGameStore = create<GameStore>()(
       dailyPurchasedGoods: [],
       hasInteractedToday: false,
       marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
+      marketInventory: goods.reduce((acc, good) => ({ ...acc, [good.id]: Math.floor(Math.random() * 51) + 50 }), {}),
       ownedGoods: {},
       ownedFacilities: {},
       leekPlots: [
@@ -372,6 +373,14 @@ export const useGameStore = create<GameStore>()(
         const discount = Math.min(0.2, highRelationsCount * 0.02);
         price = Math.floor(price * (1 - discount));
         const cost = price * quantity;
+        
+        // Check market inventory
+        const currentStock = state.marketInventory[goodId] || 0;
+        if (currentStock < quantity) {
+          state.addLog(`市场库存不足，仅剩 ${currentStock} 个。`);
+          return;
+        }
+
         if (state.playerStats.money < cost) {
           state.addLog('资金不足，无法购买。');
           return;
@@ -382,6 +391,10 @@ export const useGameStore = create<GameStore>()(
           ownedGoods: {
             ...state.ownedGoods,
             [goodId]: (state.ownedGoods[goodId] || 0) + quantity
+          },
+          marketInventory: {
+            ...state.marketInventory,
+            [goodId]: (state.marketInventory[goodId] || 0) - quantity
           }
         }));
         get().addLog(`【市集】花费 ${cost} 文买入 ${quantity} 个${goods.find(g => g.id === goodId)?.name}。`);
@@ -1241,6 +1254,7 @@ export const useGameStore = create<GameStore>()(
 
           // Market Fluctuation
           const newMarketPrices = { ...state.marketPrices };
+          const newMarketInventory: Record<string, number> = {};
           
           // Randomize Market State (80% Normal, 10% Undercut, 10% Cooperative)
           const marketRoll = Math.random();
@@ -1299,6 +1313,7 @@ export const useGameStore = create<GameStore>()(
              }
              
              newMarketPrices[good.id] = newPrice;
+             newMarketInventory[good.id] = Math.floor(Math.random() * 51) + 50; // 50-100
           });
 
           // Facility Income
@@ -1437,6 +1452,8 @@ export const useGameStore = create<GameStore>()(
             day: state.day + 1,
             weather: nextWeather,
             marketState: newMarketState,
+            marketPrices: newMarketPrices,
+            marketInventory: newMarketInventory,
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
@@ -1446,7 +1463,6 @@ export const useGameStore = create<GameStore>()(
             countyStats: newCountyStats,
             logs: logs.slice(0, 50),
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
-            marketPrices: newMarketPrices,
             priceLocks: currentPriceLocks,
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
@@ -1836,6 +1852,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: state.playerProfile,
           timeSettings: state.timeSettings,
           marketPrices: state.marketPrices,
+          marketInventory: state.marketInventory,
           ownedGoods: state.ownedGoods,
           ownedFacilities: state.ownedFacilities,
           priceLocks: state.priceLocks,
@@ -1912,6 +1929,7 @@ export const useGameStore = create<GameStore>()(
         talents: state.talents,
         achievements: state.achievements,
         marketPrices: state.marketPrices,
+        marketInventory: state.marketInventory,
         ownedGoods: state.ownedGoods,
         ownedFacilities: state.ownedFacilities,
         fortuneLevel: state.fortuneLevel,

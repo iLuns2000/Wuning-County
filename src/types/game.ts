@@ -148,6 +148,7 @@ export interface GameState {
   
   // Market & Economy
   marketPrices: Record<string, number>; // goodId -> currentPrice
+  marketInventory: Record<string, number>; // goodId -> dailyStock
   ownedGoods: Record<string, number>; // goodId -> quantity
   ownedFacilities: Record<string, number>; // facilityId -> quantity
   
