@@ -62,7 +62,6 @@ export const Game: React.FC = () => {
     currentEvent, 
     nextDay, 
     handleEventOption,
-    resetGame,
     addLog,
     currentTaskId,
     handleTaskAction,

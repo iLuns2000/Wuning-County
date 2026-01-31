@@ -85,7 +85,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
   }, [equippedApparel, equippedAccessories, itemMap]);
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 duration-200 bg-black/50 animate-in fade-in backdrop-blur-sm">
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 duration-200 bg-black/60 animate-in fade-in backdrop-blur-sm">
       <div className="bg-[#fff9e6] dark:bg-card rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800 dark:border-amber-900">
         <div className="flex justify-between items-center p-4 text-amber-50 bg-amber-800 dark:bg-amber-900 shadow-md">
           <div className="flex gap-3 items-center">
@@ -103,17 +103,17 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
           </button>
         </div>
 
-        <div className="flex justify-between items-center p-3 px-6 bg-amber-100 border-b border-amber-200">
-          <div className="flex gap-2 items-center font-bold text-amber-900">
+        <div className="flex justify-between items-center p-3 px-6 bg-amber-100 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/40">
+          <div className="flex gap-2 items-center font-bold text-amber-900 dark:text-amber-100">
             <Coins className="w-5 h-5" />
             <span>{playerStats.money} 文</span>
           </div>
-          <div className="text-sm text-amber-700">
+          <div className="text-sm text-amber-700 dark:text-amber-300">
             * 选购古风衣饰，梳妆更显风采
           </div>
         </div>
 
-        <div className="flex gap-2 p-3 bg-amber-50 border-b border-amber-200">
+        <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-900/40">
           <button
             onClick={() => setTab('apparel')}
             className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'apparel' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
@@ -143,7 +143,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')]">
+        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] dark:bg-none dark:bg-transparent">
           {tab === 'apparel' && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {apparelItems.map(item => {
@@ -154,16 +154,16 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                   <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
-                      <span className="px-2 py-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full">
+                      <span className="px-2 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 rounded-full">
                         {price} 文
                       </span>
                     </div>
-                    <p className="mb-3 h-10 text-sm text-gray-600 line-clamp-2">
+                    <p className="mb-3 h-10 text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
                       {item.description}
                     </p>
-                    <div className="flex gap-2 mb-3 text-xs text-amber-700">
-                      {slotLabel && <span className="px-2 py-1 bg-amber-50 rounded">{slotLabel}</span>}
-                      {item.style && <span className="px-2 py-1 bg-amber-50 rounded">{item.style}</span>}
+                    <div className="flex gap-2 mb-3 text-xs text-amber-700 dark:text-amber-300">
+                      {slotLabel && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{slotLabel}</span>}
+                      {item.style && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{item.style}</span>}
                     </div>
                     <button
                       onClick={() => {
@@ -171,7 +171,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                         buyItem(item.id, price);
                       }}
                       disabled={!canBuy}
-                      className={`w-full py-2 rounded text-sm font-medium transition-colors ${canBuy ? 'text-white bg-amber-600 hover:bg-amber-700' : 'text-amber-300 bg-amber-100 cursor-not-allowed'}`}
+                      className={`w-full py-2 rounded text-sm font-medium transition-colors ${canBuy ? 'text-white bg-amber-600 hover:bg-amber-700' : 'text-amber-300 bg-amber-100 dark:bg-amber-900/30 cursor-not-allowed'}`}
                     >
                       {canBuy ? '购买' : '囊中羞涩'}
                     </button>
@@ -191,16 +191,16 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                   <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
-                      <span className="px-2 py-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full">
+                      <span className="px-2 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 rounded-full">
                         {price} 文
                       </span>
                     </div>
-                    <p className="mb-3 h-10 text-sm text-gray-600 line-clamp-2">
+                    <p className="mb-3 h-10 text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
                       {item.description}
                     </p>
-                    <div className="flex gap-2 mb-3 text-xs text-amber-700">
-                      {slotLabel && <span className="px-2 py-1 bg-amber-50 rounded">{slotLabel}</span>}
-                      {item.style && <span className="px-2 py-1 bg-amber-50 rounded">{item.style}</span>}
+                    <div className="flex gap-2 mb-3 text-xs text-amber-700 dark:text-amber-300">
+                      {slotLabel && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{slotLabel}</span>}
+                      {item.style && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{item.style}</span>}
                     </div>
                     <button
                       onClick={() => {

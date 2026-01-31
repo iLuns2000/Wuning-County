@@ -48,7 +48,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
       <div className="bg-[#fff9e6] dark:bg-card rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800 dark:border-amber-900">
         
         {/* Header */}
@@ -66,7 +66,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
         </div>
 
         {/* Stats Bar */}
-        <div className="bg-amber-100 dark:bg-amber-950/50 p-3 px-6 flex justify-between items-center border-b border-amber-200 dark:border-amber-900">
+        <div className="bg-amber-100 dark:bg-amber-950/60 p-3 px-6 flex justify-between items-center border-b border-amber-200 dark:border-amber-900/40">
            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-bold">
               <Coins className="w-5 h-5" />
               <span>{playerStats.money} 文</span>
@@ -77,7 +77,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
         </div>
 
         {/* Content Grid */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] dark:bg-none dark:bg-muted/10">
+        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] dark:bg-none dark:bg-transparent">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {snacks.map((snack) => {
               const price = getPrice(snack.id);
