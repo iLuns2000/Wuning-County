@@ -53,8 +53,15 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
     }
 
     const interval = setInterval(() => {
-        const elapsed = (Date.now() - timeSettings.dayStartTime) / 1000;
-        const remaining = Math.max(0, timeSettings.dayDurationSeconds - elapsed);
+        // Check global state directly to ensure we don't run if an event is active
+        // This prevents race conditions where the interval might run once more before cleanup
+        const currentState = useGameStore.getState();
+        if (!currentState.timeSettings.isTimeFlowEnabled || currentState.timeSettings.isPaused || !!currentState.currentEvent) {
+            return;
+        }
+
+        const elapsed = (Date.now() - currentState.timeSettings.dayStartTime) / 1000;
+        const remaining = Math.max(0, currentState.timeSettings.dayDurationSeconds - elapsed);
         
         setTimeLeft(remaining);
 
@@ -74,8 +81,9 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
             // Check flag to ensure we only trigger it once per specific day instance 
             // (though nextDay will change the day, so check against current day)
             const alreadyTriggered = flags['slacking_event_day'] === day;
+            const achievementUnlocked = flags['achievement_slacking_unlocked'];
 
-            if (isIdle && !alreadyTriggered) {
+            if (isIdle && !alreadyTriggered && !achievementUnlocked) {
                 // Trigger event
                 triggerSpecificEvent('slacking_off');
                 

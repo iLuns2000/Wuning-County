@@ -1739,6 +1739,12 @@ export const useGameStore = create<GameStore>()(
       addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 50) })),
 
       triggerEvent: () => {
+         // Global 30% chance to trigger any event at the end of the day
+         if (Math.random() > 0.3) {
+             set({ currentEvent: null });
+             return;
+         }
+
          const state = get();
          
          const checkCondition = (e: GameEvent) => {

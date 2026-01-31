@@ -85,9 +85,9 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
   }, [equippedApparel, equippedAccessories, itemMap]);
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 duration-200 bg-black/50 animate-in fade-in">
-      <div className="bg-[#fff9e6] rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800">
-        <div className="flex justify-between items-center p-4 text-amber-50 bg-amber-800 shadow-md">
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 duration-200 bg-black/50 animate-in fade-in backdrop-blur-sm">
+      <div className="bg-[#fff9e6] dark:bg-card rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800 dark:border-amber-900">
+        <div className="flex justify-between items-center p-4 text-amber-50 bg-amber-800 dark:bg-amber-900 shadow-md">
           <div className="flex gap-3 items-center">
             <ShoppingBag className="w-6 h-6" />
             <h2 className="text-2xl font-bold tracking-wider">游乐街</h2>
@@ -97,7 +97,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
               vibrate(VIBRATION_PATTERNS.LIGHT);
               onClose();
             }}
-            className="p-2 rounded-full transition-colors hover:bg-amber-700"
+            className="p-2 rounded-full transition-colors hover:bg-amber-700 dark:hover:bg-amber-800"
           >
             <X className="w-6 h-6" />
           </button>
@@ -116,7 +116,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
         <div className="flex gap-2 p-3 bg-amber-50 border-b border-amber-200">
           <button
             onClick={() => setTab('apparel')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'apparel' ? 'bg-amber-600 text-white' : 'bg-white text-amber-800 border border-amber-200'}`}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'apparel' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
           >
             <div className="flex gap-2 items-center">
               <ShoppingBag className="w-4 h-4" />
@@ -125,7 +125,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
           </button>
           <button
             onClick={() => setTab('accessory')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'accessory' ? 'bg-amber-600 text-white' : 'bg-white text-amber-800 border border-amber-200'}`}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'accessory' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
           >
             <div className="flex gap-2 items-center">
               <Gem className="w-4 h-4" />
@@ -134,7 +134,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
           </button>
           <button
             onClick={() => setTab('dressing')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'dressing' ? 'bg-amber-600 text-white' : 'bg-white text-amber-800 border border-amber-200'}`}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'dressing' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
           >
             <div className="flex gap-2 items-center">
               <Star className="w-4 h-4" />
@@ -151,7 +151,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 const canBuy = playerStats.money >= price;
                 const slotLabel = item.slot ? apparelSlots.find(s => s.id === item.slot)?.label : undefined;
                 return (
-                  <div key={item.id} className="p-4 bg-white rounded-lg border border-amber-200 shadow-md transition-all hover:shadow-lg">
+                  <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
                       <span className="px-2 py-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full">
@@ -188,7 +188,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 const canBuy = playerStats.money >= price;
                 const slotLabel = item.slot ? accessorySlotLabels[item.slot as AccessorySlot] : undefined;
                 return (
-                  <div key={item.id} className="p-4 bg-white rounded-lg border border-amber-200 shadow-md transition-all hover:shadow-lg">
+                  <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
                       <span className="px-2 py-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full">
@@ -220,49 +220,49 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
 
           {tab === 'dressing' && (
             <div className="space-y-6">
-              <div className="p-4 bg-white rounded-lg border border-amber-200 shadow-sm">
+              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-bold text-amber-900">风格评分</h3>
-                  <div className="text-sm text-amber-700">总分 {styleSummary.totalScore}</div>
+                  <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">风格评分</h3>
+                  <div className="text-sm text-amber-700 dark:text-amber-300">总分 {styleSummary.totalScore}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-amber-800 md:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2 text-xs text-amber-800 dark:text-amber-200 md:grid-cols-5">
                   {Object.entries(styleSummary.styleScores).map(([style, score]) => (
-                    <div key={style} className="px-2 py-2 text-center bg-amber-50 rounded">
+                    <div key={style} className="px-2 py-2 text-center bg-amber-50 dark:bg-amber-950/30 rounded">
                       <div className="font-semibold">{style}</div>
                       <div>{score}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="p-4 bg-white rounded-lg border border-amber-200 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-amber-900">衣装搭配</h3>
+              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
+                <h3 className="mb-4 text-lg font-bold text-amber-900 dark:text-amber-100">衣装搭配</h3>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {apparelSlots.map(slot => {
                     const equippedId = equippedApparel[slot.id];
                     const equippedItem = equippedId ? itemMap.get(equippedId) : undefined;
                     const slotItems = ownedApparelItems.filter(i => i.slot === slot.id);
                     return (
-                      <div key={slot.id} className="p-3 rounded-lg border border-amber-100 bg-amber-50/40">
+                      <div key={slot.id} className="p-3 rounded-lg border border-amber-100 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20">
                         <div className="flex justify-between items-center mb-2">
-                          <div className="text-sm font-semibold text-amber-800">{slot.label}</div>
+                          <div className="text-sm font-semibold text-amber-800 dark:text-amber-200">{slot.label}</div>
                           {equippedItem && (
                             <button
                               onClick={() => {
                                 vibrate(VIBRATION_PATTERNS.LIGHT);
                                 unequipApparel(slot.id);
                               }}
-                              className="text-xs text-amber-700 hover:text-amber-900"
+                              className="text-xs text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                             >
                               卸下
                             </button>
                           )}
                         </div>
-                        <div className="mb-2 text-sm font-medium text-amber-900">
+                        <div className="mb-2 text-sm font-medium text-amber-900 dark:text-amber-100">
                           {equippedItem ? equippedItem.name : '未装备'}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {slotItems.length === 0 && (
-                            <span className="text-xs text-amber-600">暂无该部位衣装</span>
+                            <span className="text-xs text-amber-600 dark:text-amber-400">暂无该部位衣装</span>
                           )}
                           {slotItems.map(item => (
                             <button
@@ -271,7 +271,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                                 vibrate(VIBRATION_PATTERNS.LIGHT);
                                 equipApparel(slot.id, item.id);
                               }}
-                              className={`px-2 py-1 rounded text-xs border transition-colors ${equippedItem?.id === item.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-100'}`}
+                              className={`px-2 py-1 rounded text-xs border transition-colors ${equippedItem?.id === item.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30'}`}
                             >
                               {item.name}
                             </button>
@@ -283,14 +283,14 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 </div>
               </div>
 
-              <div className="p-4 bg-white rounded-lg border border-amber-200 shadow-sm">
+              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-amber-900">首饰佩戴</h3>
-                  <div className="text-xs text-amber-700">已佩戴 {equippedAccessories.length}/3</div>
+                  <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">首饰佩戴</h3>
+                  <div className="text-xs text-amber-700 dark:text-amber-300">已佩戴 {equippedAccessories.length}/3</div>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {equippedAccessories.length === 0 && (
-                    <span className="text-xs text-amber-600">暂无佩戴首饰</span>
+                    <span className="text-xs text-amber-600 dark:text-amber-400">暂无佩戴首饰</span>
                   )}
                   {equippedAccessories.map(id => {
                     const item = itemMap.get(id);
@@ -302,7 +302,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                           vibrate(VIBRATION_PATTERNS.LIGHT);
                           unequipAccessory(id);
                         }}
-                        className="px-2 py-1 text-xs text-amber-800 bg-amber-100 rounded border border-amber-200 hover:bg-amber-200"
+                        className="px-2 py-1 text-xs text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50 rounded border border-amber-200 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900/70"
                       >
                         {item.name}
                       </button>
@@ -320,10 +320,10 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                           vibrate(VIBRATION_PATTERNS.LIGHT);
                           equipAccessory(item.id);
                         }}
-                        className={`p-3 rounded-lg border text-left transition-colors ${isEquipped ? 'bg-amber-200 border-amber-300' : 'bg-amber-50 border-amber-200 hover:bg-amber-100'}`}
+                        className={`p-3 rounded-lg border text-left transition-colors ${isEquipped ? 'bg-amber-200 dark:bg-amber-800 border-amber-300 dark:border-amber-700' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30'}`}
                       >
-                        <div className="text-sm font-semibold text-amber-900">{item.name}</div>
-                        <div className="flex gap-2 mt-1 text-xs text-amber-700">
+                        <div className="text-sm font-semibold text-amber-900 dark:text-amber-100">{item.name}</div>
+                        <div className="flex gap-2 mt-1 text-xs text-amber-700 dark:text-amber-300">
                           {slotLabel && <span>{slotLabel}</span>}
                           {item.style && <span>{item.style}</span>}
                         </div>

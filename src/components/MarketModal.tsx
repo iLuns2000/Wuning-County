@@ -63,7 +63,7 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
         {/* Status Bar */}
         <div className="flex z-10 justify-between items-center px-6 py-3 border-b shadow-sm bg-card border-border">
             <div className="flex gap-2 items-center font-medium text-primary">
-                <div className="flex justify-center items-center w-8 h-8 text-yellow-600 bg-yellow-100 rounded-full border border-yellow-200">
+                <div className="flex justify-center items-center w-8 h-8 text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-400/10 rounded-full border border-yellow-200 dark:border-yellow-500/20">
                     <Coins className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col">

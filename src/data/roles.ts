@@ -2,7 +2,7 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:03:49
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-19 19:09:41
+ * @LastEditTime: 2026-01-31 16:16:01
  * @FilePath: \textgame\src\data\roles.ts
  * @Description: 
  * 
@@ -13,7 +13,7 @@ import { RoleConfig } from '@/types/game';
 export const roles: RoleConfig[] = [
   {
     id: 'magistrate',
-    name: '县丞',
+    name: '政客',
     description: '协助县令治理县城的官员。擅长政务，声望较高。',
     initialStats: {
       money: 100,

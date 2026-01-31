@@ -19,6 +19,10 @@ export const randomEvents: GameEvent[] = [
         label: '沉迷玩乐',
         message: '你在集市上沉迷于杂耍表演，荒废了时光。',
         effect: { money: -20, ability: -1 } // Decrease ability
+      },
+      {
+        label: '离开',
+        message: '你没看上什么东西，转身离开了。',
       }
     ]
   },
@@ -233,12 +237,23 @@ export const randomEvents: GameEvent[] = [
     description: '五年一度的武林大会召开了，各路高手云集。以你现在的武学修为，完全有资格去争夺盟主之位。',
     type: 'opportunity',
     stylePreference: { preferred: ['英气', '华贵'] },
-    triggerCondition: { probability: 0.2, requiredRole: 'hero', minAbility: 60 },
+    triggerCondition: { 
+      probability: 0.2, 
+      requiredRole: 'hero', 
+      minAbility: 60,
+      custom: (state) => !state.flags['hero_alliance_leader']
+    },
     options: [
       {
         label: '参加大会',
         message: '你在大会上力挫群雄，技惊四座，被推举为武林盟主！',
-        effect: { reputation: 200, money: 500, health: -50, ability: 10 }
+        effect: { 
+          reputation: 200, 
+          money: 500, 
+          health: -50, 
+          ability: 10,
+          flagsSet: { hero_alliance_leader: true }
+        }
       },
       {
         label: '旁观',
@@ -952,6 +967,63 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'luhua_rob_rich',
+    title: '劫富济贫',
+    description: '套麻袋胖揍外出查账的张员外',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '一起到集市买了一个结结实实的麻袋和两把木棍，蹲在张府门外躁候',
+        effect: { money: -15, health: 20, relationChange: { luhua: 10 } }
+      },
+      {
+        label: '拒绝',
+        message: '假装无事发生并警告你不许说出去',
+        effect: { relationChange: { luhua: -10 } }
+      }
+    ]
+  },
+  {
+    id: 'luhua_tease_yexiao',
+    title: '调戏夜宵',
+    description: '去小司雕像底下守候小贩夜宵出摊并献上最诚挚的祝福',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '打量了一下你的身形样貌，勉强同意，夜宵出来以后就把你抛诸脑后，不由得响起那首《路人》',
+        effect: { health: 10, relationChange: { luhua: 5 } }
+      },
+      {
+        label: '拒绝',
+        message: '一个人兴冲冲的跑去找夜宵结果被关门杀，拉着你坐在街头合唱《多一点》解忧',
+        effect: { money: -5, health: -5, relationChange: { luhua: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'luhua_poop_street',
+    title: '当街拉屎',
+    description: '她邀请你一起在街上拉屎',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '震惊万分并质疑你的人品',
+        effect: { relationChange: { luhua: -10 } }
+      },
+      {
+        label: '拒绝',
+        message: '问你是不是便秘然后向你推销通便的嘎炸药材',
+        effect: { money: -20, health: 10, relationChange: { luhua: 10 }, itemsAdd: ['lingnan_fried_food'] }
+      }
+    ]
+  },
+  {
     id: 'baizhou_interact',
     title: '机关术探讨',
     description: '柏舟拿着一张图纸兴奋地找你：“这个设计怎么样？要不要一起合作？”',
@@ -1039,6 +1111,44 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'lengyue_learn_basic',
+    title: '初次鉴宝',
+    description: '你来到玄月阁，希望能学习鉴宝与文物修复。冷月未央看着你：“修复古物需坐十年冷凳，你可耐得住寂寞？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '表明决心 (20文)',
+        message: '冷月未央目光从手中拓片上移开，淡然一瞥：“无宁宝阁的规矩，识物先识史。你若连《考古图》与《博古图》的体例都分不清，便先去看《金石录》的前十卷。”她轻触一件青铜器的修补痕，“修复不是掩盖。这处补得太‘新’，毁了沧桑气韵。你想学，就先学会‘尊重旧痕’。”',
+        effect: { money: -20, reputation: 10, ability: 10, relationChange: { lengyue_weiyang: 10 } }
+      },
+      {
+        label: '知难而退',
+        message: '冷月未央淡淡道：“那便作罢。只是这世间真伪，今后你看万物时，或会多三分犹豫。”',
+        effect: { relationChange: { lengyue_weiyang: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'lengyue_learn_advanced',
+    title: '深入学习',
+    description: '你在玄月阁连续学习了七日，今日冷月未央似乎有话对你说。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '倾听教诲',
+        message: '冷月未央将一本手札轻推至你面前：“这是我整理的《无宁鉴古疑云录》。顶楼有间‘格物室’，里面所藏并非珍宝，而是历代仿古赝鼎、修复败笔，以及我阁鉴定失误之记录。想上去看看吗？那才是鉴宝人告别‘眼学’，直面‘物证’的起点。”',
+        effect: { money: 1000, reputation: 500, ability: 70, relationChange: { lengyue_weiyang: 90 }, itemsAdd: ['appraisal_notebook'] }
+      },
+      {
+        label: '婉拒深造',
+        message: '冷月未央微微颔首：“也好。此道本就如临深渊，不踏足亦是智慧。机缘未至，不必强求。玄月阁的门永远为有心人开。”',
+        effect: { money: 100, ability: 5 }
+      }
+    ]
+  },
+  {
     id: 'linjian_help',
     title: '协助捕快',
     description: '林间正忙得焦头烂额。',
@@ -1054,20 +1164,98 @@ export const npcEvents: GameEvent[] = [
   },
   {
     id: 'qian_xiaolu_interact',
-    title: '千小鹿的药庐',
-    description: '千小鹿正在整理草药。',
+    title: '杏林春中药铺',
+    description: '千妖正在整理药材，空气中弥漫着淡淡的药香。',
     type: 'npc',
     triggerCondition: { probability: 0 },
     options: [
       {
         label: '赠送礼物',
-        message: '你送给千小鹿一些稀有草药，她非常喜欢。',
+        message: '你送给千妖一些稀有草药，她非常喜欢。',
         effect: { relationChange: { qian_xiaolu: 20 } }
       },
       {
         label: '闲聊',
         message: '你们聊了聊养生之道。',
         effect: { relationChange: { qian_xiaolu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_leek',
+    title: '讨要韭菜',
+    description: '看着千妖院子里长势喜人的韭菜，你心生一计。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '讨要一把 (亲密度25解锁)',
+        message: '千妖白了你一眼，但还是拔了一把韭菜扔给你。',
+        effect: { relationChange: { qian_xiaolu: 2 }, itemsAdd: ['fresh_leek'] } // Assuming fresh_leek exists or generic item
+      },
+      {
+        label: '放弃',
+        message: '你怕被千妖拿着韭菜抽，打消了这个念头。',
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_pineapple',
+    title: '品尝甜点',
+    description: '千妖端出一碗色泽诱人的红茶酿番菠萝。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '品尝 (亲密度50解锁)',
+        message: '“这是什么神仙美味！天哪！你手艺真不错！”',
+        effect: { relationChange: { qian_xiaolu: 5 }, itemsAdd: ['pineapple_tea'] }
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_croton',
+    title: '黑暗料理',
+    description: '千妖笑眯眯地端出一盘绿油油的果冻状物体：“客官，来一份韭菜巴豆冻吗？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '挑战极限 (亲密度75解锁)',
+        message: '“？yue……你、yue……小鹿杀人啦！”',
+        effect: { health: -20, relationChange: { qian_xiaolu: 5 }, itemsAdd: ['leek_croton_jelly'] }
+      },
+      {
+        label: '快跑',
+        message: '你撒腿就跑，身后传来千妖的笑声。',
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_bun',
+    title: '美味肉包',
+    description: '一阵香味飘来，千妖刚蒸好一笼韭菜肉包。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '大快朵颐 (亲密度100解锁)',
+        message: '“小鹿，你做的韭菜肉包真是一绝啊！干脆把你的中药铺关门，开一家包子铺吧！”',
+        effect: { health: 20, relationChange: { qian_xiaolu: 10 }, itemsAdd: ['leek_bun'] }
+      }
+    ]
+  },
+  {
+    id: 'qian_xiaolu_ribbon',
+    title: '最终奖励',
+    description: '千妖拿在手里把玩着一条精致的绶带。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '询问绶带 (亲密度520解锁)',
+        message: '“你怎么什么都会！小鹿，这绶带好精致，我真的可以拥有吗？”',
+        effect: { relationChange: { qian_xiaolu: 50 }, itemsAdd: ['magistrate_ribbon'] }
       }
     ]
   },
@@ -1167,8 +1355,493 @@ export const npcEvents: GameEvent[] = [
     options: [
       {
         label: '陪同游玩',
-        message: '你们在县城玩了一圈，宁缨送了你一件舶来品礼物。',
-        effect: { relationChange: { ningying: 10 }, flagsIncrement: ['ningying_play_count', 'ningying_gift_count'], flagsSet: { ningying_gift_received: true } }
+        message: '你们在县城玩了一圈，宁缨送了你一件礼物。',
+        effect: { relationChange: { ningying: 10 }, flagsIncrement: ['ningying_play_count', 'ningying_gift_count'], flagsSet: { ningying_gift_received: true }, itemsAdd: ['random_treasure_bag'] }
+      }
+    ]
+  },
+  {
+    id: 'ningying_delivery',
+    title: '送东西',
+    description: '宁缨看起来有些苦恼：“可以帮忙送个东西吗？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受 (10文)',
+        message: '宁缨非常感谢你。',
+        effect: { money: 10, relationChange: { ningying: 2 } }
+      },
+      {
+        label: '拒绝',
+        message: '“还有事情，下次再说。”',
+      }
+    ]
+  },
+  {
+    id: 'ningying_hotpot',
+    title: '天涯涮肉坊',
+    description: '“这天气，倒适合吃锅子呀！要不要一起去天涯涮肉坊？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受 (10文)',
+        message: '非常开心一起去吃好吃的，宁缨赠予你一件西洋舶来品。',
+        effect: { money: -10, health: 10, relationChange: { ningying: 5 }, itemsAdd: ['western_gadget'] }
+      },
+      {
+        label: '拒绝',
+        message: '你拒绝了邀请。',
+      }
+    ]
+  },
+  {
+    id: 'ningying_boating',
+    title: '泛舟游湖',
+    description: '“这几日天清气爽，最宜泛舟游湖，岸边芦苇沙沙响，你要不要同我去湖上泛一圈？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '湖上风光无限好。',
+        effect: { health: -10, relationChange: { ningying: 5 }, experience: 5 }
+      },
+      {
+        label: '拒绝',
+        message: '你拒绝了邀请。',
+      }
+    ]
+  },
+  {
+    id: 'ningying_bookstore',
+    title: '书坊寻奇',
+    description: '“书坊新到的江湖异闻册太有意思，全是各地奇人怪事，你要不要陪我去瞧瞧？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '两人在书坊看得十分入迷，不知天地为何物。',
+        effect: { health: -1, relationChange: { ningying: 5 } }
+      },
+      {
+        label: '拒绝',
+        message: '你拒绝了邀请。',
+      }
+    ]
+  },
+  {
+    id: 'guan_yuhe_organize_toolbox',
+    title: '帮忙整理工具箱',
+    description: '这工具箱越用越乱，我都记不清哪些工具放哪儿了。你能不能帮我一起整理一下？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '同意',
+        message: '“太谢谢你了！这下找工具可方便多了”',
+        effect: { relationChange: { guan_yuhe: 5 }, reputation: 2 }
+      },
+      {
+        label: '拒绝',
+        message: '“没事没事，我自己收拾就好，不耽误你时间了”',
+      }
+    ]
+  },
+  {
+    id: 'guan_yuhe_choose_color',
+    title: '帮忙挑选配色',
+    description: '我新设计了一款挂件，纠结用胭脂红还是石榴红的线，你能帮我提提建议吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '同意',
+        message: '“你选的颜色真不错，看着颜色更鲜艳了，就按你说的来，（从边上拿个成品）这个送你”',
+        effect: { relationChange: { guan_yuhe: 5 }, reputation: 2, ability: 2, money: 10 }
+      },
+      {
+        label: '拒绝',
+        message: '“好吧（挠头），我自己再对比看看”',
+      }
+    ]
+  },
+  {
+    id: 'guan_yuhe_find_needle',
+    title: '帮忙找丢失的绣花针',
+    description: '糟了！我那根最细的绣花针不见了，你能不能帮我找找？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '同意',
+        message: '“可算找到了！还是你的眼睛看得仔细，谢谢你”',
+        effect: { relationChange: { guan_yuhe: 5 }, ability: 2 }
+      },
+      {
+        label: '拒绝',
+        message: '“那好吧，我再仔细找找”',
+      }
+    ]
+  },
+  {
+    id: 'guan_yuhe_eat_together',
+    title: '一起去酒楼吃饭',
+    description: '要下工了，我打算去行月酒楼吃顿好的！但是一个人吃种类少，点多了又吃不完，你要和我一起拼个桌吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '同意',
+        message: '“太爽了！有人一起吃饭就是香！”',
+        effect: { relationChange: { guan_yuhe: 5 }, health: 5, money: -20 }
+      },
+      {
+        label: '拒绝',
+        message: '“好吧，那我就少点几个菜”',
+      }
+    ]
+  },
+  {
+    id: 'ye_xiao_shop',
+    title: '点开买东西',
+    description: '“。。。。”（夜宵不语，只是一味地盯着你直到交易或离开）',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '就看看',
+        message: '你被盯得心里发毛，决定还是先走为妙。',
+        effect: { relationChange: { ye_xiao: 1 } }
+      },
+      {
+        label: '买小掌柜泥人 (50文)',
+        message: '你买下了无宁县的经典地标——小掌柜泥人。',
+        effect: { money: -50, itemsAdd: ['clay_figure_manager'], relationChange: { ye_xiao: 2 } }
+      },
+      {
+        label: '买木质黄金冰箱 (100文)',
+        message: '你买下了冰箱，并获赠了一块涂了金漆的迷你石头。',
+        effect: { money: -100, itemsAdd: ['wooden_gold_fridge'], relationChange: { ye_xiao: 2 } }
+      },
+      {
+        label: '买木雕海绵宝宝 (80文)',
+        message: '你刚拿起木雕，夜宵突然幽幽地问道：“是谁住在深海的大菠萝里？”',
+        effect: { money: -80, itemsAdd: ['wood_carving_spongebob'], flagsSet: { ye_xiao_quiz_pending: true } }
+      }
+    ]
+  },
+  {
+    id: 'ye_xiao_spongebob_quiz',
+    title: '夜宵的提问',
+    description: '夜宵死死盯着你，等待着你的回答：“是谁住在深海的大菠萝里？”',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 1.0,
+      custom: (state) => state.flags['ye_xiao_quiz_pending']
+    },
+    options: [
+      {
+        label: '“海绵宝宝！”',
+        message: '夜宵点点头，默默塞给你一只派大星装饰。你隐约听见她嘀咕：“说起海绵宝宝，楼县令也与他有过一次渊源……”',
+        effect: { itemsAdd: ['patrick_star_decor'], flagsSet: { ye_xiao_quiz_pending: false }, relationChange: { ye_xiao: 5 } }
+      },
+      {
+        label: '“章鱼哥！”',
+        message: '夜宵愣了一下，递给你一只章鱼哥竖笛装饰。',
+        effect: { itemsAdd: ['squidward_clarinet_decor'], flagsSet: { ye_xiao_quiz_pending: false }, relationChange: { ye_xiao: 3 } }
+      }
+    ]
+  },
+  {
+    id: 'qi_jiu_patrol',
+    title: '在街上巡逻',
+    description: '玖捕快正在街上巡逻，满头大汗。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '递上一杯水',
+        message: '“谢谢您，我刚好需要呢。”',
+        effect: { relationChange: { qi_jiu: 5 } }
+      },
+      {
+        label: '聊聊话本',
+        message: '“哎呀，我下值刚好没事干，可以听书了。”',
+        effect: { relationChange: { qi_jiu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'qi_jiu_propaganda',
+    title: '张贴告示',
+    description: '玖捕快正在广场宣传楼县令的政策。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '询问楼县令办案',
+        message: '“大名鼎鼎的老李偷鸡案，可是我们楼县令办的！”',
+        effect: { relationChange: { qi_jiu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'qi_jiu_inspect',
+    title: '商家巡查',
+    description: '玖捕快正在商家店铺巡查。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '举报商家(确有其事)',
+        message: '“经本捕快调查，确有此事，举报有奖！”',
+        effect: { money: 100, relationChange: { qi_jiu: 5 } }
+      },
+      {
+        label: '举报商家(恶意诬陷)',
+        message: '“经本捕快调查，发现你恶意举报，对你处以罚款！”',
+        effect: { money: -100, relationChange: { qi_jiu: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'qi_jiu_listen_story',
+    title: '卷毛茶坊听说书',
+    description: '玖捕快下值后来到茶坊听说书。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '聊聊挖洞的故事',
+        message: '“嘿嘿，今天讲的好像是你下山挖惊鹊盗洞结果啥都没有……”（玖捕快面露尴尬）',
+        effect: { relationChange: { qi_jiu: -1 } }
+      },
+      {
+        label: '聊聊赌坊的故事',
+        message: '“哎哟喂，今天精彩了是小司赌坊被举报关门整改了！”',
+        effect: { relationChange: { qi_jiu: 5 } }
+      },
+      {
+        label: '聊聊县令的故事',
+        message: '“不得了了，今天讲的是楼县令断案如神呀！”',
+        effect: { relationChange: { qi_jiu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_gift_book',
+    title: '送书籍',
+    description: '你要送书籍给三月吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '送给阿久',
+        message: '“阿久定喜欢，我替他谢谢你。”',
+        effect: { relationChange: { san_yue: 5 } }
+      },
+      {
+        label: '送给三月',
+        message: '“我不识字，你送给更需要的人吧。”',
+        effect: { relationChange: { san_yue: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_gift_herb',
+    title: '送药材',
+    description: '你要送药材给三月吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '普通药材',
+        message: '“翟大夫也常送我这个。你懂我。”',
+        effect: { relationChange: { san_yue: 5 } }
+      },
+      {
+        label: '名贵药材',
+        message: '“这药名贵，你留着自用吧。”',
+        effect: { relationChange: { san_yue: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_gift_stone',
+    title: '送鹅卵石',
+    description: '你要送鹅卵石给三月吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '漂亮纹路的',
+        message: '“这纹路好看，像玉汤山捡的。”',
+        effect: { relationChange: { san_yue: 5 } }
+      },
+      {
+        label: '普通沉重的',
+        message: '“石头沉重，不如送点轻省的。”',
+        effect: { relationChange: { san_yue: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_gift_food',
+    title: '送食物',
+    description: '你要送食物给三月吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '亲手做的',
+        message: '“你自己做的？手艺不错。”',
+        effect: { relationChange: { san_yue: 5 } }
+      },
+      {
+        label: '买来的',
+        message: '“归雁楼不缺吃食，你自留着。”',
+        effect: { relationChange: { san_yue: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_gift_jewelry',
+    title: '送金银珠宝',
+    description: '你要送金银珠宝给三月吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '赠送',
+        message: '“这太贵重，我不能收。”',
+        effect: { relationChange: { san_yue: 2 } }
+      },
+      {
+        label: '强行赠送',
+        message: '“归雁楼不收不义之财。”（三月生气了）',
+        effect: { relationChange: { san_yue: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'sanyue_buy_food',
+    title: '买店里吃食',
+    description: '“客官今日想喝什么粥？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '买粥',
+        message: '“谢谢客官，下次再来。”',
+        effect: { money: -5, health: 2, relationChange: { san_yue: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'xiajun_intel_report',
+    title: '情报上报',
+    description: '夏君正于茶馆一角独酌，似乎在等待着什么消息。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '提供市井流言',
+        message: '夏君微微颔首，提笔在册上记录：“闲言碎语非无用，汇入诗笺定波澜。”',
+        effect: { relationChange: { xia_jun: 2 }, reputation: 1 }
+      },
+      {
+        label: '提供重要线索',
+        message: '夏君眼神一凝，随即展颜一笑：“孤身难守百重关，长街短巷耳目联。多谢阁下！”',
+        effect: { relationChange: { xia_jun: 10 }, money: 50, reputation: 5 }
+      },
+      {
+        label: '打听长安笺',
+        message: '夏君轻摇折扇：“长安诗缘，待有缘人。阁下若能查证实情，或许便是那有缘人。”',
+        effect: { relationChange: { xia_jun: 1 } }
+      }
+    ]
+  },
+  {
+    id: 'yinhe_music_dream',
+    title: '你我可有缘',
+    description: '银河看着你，眼神中透着期许：“听说小友也有一个音乐梦？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '是的，我有',
+        message: '“请与我入室内一叙...C大调（C Major）是C音开始的自然大调，组成的音有CDEFGAB...@#￥%&@”',
+        effect: { relationChange: { yin_he: 1 } }
+      },
+      {
+        label: '不好意思，我只是路过',
+        message: '“我相信缘分还会再来，但相逢既是有缘。”（银河塞给了你一大笔盘缠）',
+        effect: { money: 50000, relationChange: { yin_he: 1 } }
+      }
+    ]
+  },
+  {
+    id: 'yingyue_meet_mountain',
+    title: '山上偶遇',
+    description: '在后山上遇到正在采集酿酒材料的影月。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '打招呼',
+        message: '影月看了你一眼，似乎在评估你们的关系。',
+        effect: { relationChange: { ying_yue: 1 } }
+      },
+      {
+        label: '一起走 (需好感>50)',
+        message: '“你也来这里吗？我在准备酿酒的材料，要一起走吗？”（影月开心地邀请你）',
+        effect: { relationChange: { ying_yue: 5 } }
+      },
+      {
+        label: '默默离开',
+        message: '影月继续专注于手中的材料，根本没有注意到你（或者装作没看到）。',
+        effect: { relationChange: { ying_yue: 0 } }
+      }
+    ]
+  },
+  {
+    id: 'yingyue_steal_skill',
+    title: '偷师学艺',
+    description: '你悄悄溜进酒窖，发现影月正在调配新酒。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '暗中观察',
+        message: '你记下了一些关键步骤，酿酒技艺有所提升。',
+        effect: { ability: 2, relationChange: { ying_yue: -2 } }
+      },
+      {
+        label: '现身请教',
+        message: '影月被你吓了一跳，但看在你诚心的份上，教了你几招。',
+        effect: { ability: 5, relationChange: { ying_yue: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'fengge_consult_treasure',
+    title: '咨询宝物线索',
+    description: '听说二掌柜有一条关于宝物的线索，要不要向他咨询呢？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '“消息保真，快去寻宝吧，祝你好运~”',
+        effect: { money: -1, ability: 1 }
+      },
+      {
+        label: '拒绝',
+        message: '“莫向外求，善、大善、老善喽~”',
+        effect: { relationChange: { feng_ge: 1 } }
       }
     ]
   }

@@ -187,6 +187,34 @@ export const Game: React.FC = () => {
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
+
+    // Check for insufficient resources (health/money)
+    if (option.effect) {
+        let healthCost = 0;
+        let moneyCost = 0;
+
+        // Check flat costs
+        if (option.effect.health && option.effect.health < 0) healthCost += -option.effect.health;
+        if (option.effect.money && option.effect.money < 0) moneyCost += -option.effect.money;
+        
+        // Check nested playerStats costs
+        if (option.effect.playerStats) {
+            if (option.effect.playerStats.health && option.effect.playerStats.health < 0) healthCost += -option.effect.playerStats.health;
+            if (option.effect.playerStats.money && option.effect.playerStats.money < 0) moneyCost += -option.effect.playerStats.money;
+        }
+
+        if (healthCost > 0 && playerStats.health < healthCost) {
+            addLog('体力不足，无法进行此操作！');
+            vibrate(VIBRATION_PATTERNS.ERROR);
+            return;
+        }
+        if (moneyCost > 0 && playerStats.money < moneyCost) {
+            addLog('银两不足，无法进行此操作！');
+            vibrate(VIBRATION_PATTERNS.ERROR);
+            return;
+        }
+    }
+
     const preferred = currentEvent.stylePreference?.preferred;
     const match = computeStyleScores(preferred);
     const boostedEffect = applyStyleBonus(option.effect, match.bonusPercent);
@@ -335,17 +363,7 @@ export const Game: React.FC = () => {
               >
                 <Settings size={20} />
               </button>
-              <button 
-                onClick={() => { 
-                  vibrate(VIBRATION_PATTERNS.LIGHT);
-                  resetGame(); 
-                  navigate('/'); 
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground"
-                title="退出游戏"
-              >
-                退出
-              </button>
+
             </div>
           </header>
 

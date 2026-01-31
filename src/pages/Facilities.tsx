@@ -255,10 +255,10 @@ const GamblingHouse: React.FC = () => {
         </div>
 
         {lastResult && (
-          <div className={`p-3 rounded-md text-center font-medium animate-in fade-in zoom-in duration-300 ${lastResult.win ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
+          <div className={`p-3 rounded-md text-center font-medium animate-in fade-in zoom-in duration-300 ${lastResult.win ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'}`}>
             <div className="flex gap-2 justify-center mb-1 text-lg">
               {lastResult.dice.map((d, i) => (
-                <span key={i} className="flex justify-center items-center w-8 h-8 rounded border shadow-sm bg-background">
+                <span key={i} className="flex justify-center items-center w-8 h-8 rounded border shadow-sm bg-background text-foreground">
                   {d}
                 </span>
               ))}

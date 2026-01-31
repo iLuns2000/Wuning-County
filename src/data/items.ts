@@ -2,7 +2,7 @@
  * @Author: xyZhan
  * @Date: 2026-01-20 20:03:30
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-21 07:58:31
+ * @LastEditTime: 2026-01-31 16:06:52
  * @FilePath: \textgame\src\data\items.ts
  * @Description: 
  * 
@@ -383,6 +383,108 @@ export const items: Item[] = [
     slot: 'neck',
     style: '典雅'
   },
+  {
+    id: 'lingnan_fried_food',
+    name: '嘎炸',
+    description: '岭南带来的嘎炸，可入药食用。',
+    type: 'consumable',
+    effect: { health: 5 }
+  },
+  {
+    id: 'yangguo_egg',
+    name: '神雕蛋',
+    description: '杨过神雕第八十八代绝育之前留下的蛋。',
+    type: 'treasure'
+  },
+  {
+    id: 'soul_bell',
+    name: '小铜钟',
+    description: '逐客生涯中的灵魂打击乐器小铜钟，上刻钟文谈及故乡的一段传说。',
+    type: 'misc'
+  },
+  {
+    id: 'bell_rubbing',
+    name: '钟文拓片',
+    description: '内容如下：黄月容，江南扬州人，年十四嫁与慈溪进士冯元飙为妾，后冯受揭阳令，月容度岭相随，颇谙刀笔，与参案牍，多合律，却因受宠遭主母妒忌，被害身亡，殒命岭南，自生及死，方十八年，铸此钟以为纪。',
+    type: 'misc'
+  },
+  {
+    id: 'fresh_leek',
+    name: '新鲜韭菜',
+    description: '一把新鲜的韭菜，翠绿欲滴，散发着独特的辛辣味。',
+    type: 'material'
+  },
+  {
+    id: 'luban_lock',
+    name: '鲁班锁',
+    description: '有一块可拆卸重组的小型鲁班锁，传闻是墨子流传下来的物件，焦虑时常在桌下偷偷摆弄。',
+    type: 'misc'
+  },
+  {
+    id: 'moon_eclipse_compass',
+    name: '月蚀罗盘',
+    description: '巴掌大小的青铜罗盘，表面有可滑动的白玉月相遮板，能根据日期手动调节成当前月相。当遮板完全覆盖时（模拟月全食），盘底会浮现血色星图。玄月门初代掌门所制，历代掌门用于记录发现的“月相墓葬”位置。在真实月全食之夜，罗盘指针会指向附近“月相墓葬”入口。',
+    type: 'misc'
+  },
+  {
+    id: 'appraisal_notebook',
+    name: '无宁鉴古疑云录',
+    description: '一本关于自己鉴宝、文物修复心得的笔记。记载了三十七件如‘商铜周铸、汉玉唐工’般难以定谳的奇物。',
+    type: 'misc'
+  },
+  {
+    id: 'magistrate_ribbon',
+    name: '县令绶带',
+    description: '楼县令上值时所佩戴的绶带，精致无比，上面绣着云纹。',
+    type: 'misc'
+  },
+  {
+    id: 'leek_croton_jelly',
+    name: '韭菜巴豆冻',
+    description: '散发着诡异气味的绿色胶状物体，似乎是某种黑暗料理。',
+    type: 'consumable',
+    effect: { health: -10 }
+  },
+  {
+    id: 'pineapple_tea',
+    name: '红茶酿番菠萝',
+    description: '红茶的醇厚与番菠萝的酸甜完美融合，神仙美味！',
+    type: 'consumable',
+    effect: { health: 10, money: 5 }
+  },
+  {
+    id: 'leek_bun',
+    name: '韭菜肉包',
+    description: '皮薄馅大，汁水丰盈，千妖的拿手绝活。',
+    type: 'consumable',
+    effect: { health: 20, reputation: 2 }
+  },
+  {
+    id: 'random_treasure_bag',
+    name: '宁缨的赠礼',
+    description: '宁缨赠送的随机宝物，里面可能装着簪子、玉坠、金瓜子或水晶珠等稀罕物件。',
+    type: 'treasure',
+    price: 500
+  },
+  {
+    id: 'western_gadget',
+    name: '西洋舶来品',
+    description: '一件精致的西洋小玩意，做工精巧，在市面上很难见到。',
+    type: 'treasure',
+    price: 300
+  },
+  {
+    id: 'jingshanwei_thousand_token',
+    name: '南直隶径山卫千户令',
+    description: '一块沉甸甸的令牌，象征着南直隶径山卫千户的权威。',
+    type: 'misc'
+  },
+  {
+    id: 'jingshanwei_hundred_token',
+    name: '百户令',
+    description: '北境风骑百夫长的身份证明，上面刻着关山的名字。',
+    type: 'misc'
+  },
   // Alchemy Items (2048 Minigame)
   { id: 'herb_residue', name: '药渣', description: '炼丹失败的产物，虽无大用，但这灰烬中似乎还残留着一丝药性。', type: 'material', price: 1, color: 'bg-stone-400', textColor: 'text-white' },
   { id: 'herb_licorice', name: '甘草', description: '寻常可见的草药，药性温和，是炼丹的基础材料。', type: 'material', price: 2, color: 'bg-green-600', textColor: 'text-white' },
@@ -395,6 +497,46 @@ export const items: Item[] = [
   { id: 'herb_ambergris', name: '龙涎香', description: '大海中异兽的珍宝，异香扑鼻，价值连城。', type: 'material', price: 1500, color: 'bg-gray-600', textColor: 'text-white' },
   { id: 'herb_snow_lotus', name: '天山雪莲', description: '生长在极寒之地的雪莲，能解百毒。', type: 'material', price: 4000, color: 'bg-cyan-600', textColor: 'text-white' },
   { id: 'herb_ginseng_king', name: '千年人参', description: '吸收了千年日精月华的人参，已有灵性。', type: 'material', price: 10000, color: 'bg-red-700', textColor: 'text-white' },
+  {
+    id: 'clay_figure_manager',
+    name: '小掌柜泥人',
+    description: '无宁县的经典地标。',
+    type: 'misc',
+    price: 50
+  },
+  {
+    id: 'wooden_gold_fridge',
+    name: '木质黄金冰箱',
+    description: '买冰箱送金子（涂了金漆的迷你石头）。',
+    type: 'misc',
+    price: 100
+  },
+  {
+    id: 'wood_carving_spongebob',
+    name: '木雕海绵宝宝',
+    description: '“是谁住在深海的大菠萝里”',
+    type: 'misc',
+    price: 80
+  },
+  {
+    id: 'patrick_star_decor',
+    name: '派大星装饰',
+    description: '一只粉红色的海星装饰，看起来不太聪明的样子。',
+    type: 'misc'
+  },
+  {
+    id: 'squidward_clarinet_decor',
+    name: '章鱼哥竖笛装饰',
+    description: '一只拿着竖笛的章鱼哥装饰，仿佛能听到那美妙（？）的笛声。',
+    type: 'misc'
+  },
+  {
+    id: 'storage_bag',
+    name: '储物袋',
+    description: '一种产自外地的布袋子，能够增加储物栏容量，一定程度延长物品有效期。',
+    type: 'misc',
+    price: 500
+  }
 ];
 
 export const getItemById = (id: string): Item | undefined => {

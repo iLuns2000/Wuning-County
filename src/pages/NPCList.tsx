@@ -2,20 +2,23 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-25 12:34:01
+ * @LastEditTime: 2026-01-31 16:59:51
  * @FilePath: \textgame\src\pages\NPCList.tsx
  * @Description: 
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
-import React from 'react';import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gift, MessageCircle, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Gift, MessageCircle, Sparkles, Search } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { npcEvents } from '@/data/events';
 import { useGameStore } from '@/store/gameStore';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+
+type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
 export const NPCList: React.FC = () => {
   const navigate = useNavigate();
@@ -33,6 +36,44 @@ export const NPCList: React.FC = () => {
     currentEvent,
     triggerSpecificEvent
   } = useGameStore();
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortType, setSortType] = useState<SortType>('default');
+
+  const filteredAndSortedNPCs = useMemo(() => {
+    let result = [...npcs];
+
+    // Filter
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      result = result.filter(npc => 
+        npc.name.toLowerCase().includes(lowerTerm) ||
+        npc.title.toLowerCase().includes(lowerTerm) ||
+        npc.description.toLowerCase().includes(lowerTerm)
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const relationA = npcRelations[a.id] || 0;
+      const relationB = npcRelations[b.id] || 0;
+
+      switch (sortType) {
+        case 'relation_desc':
+          return relationB - relationA;
+        case 'relation_asc':
+          return relationA - relationB;
+        case 'id_asc':
+          return a.id.localeCompare(b.id);
+        case 'id_desc':
+          return b.id.localeCompare(a.id);
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [searchTerm, sortType, npcRelations]);
 
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
@@ -108,8 +149,40 @@ export const NPCList: React.FC = () => {
             </div>
           </header>
 
+          <div className="flex flex-col gap-2 px-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <input
+                type="text"
+                placeholder="搜索 NPC 姓名、称号、描述..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="py-2 pr-4 pl-9 w-full text-sm rounded-md border-none outline-none bg-secondary/50 focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+               <select 
+                  value={sortType}
+                  onChange={(e) => setSortType(e.target.value as SortType)}
+                  className="px-3 py-1.5 text-sm bg-secondary/50 rounded-md border-none outline-none focus:ring-1 focus:ring-primary cursor-pointer w-full"
+               >
+                 <option value="default">默认排序</option>
+                 <option value="relation_desc">好感度 (从高到低)</option>
+                 <option value="relation_asc">好感度 (从低到高)</option>
+                 <option value="id_asc">ID (A→Z)</option>
+                 <option value="id_desc">ID (Z→A)</option>
+               </select>
+            </div>
+          </div>
+
           <div className="overflow-y-auto flex-1 pr-2 space-y-3 min-h-0">
-            {npcs.map(npc => {
+            {filteredAndSortedNPCs.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                    未找到匹配的 NPC
+                </div>
+            ) : (
+                filteredAndSortedNPCs.map(npc => {
               const relation = npcRelations[npc.id] || 0;
               return (
                 <div key={npc.id} className="p-4 space-y-3 rounded-lg border transition-colors cursor-pointer bg-card hover:border-primary/50" onClick={() => navigate(`/npcs/${npc.id}`)}>
@@ -183,7 +256,8 @@ export const NPCList: React.FC = () => {
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
           </div>
         </div>
         

@@ -18,8 +18,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect, s
   const vibrate = useGameVibrate();
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 border animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-lg max-w-md w-full p-6 border border-border animate-in fade-in zoom-in duration-200">
         <div className="mb-4">
           <span className="text-xs font-bold px-2 py-1 rounded bg-primary/10 text-primary uppercase">
             {event.type === 'daily' ? '日常' : event.type === 'opportunity' ? '机遇' : event.type === 'challenge' ? '挑战' : 'NPC'}

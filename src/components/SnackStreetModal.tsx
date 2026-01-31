@@ -48,50 +48,50 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-[#fff9e6] rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-[#fff9e6] dark:bg-card rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800 dark:border-amber-900">
         
         {/* Header */}
-        <div className="p-4 bg-amber-800 text-amber-50 flex justify-between items-center shadow-md">
+        <div className="p-4 bg-amber-800 dark:bg-amber-900 text-amber-50 flex justify-between items-center shadow-md">
           <div className="flex items-center gap-3">
             <Utensils className="w-6 h-6" />
             <h2 className="text-2xl font-bold tracking-wider">武宁小吃街</h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-amber-700 rounded-full transition-colors"
+            className="p-2 hover:bg-amber-700 dark:hover:bg-amber-800 rounded-full transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Stats Bar */}
-        <div className="bg-amber-100 p-3 px-6 flex justify-between items-center border-b border-amber-200">
-           <div className="flex items-center gap-2 text-amber-900 font-bold">
+        <div className="bg-amber-100 dark:bg-amber-950/50 p-3 px-6 flex justify-between items-center border-b border-amber-200 dark:border-amber-900">
+           <div className="flex items-center gap-2 text-amber-900 dark:text-amber-100 font-bold">
               <Coins className="w-5 h-5" />
               <span>{playerStats.money} 文</span>
            </div>
-           <div className="text-sm text-amber-700">
+           <div className="text-sm text-amber-700 dark:text-amber-300">
               * 民以食为天，不吃饱怎么闯荡江湖？
            </div>
         </div>
 
         {/* Content Grid */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')]">
+        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] dark:bg-none dark:bg-muted/10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {snacks.map((snack) => {
               const price = getPrice(snack.id);
               
               return (
-                <div key={snack.id} className="bg-white p-4 rounded-lg shadow-md border border-amber-200 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                <div key={snack.id} className="bg-white dark:bg-card p-4 rounded-lg shadow-md border border-amber-200 dark:border-amber-900/50 hover:shadow-lg transition-all transform hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg text-amber-900">{snack.name}</h3>
-                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-bold">
+                    <h3 className="font-bold text-lg text-amber-900 dark:text-amber-100">{snack.name}</h3>
+                    <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 text-xs px-2 py-1 rounded-full font-bold">
                       {price} 文
                     </span>
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-4 h-10 line-clamp-2">
+                  <p className="text-sm text-gray-600 dark:text-muted-foreground mb-4 h-10 line-clamp-2">
                     {snack.description}
                   </p>
 
@@ -105,7 +105,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
                     </button>
                     <button
                       onClick={() => handleTakeout(snack.id, price)}
-                      className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 py-2 rounded text-sm font-medium transition-colors border border-orange-200 flex items-center justify-center gap-1"
+                      className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-800 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 dark:text-orange-200 py-2 rounded text-sm font-medium transition-colors border border-orange-200 dark:border-orange-800 flex items-center justify-center gap-1"
                     >
                       <ShoppingBag className="w-3 h-3" />
                       打包

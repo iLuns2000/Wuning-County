@@ -22,10 +22,13 @@ import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
+import { useTheme } from '@/hooks/useTheme';
 
 const Router = HashRouter;
 
 function App() {
+  useTheme();
+
   return (
     <Router>
       <Routes>
