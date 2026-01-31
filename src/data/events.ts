@@ -896,6 +896,134 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'chadu_season_spring_peach',
+    title: '春桃栽种',
+    description: '春回大地，茶嘟邀你在柳园一角栽下桃枝。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const SEASON_LENGTH = 90;
+        const adjustedDay = state.day - 1;
+        const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+        return seasonIndex === 0 && !state.flags['flower_task_spring_done'];
+      }
+    },
+    options: [
+      {
+        label: '栽下桃枝',
+        message: '你与茶嘟一起轻覆新土，盼来年繁花。',
+        effect: { relationChange: { cha_du: 20 }, flagsSet: { flower_task_spring_done: true } }
+      },
+      {
+        label: '改日再来',
+        message: '你婉拒了茶嘟的邀请。'
+      }
+    ]
+  },
+  {
+    id: 'chadu_season_summer_lotus',
+    title: '夏荷栽植',
+    description: '盛夏将至，茶嘟邀你在落星湖畔添一池新荷。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const SEASON_LENGTH = 90;
+        const adjustedDay = state.day - 1;
+        const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+        return seasonIndex === 1 && !state.flags['flower_task_summer_done'];
+      }
+    },
+    options: [
+      {
+        label: '扶荷入泥',
+        message: '清波荡漾，荷苗入泥，夏意渐浓。',
+        effect: { relationChange: { cha_du: 20 }, flagsSet: { flower_task_summer_done: true } }
+      },
+      {
+        label: '改日再来',
+        message: '你婉拒了茶嘟的邀请。'
+      }
+    ]
+  },
+  {
+    id: 'chadu_season_autumn_chrysanthemum',
+    title: '秋菊分栽',
+    description: '秋风起，茶嘟邀你在柳园分栽菊苗。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const SEASON_LENGTH = 90;
+        const adjustedDay = state.day - 1;
+        const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+        return seasonIndex === 2 && !state.flags['flower_task_autumn_done'];
+      }
+    },
+    options: [
+      {
+        label: '分栽新菊',
+        message: '霜前培土，待傲寒初放。',
+        effect: { relationChange: { cha_du: 20 }, flagsSet: { flower_task_autumn_done: true } }
+      },
+      {
+        label: '改日再来',
+        message: '你婉拒了茶嘟的邀请。'
+      }
+    ]
+  },
+  {
+    id: 'chadu_season_winter_plum',
+    title: '冬梅扶栽',
+    description: '隆冬雪里，茶嘟邀你于柳园扶栽梅桩。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const SEASON_LENGTH = 90;
+        const adjustedDay = state.day - 1;
+        const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
+        return seasonIndex === 3 && !state.flags['flower_task_winter_done'];
+      }
+    },
+    options: [
+      {
+        label: '扶栽梅桩',
+        message: '雪压枝头，暗香初起。',
+        effect: { relationChange: { cha_du: 20 }, flagsSet: { flower_task_winter_done: true } }
+      },
+      {
+        label: '改日再来',
+        message: '你婉拒了茶嘟的邀请。'
+      }
+    ]
+  },
+  {
+    id: 'falling_star_lake_spongebob_boat',
+    title: '落星湖泛舟',
+    description: '四季花事已毕，落星湖上微风轻拂。有人问：“是谁住在深海的大菠萝里？”你笑着应声，一起登舟。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const done = state.flags['flower_task_spring_done'] && state.flags['flower_task_summer_done'] && state.flags['flower_task_autumn_done'] && state.flags['flower_task_winter_done'];
+        return !!done && !state.flags['spongebob_boating_done'];
+      }
+    },
+    options: [
+      {
+        label: '登舟泛湖',
+        message: '落星湖畔芦苇沙沙，与你与海绵宝宝泛舟一圈。',
+        effect: { experience: 10, flagsSet: { spongebob_boating_done: true } }
+      },
+      {
+        label: '改日再约',
+        message: '你暂且婉拒了这次泛舟。'
+      }
+    ]
+  },
+  {
     id: 'ccccjq_interaction',
     title: '路过',
     description: 'CcccJq将正在书写的最后一笔完成，抬眼望向你。',
@@ -917,14 +1045,38 @@ export const npcEvents: GameEvent[] = [
   {
     id: 'ccccjq_burn_paper',
     title: '焚烧废纸',
-    description: 'CcccJq正在焚烧废弃的稿纸。',
+    description: 'CcccJq邀请你一起焚烧废纸。',
     type: 'npc',
     triggerCondition: { probability: 0 },
     options: [
       {
-        label: '帮忙焚烧',
-        message: '你帮忙一起焚烧废纸，掌握了火候的技巧。',
-        effect: { relationChange: { ccccjq: 5 }, flagsIncrement: ['ccccjq_burn_paper_count'] }
+        label: '接受',
+        message: '看来你也是惜纸之人，未时三刻，火候最佳，我们一同前去。',
+        effect: { money: 20, health: -5, relationChange: { ccccjq: 15 }, flagsIncrement: ['ccccjq_burn_paper_count'] }
+      },
+      {
+        label: '拒绝',
+        message: '也罢。',
+        effect: { relationChange: { ccccjq: -3 } }
+      }
+    ]
+  },
+  {
+    id: 'ccccjq_make_needle',
+    title: '制针',
+    description: '来啦，此番是为取走制法，还是？',
+    type: 'npc',
+    triggerCondition: { probability: 0 }, // Manually triggered or relation checked in code
+    options: [
+      {
+        label: '想与你一同完成 (100文)',
+        message: '好，请按图纸所载备材，七日后请如约前来。',
+        effect: { money: -100, health: -20, relationChange: { ccccjq: 30 } }
+      },
+      {
+        label: '我想自己尝试',
+        message: 'CcccJq从屋内一处锁匣中取出“青影针制法”皮纸，推至你面前。“制法在此，但有四句口诀，图上未载明，你需记清……”',
+        effect: { relationChange: { ccccjq: 5 }, itemsAdd: ['qingying_needle_recipe'] }
       }
     ]
   },
@@ -1842,6 +1994,105 @@ export const npcEvents: GameEvent[] = [
         label: '拒绝',
         message: '“莫向外求，善、大善、老善喽~”',
         effect: { relationChange: { feng_ge: 1 } }
+      }
+    ]
+  },
+  {
+    id: 'chadu_collect_flower',
+    title: '协助采花',
+    description: '茶嘟正在花丛中忙碌，需要帮手采摘花枝。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '采对了',
+        message: '“这枝不错，送你啦！”（赏花一枝）',
+        effect: { reputation: 1 }
+      },
+      {
+        label: '采错了',
+        message: '“哎呀！你怎么把花苞剪了！”（茶嘟给了你一巴掌）',
+        effect: { health: -20, relationChange: { cha_du: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'chadu_gift_flower',
+    title: '一同赠花',
+    description: '茶嘟准备去城中赠花，邀请你同行。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '送对人',
+        message: '“那姑娘笑得真好看，这十文钱请你喝酒。”',
+        effect: { money: 10, relationChange: { cha_du: 2 } }
+      },
+      {
+        label: '送错地方',
+        message: '“你怎么送到赌坊去了！”（茶嘟给了你一巴掌）',
+        effect: { health: -20, relationChange: { cha_du: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'chadu_flower_quiz',
+    title: '柳园对花',
+    description: '茶嘟在柳园设下花局，邀你识花名、吟诗作对。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '识梅',
+        message: '你指认梅花，疏影横斜，暗香浮动。',
+        effect: { reputation: 5, relationChange: { cha_du: 5 }, itemsAdd: ['gentleman_plum'] }
+      },
+      {
+        label: '识兰',
+        message: '你指认幽兰，其馨不言而自远。',
+        effect: { reputation: 5, relationChange: { cha_du: 5 }, itemsAdd: ['gentleman_orchid'] }
+      },
+      {
+        label: '识竹',
+        message: '你指认修竹，风来疏疏作响。',
+        effect: { reputation: 5, relationChange: { cha_du: 5 }, itemsAdd: ['gentleman_bamboo'] }
+      },
+      {
+        label: '识菊',
+        message: '你指认黄菊，傲霜凌寒，风骨自见。',
+        effect: { reputation: 5, relationChange: { cha_du: 5 }, itemsAdd: ['gentleman_chrysanthemum'] }
+      },
+      {
+        label: '猜错花名',
+        message: '“连这都不认得？罚酒一杯！”',
+        effect: { health: -10 }
+      }
+    ]
+  },
+  {
+    id: 'yuelao_temple_prayer',
+    title: '月老祠祈愿',
+    description: '柳园对花后，若集齐梅兰竹菊四君子，可持香三柱于月老祠祈愿。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 1.0,
+      custom: (state) => {
+        const hasPlum = state.inventory.includes('gentleman_plum');
+        const hasOrchid = state.inventory.includes('gentleman_orchid');
+        const hasBamboo = state.inventory.includes('gentleman_bamboo');
+        const hasChrysanthemum = state.inventory.includes('gentleman_chrysanthemum');
+        return hasPlum && hasOrchid && hasBamboo && hasChrysanthemum && !state.flags['yuelao_prayer_done'];
+      }
+    },
+    options: [
+      {
+        label: '上香祈愿',
+        message: '你于月老祠上香三柱，系下一枚同心结。',
+        effect: { itemsAdd: ['incense_three', 'love_knot'], flagsSet: { yuelao_prayer_done: true } }
+      },
+      {
+        label: '暂不祈愿',
+        message: '你决定择日再来。'
       }
     ]
   }

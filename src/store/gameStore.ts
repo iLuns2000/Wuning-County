@@ -173,6 +173,9 @@ interface GameStore extends GameState {
   // Gold Sinks
   buyTreasure: (treasureId: string) => void;
   performCharity: (charityId: string) => void;
+  
+  // Disaster Relief
+  donateDisasterRelief: (type: 'grain' | 'cloth', amount: number) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -195,7 +198,7 @@ export const useGameStore = create<GameStore>()(
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
       collectedScrolls: [],
@@ -230,6 +233,7 @@ export const useGameStore = create<GameStore>()(
       ],
       leekFacilities: {},
       leekOrders: [],
+      disasterState: { type: 'none', active: false, duration: 0, lastTriggerDay: 0 },
 
       markInteraction: () => {
         const state = get();
@@ -269,8 +273,7 @@ export const useGameStore = create<GameStore>()(
              set(state => ({
                 dailyCounts: { 
                     ...state.dailyCounts, 
-                    work: 100, 
-                    rest: 100 
+                    explore: (state.dailyCounts.explore || 0) + 1
                 },
                 exploreResult: { money: 0, reputation: 0, message: failMessage },
              }));
@@ -283,81 +286,80 @@ export const useGameStore = create<GameStore>()(
         }
 
         // Random rewards
-        const money = Math.floor(Math.random() * 50) + 10; // 10-60 money
+        let money = Math.floor(Math.random() * 50) + 10; // 10-60 money
         const reputation = Math.floor(Math.random() * 10) + 5; // 5-15 reputation
         let itemId: string | undefined = undefined;
+        let healthChange = 0;
+        let extraMessage = '';
+        const droppedItems: string[] = [];
 
-        // 15% chance to get an item
-        if (Math.random() < 0.15) {
-           // For now, just random item from pool, or specifically Lovesickness Tablet
-           // Let's make Lovesickness Tablet a rare drop from explore (e.g. 20% of the 15% chance, or just direct for this task)
-           // Task implies "if user gets item... e.g. Lovesickness Tablet". Let's make it the primary explore item for now.
-           itemId = 'lovesickness_tablet';
+        // 60% chance to find Wood (1-3)
+        if (Math.random() < 0.6) {
+             const count = Math.floor(Math.random() * 3) + 1;
+             for (let i = 0; i < count; i++) droppedItems.push('wood');
+             extraMessage += ` 拾得${count}根木头。`;
         }
 
-        // Apply effects after "delay" simulated in UI, but state updates happen now or after?
-        // Let's update stats immediately but keep 'isExploring' true for UI to show spinner.
-        // Actually, we should update stats only when UI finishes or immediately.
-        // Let's update immediately for simplicity of state management.
+        // 60% chance to find Stone (1-3)
+        if (Math.random() < 0.6) {
+             const count = Math.floor(Math.random() * 3) + 1;
+             for (let i = 0; i < count; i++) droppedItems.push('stone');
+             extraMessage += ` 拾得${count}块石头。`;
+        }
+
+        // INCREASED DROP RATE: 25% chance to get an item (was 15%)
+        if (Math.random() < 0.25) {
+           // For now, just random item from pool, or specifically Lovesickness Tablet
+           itemId = 'lovesickness_tablet';
+           droppedItems.push(itemId);
+        }
+
+        // NEGATIVE BUFFS/EVENTS
+        // 30% chance to encounter a minor setback
+        if (Math.random() < 0.3) {
+            const setbacks = [
+                { msg: '但不小心摔了一跤，擦破了皮。', health: -5, money: 0 },
+                { msg: '回来的路上遇到了剪径的强盗，破财消灾。', health: 0, money: -20 },
+                { msg: '为了躲避野兽，跑得气喘吁吁。', health: -10, money: 0 },
+                { msg: '不慎遗失了一些零钱。', health: 0, money: -10 }
+            ];
+            const setback = setbacks[Math.floor(Math.random() * setbacks.length)];
+            extraMessage += ` ${setback.msg}`;
+            healthChange = setback.health;
+            money += setback.money;
+        }
         
         const effect: Effect = {
             money,
             reputation,
-            itemsAdd: itemId ? [itemId] : undefined,
-            // Explore consumes entire day? User prompt says "cannot do other things".
-            // We can set daily counts to max to prevent other actions.
+            health: healthChange,
+            itemsAdd: droppedItems.length > 0 ? droppedItems : undefined,
         };
 
         // Check for "Night Rain Jianghu" achievement
-        // Condition: Rain Heavy + Night (Using simple logic here since we don't have explicit time of day, 
-        // but maybe we can check if it's "late" in day or just random?
-        // User request: "If user is in heavy rain AND night state".
-        // We don't have "Night" state explicitly, but we have `timeSettings` or we can assume exploration takes time.
-        // Or we can add a simple check if the user triggers explore "at night".
-        // Let's assume for now if it's Heavy Rain, we trigger it for this request context.
-        // OR better: check if `dailyCounts.work` or `rest` suggests it's late? 
-        // The prompt says "enter night state". We have a night warning in Game.tsx but not in store.
-        // Let's check `weather === 'rain_heavy'`.
-        // And we need to add the item `cursed_sword` if achievement conditions met.
-        
         if (state.weather === 'rain_heavy') {
-            // Assume it's "night" enough or add randomness? 
-            // Or just grant it if it's heavy rain for now as per "night rain" theme.
-            // Let's add the sword and unlock achievement.
             if (!state.inventory.includes('cursed_sword')) {
                  effect.itemsAdd = effect.itemsAdd ? [...effect.itemsAdd, 'cursed_sword'] : ['cursed_sword'];
-                 // Achievement unlock is handled automatically by checkAchievements if we have the item.
             }
         }
 
         // Apply rewards
         get().handleEventOption(effect);
         
-        // Lock day actions
+        // Increment explore count
         set(state => ({
             dailyCounts: { 
                 ...state.dailyCounts, 
-                work: 100, // Max out to prevent work
-                rest: 100  // Max out to prevent rest
+                explore: (state.dailyCounts.explore || 0) + 1
             },
-            exploreResult: { money, reputation, itemId },
-            isExploring: false // Set false immediately? No, wait for UI to handle animation timing? 
-                               // Better: Set result, keep isExploring true? 
-                               // UI needs to know when to show result.
-                               // Let's use isExploring as "animation playing".
-                               // Actually, let's just set result and let UI handle "isExploring" visual state if needed,
-                               // or use a timeout here.
+            exploreResult: { 
+                money, 
+                reputation, 
+                itemId,
+                message: extraMessage ? `探索归来。${extraMessage}` : undefined
+            },
         }));
         
-        // Use timeout to simulate async exploration for store state if we want to block interaction
-        // But since we maxed out daily counts, user can't do much anyway.
-        // Let's keep isExploring = false here and let component manage the "visual" delay start.
-        // Re-reading component: it calls performExplore on mount.
-        // So:
-        // 1. User clicks Explore -> UI shows Modal -> Modal mounts -> calls performExplore
-        // 2. performExplore sets isExploring=true (start), waits, then sets result and isExploring=false.
-        
-        set({ isExploring: true });
         setTimeout(() => {
              set({ isExploring: false });
         }, 2000); // Sync with UI delay
@@ -679,6 +681,34 @@ export const useGameStore = create<GameStore>()(
           get().addLog(`【善行】${charity.logMessage}`);
       },
 
+      donateDisasterRelief: (type, amount) => {
+        const state = get();
+        if (!state.disasterState.active || state.disasterState.type !== 'flood') {
+            get().addLog('当前并无灾情。');
+            return;
+        }
+        
+        const goodId = type;
+        const currentStock = state.ownedGoods[goodId] || 0;
+        if (currentStock < amount) {
+            get().addLog('物资不足。');
+            return;
+        }
+        
+        // Rewards: Reputation.
+        // Grain (price ~10), Cloth (price ~50).
+        // 1 Reputation per 50 value?
+        const value = type === 'grain' ? 10 * amount : 50 * amount;
+        const repGain = Math.ceil(value / 50);
+        
+        set(s => ({
+            ownedGoods: { ...s.ownedGoods, [goodId]: currentStock - amount },
+            playerStats: { ...s.playerStats, reputation: s.playerStats.reputation + repGain }
+        }));
+        
+        get().addLog(`【赈灾】捐赠了 ${amount} ${type === 'grain' ? '粮草' : '布匹'}，获得了 ${repGain} 点声望。百姓对你的义举感激涕零。`);
+      },
+
       useItem: (itemId) => {
         const state = get();
         const itemIndex = state.inventory.indexOf(itemId);
@@ -829,7 +859,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
           collectedScrolls: [],
@@ -1199,7 +1229,8 @@ export const useGameStore = create<GameStore>()(
             newHealth = maxHealth;
             recoveryMessage = '经过一晚充足的休息，体力已完全恢复。';
           } else {
-            newHealth = Math.min(maxHealth, currentHealth + 10);
+            const extraRecovery = Math.min(10, (state.flags['archery_baduanjin_bonus'] || 0));
+            newHealth = Math.min(maxHealth, currentHealth + 10 + extraRecovery);
             recoveryMessage = '由于身体状况不佳，昨晚休息得不是很好，体力仅略有恢复。';
           }
 
@@ -1427,6 +1458,41 @@ export const useGameStore = create<GameStore>()(
             'snow_heavy': '大雪'
           };
 
+          // Disaster Logic
+          let disasterMessage = '';
+          let nextDisasterState = { ...state.disasterState };
+          
+          if (state.disasterState.active) {
+              const newDuration = state.disasterState.duration - 1;
+              if (newDuration <= 0) {
+                  nextDisasterState = { ...nextDisasterState, active: false, type: 'none', duration: 0 };
+                  disasterMessage = '【灾情】洪水终于退去，百姓们开始重建家园。';
+              } else {
+                  nextDisasterState = { ...nextDisasterState, duration: newDuration };
+                  disasterMessage = `【灾情】洪水肆虐，由于灾情严重，百姓流离失所（剩余 ${newDuration} 天）。`;
+              }
+          } else {
+              // Try trigger
+              // Summer is index 1
+              // Once a year (360 days) or longer.
+              const lastTrigger = state.disasterState.lastTriggerDay || 0;
+              const daysSinceLast = nextDayVal - lastTrigger;
+              
+              if (seasonIndex === 1 && daysSinceLast > 300) {
+                   // 1% chance per day in Summer
+                   if (Math.random() < 0.01) {
+                       const duration = Math.floor(Math.random() * 5) + 3; // 3-7 days
+                       nextDisasterState = { 
+                           type: 'flood', 
+                           active: true, 
+                           duration, 
+                           lastTriggerDay: nextDayVal 
+                       };
+                       disasterMessage = '【突发】连日暴雨引发山洪，柳园以南一片汪洋，急需赈灾！';
+                   }
+              }
+          }
+
           // Reset daily flags
           const newFlags = { ...state.flags };
           Object.keys(newFlags).forEach(key => {
@@ -1444,6 +1510,7 @@ export const useGameStore = create<GameStore>()(
           if (mowerHarvestCount > 0) logs.unshift(`【自动收割】割草机自动收割了 ${mowerHarvestCount} 捆韭菜。`);
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
+          if (disasterMessage) logs.unshift(disasterMessage);
           
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1451,10 +1518,11 @@ export const useGameStore = create<GameStore>()(
           return { 
             day: state.day + 1,
             weather: nextWeather,
+            disasterState: nextDisasterState,
             marketState: newMarketState,
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
@@ -1649,7 +1717,8 @@ export const useGameStore = create<GameStore>()(
             if (livelihoodChange !== 0) statChanges.push(formatChange('民生', livelihoodChange));
             
             if (effect.itemsAdd && effect.itemsAdd.length > 0) {
-                statChanges.push(`获得 ${effect.itemsAdd.join('、')}`);
+                const itemNames = effect.itemsAdd.map(id => items.find(i => i.id === id)?.name || id);
+                statChanges.push(`获得 ${itemNames.join('、')}`);
             }
 
             if (effect.relationChange) {
@@ -1701,7 +1770,12 @@ export const useGameStore = create<GameStore>()(
                newInventory = [...newInventory, ...effect.itemsAdd];
             }
             if (effect.itemsRemove) {
-               newInventory = newInventory.filter(i => !effect.itemsRemove?.includes(i));
+               for (const itemId of effect.itemsRemove) {
+                   const index = newInventory.indexOf(itemId);
+                   if (index !== -1) {
+                       newInventory.splice(index, 1);
+                   }
+               }
             }
 
             const newNpcRelations = { ...state.npcRelations };
@@ -1795,7 +1869,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],

@@ -342,7 +342,9 @@ export const npcs: NPC[] = [
       ]
     },
     "interactionEventIds": [
-      "ccccjq_interaction"
+      "ccccjq_interaction",
+      "ccccjq_burn_paper",
+      "ccccjq_make_needle"
     ]
   },
   {
@@ -946,5 +948,55 @@ export const npcs: NPC[] = [
     interactionEventIds: [
       "fengge_consult_treasure"
     ]
+  },
+  {
+    id: "cha_du",
+    name: "茶嘟",
+    title: "江湖人士",
+    identityCode: "9210310115",
+    description: "采花侠",
+    background: "自幼爱花，游历各地学习花木之道，回归无宁县后，在城中各处栽种杏花、月季、桂花、槐花等四时花木。此外，还在城外东南一隅种植了三里桃花，官道、乡道两旁也种满了金柑、柚子、杨梅等果树。她以赠花为乐，将采撷的花枝悄赠于人，成为县中颇具盛名的采花侠。",
+    dailyLife: "拂晓即起，巡游花间，记录花时。花开时节，便采撷花枝，悄赠于城中各处。午后照料花木，黄昏撰写《四季花时录》，夜间偶尔踏月访友，留花窗台。\n\n【藏珍匣】一本《四季花时录》、几包珍藏花种、一套银制花剪、一只青瓷葫芦瓶",
+    danqing: "青衣素裙，头戴轻纱斗笠，手挽竹编花篮，腰间挂银剪与花囊。目光柔和，步履轻盈。",
+    chatDialogues: {
+      high: [
+        "小楼一夜听春雨，深巷明朝爱杏花"
+      ],
+      medium: [
+        "今日桃花开得正好，我剪了一枝插在茶馆瓶里，你可去瞧见了"
+      ],
+      low: [
+        "“花开堪折直须折，莫待无花空折枝”，知豆不？",
+        "这一剪刀下去，我们就是姐妹了"
+      ]
+    },
+    interactionEventIds: [
+      "chadu_collect_flower",
+      "chadu_gift_flower",
+      "chadu_flower_quiz"
+    ]
+  },
+  {
+    "id": "mo_gu",
+    "name": "墨骨",
+    "title": "隐士",
+    "description": "灵茸园的主人，神秘而清冷的隐士。",
+    "background": "不知从何处来，独自在无宁县郊外开辟了灵茸园，擅长培育各种珍稀菌类。性格孤僻，不喜与人交往，但对真心喜爱植物的人会另眼相看。",
+    "dailyLife": "整日流连于灵茸园中，照料那些娇贵的菌子。",
+    "chatDialogues": {
+      "high": [
+        "这株竹荪长势喜人，多亏了你。",
+        "园子里的菌子都很有灵性，你听到了吗？"
+      ],
+      "medium": [
+        "打理园子要用心，不可急躁。",
+        "那是毒蘑菇，小心别碰。"
+      ],
+      "low": [
+        "别踩坏了我的菌子！",
+        "这里不欢迎闲杂人等。"
+      ]
+    },
+    "interactionEventIds": []
   }
 ];

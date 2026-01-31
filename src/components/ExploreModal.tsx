@@ -23,10 +23,10 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
       const timer = setTimeout(() => {
         setShowResult(true);
         // Vibrate based on result
-        if (exploreResult.message) {
-            vibrate(VIBRATION_PATTERNS.MEDIUM); // Failure
-        } else {
+        if ((exploreResult.reputation || 0) > 0) {
             vibrate(VIBRATION_PATTERNS.SUCCESS); // Success
+        } else {
+            vibrate(VIBRATION_PATTERNS.MEDIUM); // Failure
         }
       }, 2000); // 2 seconds delay for "exploring" animation
       return () => clearTimeout(timer);
@@ -34,6 +34,7 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
   }, [isExploring, exploreResult, vibrate]);
 
   const gainedItem = exploreResult?.itemId ? items.find(i => i.id === exploreResult.itemId) : null;
+  const isSuccess = (exploreResult?.reputation || 0) > 0;
 
   return (
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-300 bg-black/80 animate-in fade-in">
@@ -62,12 +63,12 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
             </div>
           ) : (
             <div className="flex flex-col gap-6 items-center w-full duration-300 animate-in zoom-in">
-              {exploreResult?.message ? (
+              {!isSuccess ? (
                 <>
                   <h2 className="text-2xl font-bold text-destructive">探险失败</h2>
                   <div className="p-6 w-full text-center rounded-lg bg-destructive/10">
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      {exploreResult.message}
+                      {exploreResult?.message}
                     </p>
                   </div>
                   <button 
@@ -81,6 +82,12 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
                 <>
                   <h2 className="text-2xl font-bold text-primary">探险归来</h2>
                   
+                  {exploreResult?.message && (
+                    <div className="p-3 w-full text-sm text-center rounded bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
+                      {exploreResult.message}
+                    </div>
+                  )}
+
                   <div className="p-4 space-y-3 w-full rounded-lg bg-secondary/30">
                     <div className="flex justify-between items-center p-2 rounded border bg-card border-border/50">
                       <div className="flex gap-2 items-center">

@@ -44,6 +44,13 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     condition: (state) => state.playerStats.ability >= 100
   },
   {
+    id: 'wuning_collector',
+    name: '无宁收藏家',
+    description: '集齐无宁县微缩景观一套',
+    rewardExp: 200,
+    condition: (state) => state.inventory.includes('wuning_landscape')
+  },
+  {
     id: 'master',
     name: '一代宗师',
     description: '能力值达到 500',
@@ -271,7 +278,7 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'ccccjq_proxy_write',
     name: '行走的润笔费',
-    description: '她的规矩你倒背如流，她的砚台有你一份磨损，今后找她代笔可享九折润笔费，金钱消耗减少10%',
+    description: '她的规矩你倒背如流，她的砚台有你一份磨损',
     rewardExp: 100,
     provider: 'CcccJq',
     condition: (state) => (state.flags['ccccjq_proxy_write_count'] || 0) >= 10
@@ -279,7 +286,7 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'ccccjq_burn_paper',
     name: '人形鼓风机',
-    description: '熟能生巧，你已经深谙焚纸的火候与技巧，效率提升，体力消耗减少20%',
+    description: '熟能生巧，你已经深谙焚纸的火候与技巧',
     rewardExp: 100,
     provider: 'CcccJq',
     condition: (state) => (state.flags['ccccjq_burn_paper_count'] || 0) >= 10
@@ -465,5 +472,56 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '你已经深入掌握边关枪术了',
     rewardExp: 300,
     condition: (state) => (state.flags['spear_count'] || 0) >= 30
+  },
+  {
+    id: 'wine_god_1',
+    name: '千杯不醉',
+    description: '单日饮用“女儿红”超过5次，获得酒量提升。',
+    rewardExp: 100,
+    provider: '锦城',
+    condition: (state) => (state.flags['daily_wine_1_count'] || 0) >= 5
+  },
+  {
+    id: 'wine_god_2',
+    name: '酒中仙',
+    description: '单日饮用“竹叶青”超过5次，获得酒量提升。',
+    rewardExp: 100,
+    provider: '锦城',
+    condition: (state) => (state.flags['daily_wine_2_count'] || 0) >= 5
+  },
+  {
+    id: 'wine_god_3',
+    name: '醉生梦死',
+    description: '单日饮用“状元红”超过5次，获得酒量提升。',
+    rewardExp: 100,
+    provider: '锦城',
+    condition: (state) => (state.flags['daily_wine_3_count'] || 0) >= 5
+  },
+  {
+    id: 'wine_god_4',
+    name: '把酒问天',
+    description: '单日饮用“剑南春”超过5次，获得酒量提升。',
+    rewardExp: 100,
+    provider: '锦城',
+    condition: (state) => (state.flags['daily_wine_4_count'] || 0) >= 5
+  },
+  {
+    id: 'wine_master',
+    name: '酒国至尊',
+    description: '集齐四种酒的成就，行月酒楼拼酒永久免费！',
+    rewardExp: 500,
+    provider: '锦城',
+    condition: (state) => 
+      state.achievements.includes('wine_god_1') &&
+      state.achievements.includes('wine_god_2') &&
+      state.achievements.includes('wine_god_3') &&
+      state.achievements.includes('wine_god_4')
+  },
+  {
+    id: 'brewer',
+    name: '酿酒师',
+    description: '在小言酒馆学习酿酒，掌握酿造技艺',
+    rewardExp: 200,
+    condition: (state) => !!state.flags['can_brew_wine']
   }
 ];

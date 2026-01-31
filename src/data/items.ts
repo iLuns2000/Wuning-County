@@ -2,7 +2,7 @@
  * @Author: xyZhan
  * @Date: 2026-01-20 20:03:30
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-31 16:06:52
+ * @LastEditTime: 2026-01-31 19:24:23
  * @FilePath: \textgame\src\data\items.ts
  * @Description: 
  * 
@@ -94,6 +94,12 @@ export const items: Item[] = [
     effect: {
       health: 20
     }
+  },
+  {
+    id: 'wonton_72_transformations',
+    name: '馄饨的七十二变',
+    description: '云吞吞亲手撰写的馄饨制作秘籍，记载了七十二种馄饨的包法和馅料配方。',
+    type: 'misc'
   },
   {
     id: 'clo_apricot_ruqun',
@@ -404,8 +410,8 @@ export const items: Item[] = [
   },
   {
     id: 'bell_rubbing',
-    name: '钟文拓片',
-    description: '内容如下：黄月容，江南扬州人，年十四嫁与慈溪进士冯元飙为妾，后冯受揭阳令，月容度岭相随，颇谙刀笔，与参案牍，多合律，却因受宠遭主母妒忌，被害身亡，殒命岭南，自生及死，方十八年，铸此钟以为纪。',
+    name: '拓片',
+    description: '刻有岭南某个传说的拓片，内容如下：黄月容，江南扬州人，年十四嫁与慈溪进士冯元飙为妾，后冯受揭阳令，月容度岭相随，颇谙刀笔，与参案牍，多合律，却因受宠遭主母妒忌，被害身亡，殒命岭南，自生及死，方十八年，铸此钟以为纪。',
     type: 'misc'
   },
   {
@@ -428,14 +434,14 @@ export const items: Item[] = [
   },
   {
     id: 'appraisal_notebook',
-    name: '无宁鉴古疑云录',
-    description: '一本关于自己鉴宝、文物修复心得的笔记。记载了三十七件如‘商铜周铸、汉玉唐工’般难以定谳的奇物。',
+    name: '《无宁鉴古疑云录》',
+    description: '一本冷月未央自己总结整理的鉴宝、文物修复心得的笔记',
     type: 'misc'
   },
   {
     id: 'magistrate_ribbon',
-    name: '县令绶带',
-    description: '楼县令上值时所佩戴的绶带，精致无比，上面绣着云纹。',
+    name: '绶带',
+    description: '楼县令上值时所佩戴的绶带，通过和掌柜千妖互动获得',
     type: 'misc'
   },
   {
@@ -481,8 +487,119 @@ export const items: Item[] = [
   },
   {
     id: 'jingshanwei_hundred_token',
-    name: '百户令',
-    description: '北境风骑百夫长的身份证明，上面刻着关山的名字。',
+    name: '径山卫百户令',
+    description: '径山卫百户的令牌，不知道是什么材质做的，水火不侵',
+    type: 'misc'
+  },
+  {
+    id: 'qingying_needle_recipe',
+    name: '青影针制法',
+    description: '一张浅褐色的陈旧皮纸，其上绘有青影针的详细图样与工序，关键处有数行纤小的朱砂批注。',
+    type: 'misc'
+  },
+  {
+    id: 'shark_razor',
+    name: '鲨鱼剃须刀',
+    description: '无名杂货铺销冠：鲨鱼剃须刀',
+    type: 'misc'
+  },
+  {
+    id: 'sun_chair',
+    name: '无名杂货铺的太阳椅',
+    description: '一把胡桃木做成的太阳椅，躺起来很舒服还可以折叠',
+    type: 'misc'
+  },
+  {
+    id: 'zhiyin_wine',
+    name: '知音酒',
+    description: '璃尘亲自酿制好酒；上穷碧落下黄泉，与君相逢话千秋',
+    type: 'consumable',
+    effect: { health: 10, reputation: 5 }
+  },
+  {
+    id: 'good_wine',
+    name: '一壶好酒',
+    description: '璃尘亲自酿制好酒',
+    type: 'consumable',
+    effect: { health: 10 }
+  },
+  {
+    id: 'red_sword_duanyu',
+    name: '赤剑断欲',
+    description: '璃尘曾经纵横江湖佩剑之一，不知被藏于何处',
+    type: 'misc'
+  },
+  {
+    id: 'wonton_manual',
+    name: '美食秘笈《馄饨的七十二变》',
+    description: '云老板家密不外传的馄饨制作秘笈，有了它你也能开一家大饭店！',
+    type: 'misc'
+  },
+  {
+    id: 'mechanism_key',
+    name: '机关钥匙',
+    description: '一把专为解锁各类机关匣、隐秘门扉打造的特制万能钥匙，匙身契合机关卡槽的独特纹路，是探索密域的基础必备品。',
+    type: 'misc'
+  },
+  {
+    id: 'butterfly_step_shake',
+    name: '蝶恋花步摇',
+    description: '一支绿色蝴蝶缠枝牡丹步摇，阳光下泛着莹光，精致华贵',
+    type: 'misc'
+  },
+  {
+    id: 'silver_flower_shears',
+    name: '银制花剪',
+    description: '无比锋利，既可修剪花枝，也可作为武器',
+    type: 'misc'
+  },
+  {
+    id: 'rare_flower_seeds',
+    name: '珍藏花种',
+    description: '游历所得，含异域花种，可观赏可入药',
+    type: 'misc'
+  },
+  {
+    id: 'celadon_gourd_bottle',
+    name: '青瓷葫芦瓶',
+    description: '可装酒水，长久保鲜',
+    type: 'misc'
+  },
+  {
+    id: 'four_seasons_flower_record',
+    name: '《四季花时录》',
+    description: '记录各种花开时节与最佳采撷时',
+    type: 'misc'
+  },
+  {
+    id: 'sword_moves_slanted',
+    name: '《剑走偏锋》',
+    description: '内功心法，增加速度',
+    type: 'consumable',
+    effect: { ability: 5 }
+  },
+  {
+    id: 'ink_shadow_sword',
+    name: '墨影',
+    description: '十大名剑之一',
+    type: 'misc'
+  },
+  {
+    id: 'mushroom_manual',
+    name: '《菌菇培育知识大全》',
+    description: '一本墨骨自己整理记录的笔记',
+    type: 'misc'
+  },
+  {
+    id: 'iron_sword',
+    name: '一把铁剑',
+    description: '一把豆沙铸造的铁剑',
+    type: 'misc'
+  },
+  {
+    id: 'iron_spear',
+    name: '一杆铁枪',
+    description: '一把豆沙铸造的铁枪',
     type: 'misc'
   },
   // Alchemy Items (2048 Minigame)
@@ -505,18 +622,64 @@ export const items: Item[] = [
     price: 50
   },
   {
+    id: 'wood',
+    name: '木头',
+    description: '普通的木材，可以用来制作各种物品。',
+    type: 'material',
+    price: 1
+  },
+  {
+    id: 'stone',
+    name: '石头',
+    description: '坚硬的石块，建筑和工艺的基础材料。',
+    type: 'material',
+    price: 1
+  },
+  {
+    id: 'clay_shopkeeper',
+    name: '小掌柜泥人',
+    description: '捏得惟妙惟肖的小掌柜泥人，看着很喜庆。',
+    type: 'misc',
+    price: 15
+  },
+  {
     id: 'wooden_gold_fridge',
-    name: '木质黄金冰箱',
+    name: '木制黄金冰箱',
     description: '买冰箱送金子（涂了金漆的迷你石头）。',
     type: 'misc',
-    price: 100
+    price: 20
   },
   {
     id: 'wood_carving_spongebob',
     name: '木雕海绵宝宝',
     description: '“是谁住在深海的大菠萝里”',
     type: 'misc',
-    price: 80
+    price: 8
+  },
+  {
+    id: 'wuning_fragment',
+    name: '无宁县微缩景观碎片',
+    description: '制作精良的微缩景观碎片，集齐12个可以兑换整套景观。',
+    type: 'misc'
+  },
+  {
+    id: 'wuning_landscape',
+    name: '无宁县微缩景观',
+    description: '一套完整的无宁县微缩景观，做工精细，极具收藏价值。',
+    type: 'misc'
+  },
+  {
+    id: 'barber_discount_coupon',
+    name: '理发八折优惠券',
+    description: '在梦幻只雕剃肆下次理发可享受八折优惠，用后即失效。',
+    type: 'misc'
+  },
+  {
+    id: 'gaza_conditioner',
+    name: '嘎炸护发素',
+    description: '岭南知名动物所制，芦花自主研发，你或许成为了第一只小白鼠。',
+    type: 'consumable',
+    price: 8
   },
   {
     id: 'patrick_star_decor',
@@ -536,6 +699,74 @@ export const items: Item[] = [
     description: '一种产自外地的布袋子，能够增加储物栏容量，一定程度延长物品有效期。',
     type: 'misc',
     price: 500
+  },
+  {
+    id: 'ximeng_invitation',
+    name: '曦梦楼邀请函',
+    description: '一张精致的邀请函，持有者可参与曦梦楼的问答挑战。',
+    type: 'misc'
+  },
+  {
+    id: 'sword_edge_method',
+    name: '《剑走偏锋》心法',
+    description: '记载了奇诡剑招的武学秘籍，修习后身法如电，速度大增。',
+    type: 'misc'
+  },
+  {
+    id: 'wild_mushroom',
+    name: '野生菌',
+    description: '灵茸园里采集的新鲜野生菌，味道鲜美，可用于烹饪。',
+    type: 'material'
+  },
+  {
+    id: 'bamboo_fungus',
+    name: '竹荪',
+    description: '珍稀的菌类，被称为“菌中皇后”，口感爽脆。',
+    type: 'material'
+  },
+  {
+    id: 'mogu_gift',
+    name: '墨骨的谢礼',
+    description: '墨骨赠送的礼物，里面似乎装着一些珍贵的菌种。',
+    type: 'misc'
+  },
+  {
+    id: 'gentleman_plum',
+    name: '梅枝',
+    description: '花中四君子之一，冷香疏影，取一枝以记。',
+    type: 'quest'
+  },
+  {
+    id: 'gentleman_orchid',
+    name: '兰叶',
+    description: '花中四君子之一，幽兰其馨，取一叶以记。',
+    type: 'quest'
+  },
+  {
+    id: 'gentleman_bamboo',
+    name: '竹节',
+    description: '花中四君子之一，竹节清瘦挺拔，取一节以记。',
+    type: 'quest'
+  },
+  {
+    id: 'gentleman_chrysanthemum',
+    name: '菊花',
+    description: '花中四君子之一，傲霜凌寒，取一朵以记。',
+    type: 'quest'
+  },
+  {
+    id: 'incense_three',
+    name: '香三柱',
+    description: '月老祠供奉用香，一次祈愿消耗三柱。',
+    type: 'consumable'
+  },
+  {
+    id: 'love_knot',
+    name: '同心结',
+    description: '红绳同心结，寓意良缘。',
+    type: 'accessory',
+    slot: 'waist',
+    style: '俏皮'
   }
 ];
 

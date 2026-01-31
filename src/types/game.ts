@@ -82,6 +82,7 @@ export interface DailyActionCounts {
   rest: number;
   chatTotal: number; // Total chats today across all NPCs
   fortune: number; // Daily fortune telling count
+  explore: number; // Daily exploration count
 }
 
 export interface NPCInteractionState {
@@ -159,6 +160,16 @@ export interface GameState {
   leekPlots?: LeekPlot[];
   leekFacilities?: Record<string, boolean>; // id -> owned
   leekOrders?: LeekOrder[];
+
+  // Disaster State
+  disasterState: DisasterState;
+}
+
+export interface DisasterState {
+  type: 'none' | 'flood';
+  active: boolean;
+  duration: number; // Days remaining
+  lastTriggerDay: number; // To prevent frequent triggers
 }
 
 export interface LeekOrder {

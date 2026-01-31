@@ -22,11 +22,12 @@ import { SnackStreetModal } from '@/components/SnackStreetModal';
 import { TreasureModal } from '@/components/TreasureModal';
 import { CharityModal } from '@/components/CharityModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
-import { Settings, Backpack, Compass, Leaf, Utensils } from 'lucide-react';
+import { Settings, Backpack, Compass, Leaf, Utensils, Trees } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
 import { PlayStreetModal } from '@/components/PlayStreetModal';
+import { WillowGardenModal } from '@/components/WillowGardenModal';
 import { items } from '@/data/items';
 import { Effect, StyleTag } from '@/types/game';
 
@@ -44,6 +45,7 @@ export const Game: React.FC = () => {
   const [showExplore, setShowExplore] = React.useState(false);
   const [showSnackStreet, setShowSnackStreet] = React.useState(false);
   const [showLeekGarden, setShowLeekGarden] = React.useState(false);
+  const [showWillowGarden, setShowWillowGarden] = React.useState(false);
   const [showTreasure, setShowTreasure] = React.useState(false);
   const [showCharity, setShowCharity] = React.useState(false);
   const [showPlayStreet, setShowPlayStreet] = React.useState(false);
@@ -569,6 +571,20 @@ export const Game: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
+                setShowWillowGarden(true);
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+            >
+              <div className="p-2 text-green-600 bg-green-100 rounded-lg transition-transform dark:bg-green-950/30 dark:text-green-400 group-hover:scale-110">
+                <Trees size={18} />
+              </div>
+              <span className="text-sm font-medium">柳园</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowEstates(true);
               }}
               disabled={!!currentEvent}
@@ -640,7 +656,7 @@ export const Game: React.FC = () => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowExplore(true);
               }}
-              disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || dailyCounts.rest >= MAX_DAILY_REST || isHeavySnow}
+              disabled={!!currentEvent || isHeavySnow || (dailyCounts.explore || 0) >= 2}
               className="flex relative gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 group/btn"
               title={isHeavySnow ? "大雪封山，无法探险" : ""}
             >
@@ -748,6 +764,7 @@ export const Game: React.FC = () => {
       {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
       {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
       {showLeekGarden && <LeekGardenModal onClose={() => setShowLeekGarden(false)} />}
+      {showWillowGarden && <WillowGardenModal onClose={() => setShowWillowGarden(false)} />}
       {showPlayStreet && <PlayStreetModal onClose={() => setShowPlayStreet(false)} />}
       {showTreasure && <TreasureModal onClose={() => setShowTreasure(false)} />}
       {showCharity && <CharityModal onClose={() => setShowCharity(false)} />}
