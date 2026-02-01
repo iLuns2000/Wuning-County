@@ -309,8 +309,8 @@ export const useGameStore = create<GameStore>()(
 
         // INCREASED DROP RATE: 25% chance to get an item (was 15%)
         if (Math.random() < 0.25) {
-           // For now, just random item from pool, or specifically Lovesickness Tablet
-           itemId = 'lovesickness_tablet';
+           const pool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
+           itemId = pool[Math.floor(Math.random() * pool.length)];
            droppedItems.push(itemId);
         }
 

@@ -477,7 +477,7 @@ export const randomEvents: GameEvent[] = [
         // Also check if we already have the badge to avoid repeat.
         return seasonIndex === 2 && 
                (dayOfSeason === 7 || dayOfSeason === 8) && 
-               (state.dailyCounts.work + state.dailyCounts.rest >= 10) &&
+               (state.dailyCounts.work + state.dailyCounts.rest >= 2) &&
                !state.inventory.includes('crescent_moon_badge') &&
                !state.achievements.includes('first_moon');
       }

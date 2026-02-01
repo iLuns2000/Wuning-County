@@ -20,6 +20,7 @@ import { Collection } from '@/pages/Collection';
 import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
 import { Watermark } from '@/components/Watermark';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
@@ -31,6 +32,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
