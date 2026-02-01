@@ -25,7 +25,7 @@ export const getDateInfo = (day: number) => {
   const year = Math.floor(adjustedDay / (SEASON_LENGTH * 4)) + 1;
   const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
   const dayOfSeason = (adjustedDay % SEASON_LENGTH) + 1;
-  
+
   return {
     year,
     season: SEASONS[seasonIndex],
@@ -36,7 +36,7 @@ export const getDateInfo = (day: number) => {
 
 const generateWeather = (seasonIndex: number): WeatherType => {
   const rand = Math.random();
-  
+
   // Probabilities based on season
   switch (seasonIndex) {
     case 0: // Spring
@@ -66,6 +66,7 @@ const generateWeather = (seasonIndex: number): WeatherType => {
 
 interface GameStore extends GameState {
   currentEvent: GameEvent | null;
+  eventQueue: GameEvent[];
   isGameOver: boolean;
   marketState: 'normal' | 'undercut' | 'cooperative' | 'boom' | 'crash';
 
@@ -84,7 +85,7 @@ interface GameStore extends GameState {
   setPolicy: (policyId: string) => void;
   cancelPolicy: () => void;
   divineFortune: () => void;
-  
+
   // UI State for Achievements
   latestUnlockedAchievementId?: string;
 
@@ -106,7 +107,7 @@ interface GameStore extends GameState {
   // Market & Economy
   buyGood: (goodId: string, quantity: number) => void;
   sellGood: (goodId: string, quantity: number) => void;
-  
+
   // Facility Methods
   buyFacility: (facilityId: string) => void;
   buyLeekFacility: (id: string, cost?: number) => void;
@@ -114,15 +115,15 @@ interface GameStore extends GameState {
   // Loan Methods
   loan: (amount: number) => void;
   repayLoan: (amount: number) => void;
-  
+
   // Talent & Achievement Methods
   upgradeTalent: (talentId: string) => void;
   checkAchievements: () => void;
-  
+
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'work') => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
-  
+
   // Profile Methods
   setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
 
@@ -136,7 +137,7 @@ interface GameStore extends GameState {
 
   // Achievement Actions
   dismissAchievementPopup: () => void;
-  
+
   // Explore Actions
   performExplore: () => void;
 
@@ -161,7 +162,7 @@ interface GameStore extends GameState {
   harvestLeek: (plotId: number) => void;
   processLeek: () => void;
   submitLeekOrder: (orderId: string) => void;
-  
+
   // Item Methods
   buyItem: (itemId: string, cost: number) => void;
   useItem: (itemId: string) => void;
@@ -173,7 +174,7 @@ interface GameStore extends GameState {
   // Gold Sinks
   buyTreasure: (treasureId: string) => void;
   performCharity: (charityId: string) => void;
-  
+
   // Disaster Relief
   donateDisasterRelief: (type: 'grain' | 'cloth', amount: number) => void;
 }
@@ -209,6 +210,7 @@ export const useGameStore = create<GameStore>()(
       npcRelations: {},
       logs: [],
       currentEvent: null,
+      eventQueue: [],
       isGameOver: false,
       marketState: 'normal',
       currentTaskId: undefined,
@@ -238,7 +240,7 @@ export const useGameStore = create<GameStore>()(
       markInteraction: () => {
         const state = get();
         if (!state.hasInteractedToday) {
-            set({ hasInteractedToday: true });
+          set({ hasInteractedToday: true });
         }
       },
 
@@ -246,43 +248,43 @@ export const useGameStore = create<GameStore>()(
 
       performExplore: () => {
         set({ isExploring: true, exploreResult: null });
-        
+
         const state = get();
         let failChance = 0.15;
-        
+
         // Ability reduction: 1 point = 0.01% = 0.0001
         failChance -= state.playerStats.ability * 0.0001;
-        
+
         // Fortune modifier
         if (state.fortuneLevel === 'great_blessing') {
-            failChance = 0;
+          failChance = 0;
         } else if (state.fortuneLevel === 'blessing') {
-            failChance -= 0.05;
+          failChance -= 0.05;
         } else if (state.fortuneLevel === 'bad_luck') {
-            failChance += 0.05;
+          failChance += 0.05;
         } else if (state.fortuneLevel === 'terrible_luck') {
-            failChance += 0.10;
+          failChance += 0.10;
         }
-        
+
         failChance = Math.max(0, Math.min(1, failChance));
-        
+
         if (Math.random() < failChance) {
-             const failMessage = '你在出城探险的路上掉入了一个莫名其妙的洞，上面写着惊鹊的盗洞…………费了九牛二虎之力爬上去之后灰溜溜的回家了，嘴里喊着下次别让我碰到！不然让我烤了你';
-             get().addLog('【探险】出师不利，空手而归。');
-             
-             set(state => ({
-                dailyCounts: { 
-                    ...state.dailyCounts, 
-                    explore: (state.dailyCounts.explore || 0) + 1
-                },
-                exploreResult: { money: 0, reputation: 0, message: failMessage },
-             }));
-             
-             // Simulate delay same as success
-             setTimeout(() => {
-                 set({ isExploring: false });
-             }, 2000);
-             return;
+          const failMessage = '你在出城探险的路上掉入了一个莫名其妙的洞，上面写着惊鹊的盗洞…………费了九牛二虎之力爬上去之后灰溜溜的回家了，嘴里喊着下次别让我碰到！不然让我烤了你';
+          get().addLog('【探险】出师不利，空手而归。');
+
+          set(state => ({
+            dailyCounts: {
+              ...state.dailyCounts,
+              explore: (state.dailyCounts.explore || 0) + 1
+            },
+            exploreResult: { money: 0, reputation: 0, message: failMessage },
+          }));
+
+          // Simulate delay same as success
+          setTimeout(() => {
+            set({ isExploring: false });
+          }, 2000);
+          return;
         }
 
         // Random rewards
@@ -295,73 +297,73 @@ export const useGameStore = create<GameStore>()(
 
         // 60% chance to find Wood (1-3)
         if (Math.random() < 0.6) {
-             const count = Math.floor(Math.random() * 3) + 1;
-             for (let i = 0; i < count; i++) droppedItems.push('wood');
-             extraMessage += ` 拾得${count}根木头。`;
+          const count = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < count; i++) droppedItems.push('wood');
+          extraMessage += ` 拾得${count}根木头。`;
         }
 
         // 60% chance to find Stone (1-3)
         if (Math.random() < 0.6) {
-             const count = Math.floor(Math.random() * 3) + 1;
-             for (let i = 0; i < count; i++) droppedItems.push('stone');
-             extraMessage += ` 拾得${count}块石头。`;
+          const count = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < count; i++) droppedItems.push('stone');
+          extraMessage += ` 拾得${count}块石头。`;
         }
 
         // INCREASED DROP RATE: 25% chance to get an item (was 15%)
         if (Math.random() < 0.25) {
-           const pool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
-           itemId = pool[Math.floor(Math.random() * pool.length)];
-           droppedItems.push(itemId);
+          const pool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
+          itemId = pool[Math.floor(Math.random() * pool.length)];
+          droppedItems.push(itemId);
         }
 
         // NEGATIVE BUFFS/EVENTS
         // 30% chance to encounter a minor setback
         if (Math.random() < 0.3) {
-            const setbacks = [
-                { msg: '但不小心摔了一跤，擦破了皮。', health: -5, money: 0 },
-                { msg: '回来的路上遇到了剪径的强盗，破财消灾。', health: 0, money: -20 },
-                { msg: '为了躲避野兽，跑得气喘吁吁。', health: -10, money: 0 },
-                { msg: '不慎遗失了一些零钱。', health: 0, money: -10 }
-            ];
-            const setback = setbacks[Math.floor(Math.random() * setbacks.length)];
-            extraMessage += ` ${setback.msg}`;
-            healthChange = setback.health;
-            money += setback.money;
+          const setbacks = [
+            { msg: '但不小心摔了一跤，擦破了皮。', health: -5, money: 0 },
+            { msg: '回来的路上遇到了剪径的强盗，破财消灾。', health: 0, money: -20 },
+            { msg: '为了躲避野兽，跑得气喘吁吁。', health: -10, money: 0 },
+            { msg: '不慎遗失了一些零钱。', health: 0, money: -10 }
+          ];
+          const setback = setbacks[Math.floor(Math.random() * setbacks.length)];
+          extraMessage += ` ${setback.msg}`;
+          healthChange = setback.health;
+          money += setback.money;
         }
-        
+
         const effect: Effect = {
-            money,
-            reputation,
-            health: healthChange,
-            itemsAdd: droppedItems.length > 0 ? droppedItems : undefined,
+          money,
+          reputation,
+          health: healthChange,
+          itemsAdd: droppedItems.length > 0 ? droppedItems : undefined,
         };
 
         // Check for "Night Rain Jianghu" achievement
         if (state.weather === 'rain_heavy') {
-            if (!state.inventory.includes('cursed_sword')) {
-                 effect.itemsAdd = effect.itemsAdd ? [...effect.itemsAdd, 'cursed_sword'] : ['cursed_sword'];
-            }
+          if (!state.inventory.includes('cursed_sword')) {
+            effect.itemsAdd = effect.itemsAdd ? [...effect.itemsAdd, 'cursed_sword'] : ['cursed_sword'];
+          }
         }
 
         // Apply rewards
         get().handleEventOption(effect);
-        
+
         // Increment explore count
         set(state => ({
-            dailyCounts: { 
-                ...state.dailyCounts, 
-                explore: (state.dailyCounts.explore || 0) + 1
-            },
-            exploreResult: { 
-                money, 
-                reputation, 
-                itemId,
-                message: extraMessage ? `探索归来。${extraMessage}` : undefined
-            },
+          dailyCounts: {
+            ...state.dailyCounts,
+            explore: (state.dailyCounts.explore || 0) + 1
+          },
+          exploreResult: {
+            money,
+            reputation,
+            itemId,
+            message: extraMessage ? `探索归来。${extraMessage}` : undefined
+          },
         }));
-        
+
         setTimeout(() => {
-             set({ isExploring: false });
+          set({ isExploring: false });
         }, 2000); // Sync with UI delay
       },
 
@@ -369,13 +371,13 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         let price = state.marketPrices[goodId];
         if (state.marketState === 'cooperative') {
-            price = Math.ceil(price * 1.1);
+          price = Math.ceil(price * 1.1);
         }
         const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
         const discount = Math.min(0.2, highRelationsCount * 0.02);
         price = Math.floor(price * (1 - discount));
         const cost = price * quantity;
-        
+
         // Check market inventory
         const currentStock = state.marketInventory[goodId] || 0;
         if (currentStock < quantity) {
@@ -405,21 +407,21 @@ export const useGameStore = create<GameStore>()(
       sellGood: (goodId, quantity) => {
         const state = get();
         const currentQty = state.ownedGoods[goodId] || 0;
-        
+
         if (currentQty < quantity) {
           state.addLog('库存不足，无法出售。');
           return;
         }
-        
+
         let price = state.marketPrices[goodId];
         if (state.marketState === 'undercut') {
-            price = Math.floor(price * 0.7);
-            get().addLog('【市集】遭遇商贩恶意压价，售价大跌。');
+          price = Math.floor(price * 0.7);
+          get().addLog('【市集】遭遇商贩恶意压价，售价大跌。');
         } else if (state.marketState === 'cooperative') {
-            price = Math.floor(price * 1.1);
+          price = Math.floor(price * 1.1);
         }
         const earnings = price * quantity;
-        
+
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money + earnings },
           ownedGoods: {
@@ -434,12 +436,12 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const facility = facilities.find(f => f.id === facilityId);
         if (!facility) return;
-        
+
         if (state.playerStats.money < facility.cost) {
           state.addLog('资金不足，无法置办此产业。');
           return;
         }
-        
+
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - facility.cost },
           ownedFacilities: {
@@ -454,51 +456,51 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         let finalCost = cost ?? (leekFacilities.find(f => f.id === id)?.cost ?? 0);
         if (state.playerStats.money < finalCost) {
-            state.addLog('资金不足。');
-            return;
+          state.addLog('资金不足。');
+          return;
         }
         if (state.leekFacilities?.[id]) {
-            state.addLog('你已经拥有此设施。');
-            return;
+          state.addLog('你已经拥有此设施。');
+          return;
         }
         set(s => ({
-            playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
-            leekFacilities: { ...s.leekFacilities, [id]: true }
+          playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
+          leekFacilities: { ...s.leekFacilities, [id]: true }
         }));
         get().addLog('【韭菜园】成功添置设施。');
       },
 
       loan: (amount) => {
-          if (amount <= 0) return;
-          set(state => ({
-              playerStats: { 
-                  ...state.playerStats, 
-                  money: state.playerStats.money + amount,
-                  debt: (state.playerStats.debt || 0) + amount
-              },
-              logs: [`向钱庄借款 ${amount} 文。`, ...state.logs]
-          }));
+        if (amount <= 0) return;
+        set(state => ({
+          playerStats: {
+            ...state.playerStats,
+            money: state.playerStats.money + amount,
+            debt: (state.playerStats.debt || 0) + amount
+          },
+          logs: [`向钱庄借款 ${amount} 文。`, ...state.logs]
+        }));
       },
 
       repayLoan: (amount) => {
-          const state = get();
-          const currentDebt = state.playerStats.debt || 0;
-          if (currentDebt <= 0) return;
-          
-          const actualRepay = Math.min(amount, currentDebt);
-          if (state.playerStats.money < actualRepay) {
-              state.addLog('资金不足，无法还款。');
-              return;
-          }
+        const state = get();
+        const currentDebt = state.playerStats.debt || 0;
+        if (currentDebt <= 0) return;
 
-          set(state => ({
-              playerStats: {
-                  ...state.playerStats,
-                  money: state.playerStats.money - actualRepay,
-                  debt: currentDebt - actualRepay
-              },
-              logs: [`归还借款 ${actualRepay} 文。`, ...state.logs]
-          }));
+        const actualRepay = Math.min(amount, currentDebt);
+        if (state.playerStats.money < actualRepay) {
+          state.addLog('资金不足，无法还款。');
+          return;
+        }
+
+        set(state => ({
+          playerStats: {
+            ...state.playerStats,
+            money: state.playerStats.money - actualRepay,
+            debt: currentDebt - actualRepay
+          },
+          logs: [`归还借款 ${actualRepay} 文。`, ...state.logs]
+        }));
       },
 
       plantLeek: (plotId, variety) => {
@@ -506,8 +508,8 @@ export const useGameStore = create<GameStore>()(
           const plots = (state.leekPlots || []).map(p => {
             if (p.id === plotId) {
               if ((p.fertility || 0) <= 0) {
-                 get().addLog('【韭菜园】该地块土地贫瘠，无法种植，请休耕恢复。');
-                 return p;
+                get().addLog('【韭菜园】该地块土地贫瘠，无法种植，请休耕恢复。');
+                return p;
               }
               return {
                 ...p,
@@ -547,19 +549,19 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const plot = (state.leekPlots || []).find(p => p.id === plotId);
         if (!plot || !plot.ready || !plot.varietyId) return;
-        
+
         // Fertility penalty
         const currentFertility = plot.fertility || 100;
         let baseYield = Math.max(1, (plot as any).baseYield || plot.growthTarget || 3);
         if (currentFertility < 30) {
-            baseYield = Math.max(1, Math.floor(baseYield * 0.5));
-            get().addLog('【韭菜园】土地贫瘠，收成大减。');
+          baseYield = Math.max(1, Math.floor(baseYield * 0.5));
+          get().addLog('【韭菜园】土地贫瘠，收成大减。');
         }
 
         const qualityBonus = Math.floor((plot.quality || 0) / 10);
         const pestPenalty = Math.floor((plot.pest || 0) / 20);
         const qty = Math.max(1, baseYield + qualityBonus - pestPenalty);
-        
+
         set(s => ({
           ownedGoods: { ...s.ownedGoods, leek: (s.ownedGoods['leek'] || 0) + qty },
           leekPlots: (s.leekPlots || []).map(p => p.id === plotId ? { id: plotId, pest: 0, ready: false, fertility: Math.max(0, currentFertility - 10) } : p),
@@ -570,26 +572,26 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const leekCount = state.ownedGoods['leek'] || 0;
         if (leekCount < 2) {
-            get().addLog('鲜韭不足（需2把）。');
-            return;
+          get().addLog('鲜韭不足（需2把）。');
+          return;
         }
         if (state.playerStats.money < 2) {
-            get().addLog('加工资金不足（需2文）。');
-            return;
+          get().addLog('加工资金不足（需2文）。');
+          return;
         }
         // Check facilities? For now let's assume manual processing or basic facility unlocked by default/cheap.
         // Let's require a "Processing Table" (id: processor) if we want to be strict, but for now let's make it basic.
         // Or check if user has bought "processing_table" facility.
         // Simplified: Can always process, but maybe slower/more expensive without facility?
         // Let's just consume resources.
-        
+
         set(s => ({
-            playerStats: { ...s.playerStats, money: s.playerStats.money - 2 },
-            ownedGoods: { 
-                ...s.ownedGoods, 
-                leek: (s.ownedGoods['leek'] || 0) - 2,
-                leek_box: (s.ownedGoods['leek_box'] || 0) + 1
-            }
+          playerStats: { ...s.playerStats, money: s.playerStats.money - 2 },
+          ownedGoods: {
+            ...s.ownedGoods,
+            leek: (s.ownedGoods['leek'] || 0) - 2,
+            leek_box: (s.ownedGoods['leek_box'] || 0) + 1
+          }
         }));
         get().addLog('【加工】制作了1个香喷喷的韭菜盒子。');
       },
@@ -597,26 +599,26 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const order = (state.leekOrders || []).find(o => o.id === orderId);
         if (!order) return;
-        
+
         // We don't track quality per item in inventory (simplified model), so we assume inventory quality meets requirement?
         // Or we just check quantity.
         // To support "Quality Threshold", we might need to store avg quality in inventory or just assume player's skill check.
         // Let's simplify: Check quantity only, but maybe check a global "Garden Reputation" or just assume quality is OK if user accepts.
         // OR: We check if `ownedGoods` has enough.
-        
+
         const currentQty = state.ownedGoods['leek'] || 0;
         if (currentQty < order.quantity) {
-            get().addLog('库存不足以交付此订单。');
-            return;
+          get().addLog('库存不足以交付此订单。');
+          return;
         }
-        
+
         const basePrice = goods.find(g => g.id === 'leek')?.basePrice || 3;
         const totalReward = Math.floor(basePrice * order.quantity * order.priceMultiplier);
-        
+
         set(s => ({
-            ownedGoods: { ...s.ownedGoods, leek: currentQty - order.quantity },
-            playerStats: { ...s.playerStats, money: s.playerStats.money + totalReward },
-            leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId)
+          ownedGoods: { ...s.ownedGoods, leek: currentQty - order.quantity },
+          playerStats: { ...s.playerStats, money: s.playerStats.money + totalReward },
+          leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId)
         }));
         get().addLog(`【订单】交付订单，获得 ${totalReward} 文。`);
       },
@@ -624,88 +626,88 @@ export const useGameStore = create<GameStore>()(
       buyItem: (itemId, cost) => {
         const state = get();
         if (state.playerStats.money < cost) {
-            get().addLog('资金不足。');
-            return;
+          get().addLog('资金不足。');
+          return;
         }
         set(state => ({
-            playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
-            inventory: [...state.inventory, itemId]
+          playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+          inventory: [...state.inventory, itemId]
         }));
         const itemName = items.find(i => i.id === itemId)?.name || '物品';
         get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
       },
 
       buyTreasure: (treasureId) => {
-          const state = get();
-          const cost = treasurePrices[treasureId];
-          if (!cost) return;
+        const state = get();
+        const cost = treasurePrices[treasureId];
+        if (!cost) return;
 
-          if (state.playerStats.money < cost) {
-              get().addLog('资金不足，无法购买此珍宝。');
-              return;
-          }
+        if (state.playerStats.money < cost) {
+          get().addLog('资金不足，无法购买此珍宝。');
+          return;
+        }
 
-          if (state.inventory.includes(treasureId)) {
-               get().addLog('你已经拥有此珍宝了。');
-               return;
-          }
+        if (state.inventory.includes(treasureId)) {
+          get().addLog('你已经拥有此珍宝了。');
+          return;
+        }
 
-          const treasure = items.find(i => i.id === treasureId);
-          if (!treasure) return;
+        const treasure = items.find(i => i.id === treasureId);
+        if (!treasure) return;
 
-          set(state => ({
-              playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
-              inventory: [...state.inventory, treasureId]
-          }));
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+          inventory: [...state.inventory, treasureId]
+        }));
 
-          get().addLog(`【珍宝阁】挥金如土！花费 ${cost} 文购得了稀世珍宝【${treasure.name}】。`);
-          // Buying treasures increases reputation slightly as a hidden bonus
-          get().handleEventOption({ reputation: 5, culture: 2 }, ''); 
+        get().addLog(`【珍宝阁】挥金如土！花费 ${cost} 文购得了稀世珍宝【${treasure.name}】。`);
+        // Buying treasures increases reputation slightly as a hidden bonus
+        get().handleEventOption({ reputation: 5, culture: 2 }, '');
       },
 
       performCharity: (charityId) => {
-          const state = get();
-          const charity = charities.find(c => c.id === charityId);
-          if (!charity) return;
+        const state = get();
+        const charity = charities.find(c => c.id === charityId);
+        if (!charity) return;
 
-          if (state.playerStats.money < charity.cost) {
-              get().addLog('囊中羞涩，无法行善。');
-              return;
-          }
+        if (state.playerStats.money < charity.cost) {
+          get().addLog('囊中羞涩，无法行善。');
+          return;
+        }
 
-          set(state => ({
-              playerStats: { ...state.playerStats, money: state.playerStats.money - charity.cost }
-          }));
-          
-          get().handleEventOption(charity.effect, '');
-          get().addLog(`【善行】${charity.logMessage}`);
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - charity.cost }
+        }));
+
+        get().handleEventOption(charity.effect, '');
+        get().addLog(`【善行】${charity.logMessage}`);
       },
 
       donateDisasterRelief: (type, amount) => {
         const state = get();
         if (!state.disasterState.active || state.disasterState.type !== 'flood') {
-            get().addLog('当前并无灾情。');
-            return;
+          get().addLog('当前并无灾情。');
+          return;
         }
-        
+
         const goodId = type;
         const currentStock = state.ownedGoods[goodId] || 0;
         if (currentStock < amount) {
-            get().addLog('物资不足。');
-            return;
+          get().addLog('物资不足。');
+          return;
         }
-        
+
         // Rewards: Reputation.
         // Grain (price ~10), Cloth (price ~50).
         // 1 Reputation per 50 value?
         const value = type === 'grain' ? 10 * amount : 50 * amount;
         const repGain = Math.ceil(value / 50);
-        
+
         set(s => ({
-            ownedGoods: { ...s.ownedGoods, [goodId]: currentStock - amount },
-            playerStats: { ...s.playerStats, reputation: s.playerStats.reputation + repGain }
+          ownedGoods: { ...s.ownedGoods, [goodId]: currentStock - amount },
+          playerStats: { ...s.playerStats, reputation: s.playerStats.reputation + repGain }
         }));
-        
+
         get().addLog(`【赈灾】捐赠了 ${amount} ${type === 'grain' ? '粮草' : '布匹'}，获得了 ${repGain} 点声望。百姓对你的义举感激涕零。`);
       },
 
@@ -716,9 +718,9 @@ export const useGameStore = create<GameStore>()(
 
         const item = items.find(i => i.id === itemId);
         if (item && item.effect) {
-             get().handleEventOption(item.effect, `使用了 ${item.name}`);
+          get().handleEventOption(item.effect, `使用了 ${item.name}`);
         } else {
-             get().addLog(`使用了 ${item?.name || '物品'}，但是什么也没发生。`);
+          get().addLog(`使用了 ${item?.name || '物品'}，但是什么也没发生。`);
         }
 
         const newInventory = [...state.inventory];
@@ -787,56 +789,56 @@ export const useGameStore = create<GameStore>()(
 
       updateTimeSettings: (settings) => {
         set(state => ({
-            timeSettings: { ...state.timeSettings, ...settings }
+          timeSettings: { ...state.timeSettings, ...settings }
         }));
       },
 
       resetDayTimer: () => {
         set(state => ({
-            timeSettings: { ...state.timeSettings, dayStartTime: Date.now(), isPaused: false }
+          timeSettings: { ...state.timeSettings, dayStartTime: Date.now(), isPaused: false }
         }));
       },
 
       togglePause: (paused) => {
         set(state => {
-            // If pausing, calculate elapsed so we can adjust startTime on resume?
-            // Simplified: Just toggle pause flag. The component will handle elapsed time logic by using stored duration.
-            // Actually, if we pause, we need to adjust startTime when we resume to "freeze" the time.
-            // But for now let's keep it simple. If we want to support true pause/resume, we need to track 'elapsed' in store or adjust startTime.
-            // Let's adjust startTime on resume:
-            // When pausing: store 'pauseTime'.
-            // When resuming: startTime = startTime + (now - pauseTime).
-            // For MVP: let's just use the boolean. The TimeManager component can handle "pausing" the visual timer.
-            // However, Date.now() keeps moving. If I pause for 10 mins, the day will end immediately on resume if I don't adjust.
-            // Strategy: When pausing, save 'elapsedTimeAtPause'. When resuming, set 'dayStartTime = Date.now() - elapsedTimeAtPause'.
-            
-            // Re-implementing correctly:
-            let newSettings = { ...state.timeSettings, isPaused: paused };
-            
-            if (paused) {
-                // We are pausing.
-                // We don't need to do anything to start time yet, just stop checking.
-                // But we need to know how much time had passed to restore it.
-                // Let's store 'elapsedTime' in the store? No, let's use a "pauseTimestamp".
-                // Actually, simplest way:
-                // We need to shift dayStartTime forward by the duration of the pause.
-                // So we need to store 'lastPauseTime' in state?
-                // Let's rely on the component to calculate offsets? No, store is source of truth.
-                
-                // Better approach: 
-                // We will add 'pausedAt' timestamp to settings.
-                // When resuming: dayStartTime += (Date.now() - pausedAt).
-                newSettings = { ...newSettings, pausedAt: Date.now() } as any; 
-            } else {
-                // Resuming
-                if ((state.timeSettings as any).pausedAt) {
-                    const pauseDuration = Date.now() - (state.timeSettings as any).pausedAt;
-                    newSettings.dayStartTime = state.timeSettings.dayStartTime + pauseDuration;
-                    newSettings = { ...newSettings, pausedAt: undefined } as any;
-                }
-            }
+          // If pausing, calculate elapsed so we can adjust startTime on resume?
+          // Simplified: Just toggle pause flag. The component will handle elapsed time logic by using stored duration.
+          // Actually, if we pause, we need to adjust startTime when we resume to "freeze" the time.
+          // But for now let's keep it simple. If we want to support true pause/resume, we need to track 'elapsed' in store or adjust startTime.
+          // Let's adjust startTime on resume:
+          // When pausing: store 'pauseTime'.
+          // When resuming: startTime = startTime + (now - pauseTime).
+          // For MVP: let's just use the boolean. The TimeManager component can handle "pausing" the visual timer.
+          // However, Date.now() keeps moving. If I pause for 10 mins, the day will end immediately on resume if I don't adjust.
+          // Strategy: When pausing, save 'elapsedTimeAtPause'. When resuming, set 'dayStartTime = Date.now() - elapsedTimeAtPause'.
 
-            return { timeSettings: newSettings };
+          // Re-implementing correctly:
+          let newSettings = { ...state.timeSettings, isPaused: paused };
+
+          if (paused) {
+            // We are pausing.
+            // We don't need to do anything to start time yet, just stop checking.
+            // But we need to know how much time had passed to restore it.
+            // Let's store 'elapsedTime' in the store? No, let's use a "pauseTimestamp".
+            // Actually, simplest way:
+            // We need to shift dayStartTime forward by the duration of the pause.
+            // So we need to store 'lastPauseTime' in state?
+            // Let's rely on the component to calculate offsets? No, store is source of truth.
+
+            // Better approach: 
+            // We will add 'pausedAt' timestamp to settings.
+            // When resuming: dayStartTime += (Date.now() - pausedAt).
+            newSettings = { ...newSettings, pausedAt: Date.now() } as any;
+          } else {
+            // Resuming
+            if ((state.timeSettings as any).pausedAt) {
+              const pauseDuration = Date.now() - (state.timeSettings as any).pausedAt;
+              newSettings.dayStartTime = state.timeSettings.dayStartTime + pauseDuration;
+              newSettings = { ...newSettings, pausedAt: undefined } as any;
+            }
+          }
+
+          return { timeSettings: newSettings };
         });
       },
 
@@ -882,9 +884,9 @@ export const useGameStore = create<GameStore>()(
           ownedGoods: {},
           ownedFacilities: {},
         });
-        
+
         if (firstTask) {
-            setTimeout(() => get().addLog(`【主线任务】${firstTask.title}: ${firstTask.description}`), 0);
+          setTimeout(() => get().addLog(`【主线任务】${firstTask.title}: ${firstTask.description}`), 0);
         }
       },
 
@@ -896,23 +898,23 @@ export const useGameStore = create<GameStore>()(
 
         if (task.checkCompletion(state)) {
           get().addLog(`【任务完成】${task.title}`);
-          
+
           const nextTaskId = task.nextTaskId;
-          
-          set((state) => ({ 
+
+          set((state) => ({
             currentTaskId: nextTaskId,
             completedTaskIds: [...state.completedTaskIds, task.id]
-          })); 
-          
+          }));
+
           get().handleEventOption(task.reward, task.rewardText);
 
           if (nextTaskId) {
-             const nextTask = tasks.find(t => t.id === nextTaskId);
-             if (nextTask) {
-                 get().addLog(`【新任务】${nextTask.title}: ${nextTask.description}`);
-             }
+            const nextTask = tasks.find(t => t.id === nextTaskId);
+            if (nextTask) {
+              get().addLog(`【新任务】${nextTask.title}: ${nextTask.description}`);
+            }
           } else {
-             get().addLog(`【恭喜】你已完成所有主线任务！`);
+            get().addLog(`【恭喜】你已完成所有主线任务！`);
           }
         }
       },
@@ -938,155 +940,155 @@ export const useGameStore = create<GameStore>()(
       interactWithNPC: (npcId, type) => {
         const state = get();
         const npcState = state.npcInteractionStates[npcId] || { dailyGiftCount: 0, dailyChatCount: 0, dailyActionCount: 0 };
-        
+
         if (type === 'chat') {
-            if (state.isVoiceLost) {
-                return { success: false, message: '你嗓子哑了，发不出声音，无法闲聊。' };
-            }
+          if (state.isVoiceLost) {
+            return { success: false, message: '你嗓子哑了，发不出声音，无法闲聊。' };
+          }
 
-            if (state.dailyCounts.chatTotal >= 100) {
-                 return { success: false, message: '你今天说的话太多了，嗓子已经开始冒烟了。' };
-            }
+          if (state.dailyCounts.chatTotal >= 100) {
+            return { success: false, message: '你今天说的话太多了，嗓子已经开始冒烟了。' };
+          }
 
-            if (npcState.dailyChatCount >= 10) {
-                 // Annoyance mechanic
-                 set(prev => ({
-                    npcInteractionStates: {
-                        ...prev.npcInteractionStates,
-                        [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
-                    },
-                    dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
-                    npcRelations: {
-                        ...prev.npcRelations,
-                        [npcId]: (prev.npcRelations[npcId] || 0) - 1
-                    }
-                 }));
-                 return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。(好感度 -1)' };
-            }
-
-            // Normal chat
-            const currentRelation = state.npcRelations[npcId] || 0;
-            const roll = Math.random();
-            let level: 'high' | 'medium' | 'low' = 'low';
-            let relationChange = 1;
-            
-            // Probabilities based on intimacy level
-            if (currentRelation < 50) {
-                if (roll < 0.01) level = 'high';      // 1%
-                else if (roll < 0.11) level = 'medium'; // 10%
-                else level = 'low';                     // 89%
-            } else if (currentRelation <= 100) {
-                if (roll < 0.03) level = 'high';      // 3%
-                else if (roll < 0.18) level = 'medium'; // 15%
-                else level = 'low';                     // 82%
-            } else {
-                if (roll < 0.05) level = 'high';      // 5%
-                else if (roll < 0.25) level = 'medium'; // 20%
-                else level = 'low';                     // 75%
-            }
-
-            // Determine relation gain based on interaction level
-            if (level === 'high') relationChange = 5;
-            else if (level === 'medium') relationChange = 3;
-            else relationChange = 1;
-
-            // Determine message
-            const npc = npcs.find(n => n.id === npcId);
-            let message = '';
-            
-            const dialogues = npc?.chatDialogues?.[level];
-
-            if (dialogues && dialogues.length > 0) {
-                message = dialogues[Math.floor(Math.random() * dialogues.length)];
-            } else {
-                if (level === 'high') message = '你们相谈甚欢，仿佛有说不完的话题！';
-                else if (level === 'medium') message = '你们愉快地聊了一会儿，气氛融洽。';
-                else message = '你们聊了一些家常琐事。';
-            }
-            
-            message += ` (亲密度 +${relationChange})`;
-
+          if (npcState.dailyChatCount >= 10) {
+            // Annoyance mechanic
             set(prev => ({
-                npcInteractionStates: {
-                    ...prev.npcInteractionStates,
-                    [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
-                },
-                dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
-                npcRelations: {
-                    ...prev.npcRelations,
-                    [npcId]: (prev.npcRelations[npcId] || 0) + relationChange
-                }
+              npcInteractionStates: {
+                ...prev.npcInteractionStates,
+                [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
+              },
+              dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
+              npcRelations: {
+                ...prev.npcRelations,
+                [npcId]: (prev.npcRelations[npcId] || 0) - 1
+              }
             }));
-            return { success: true, message };
-        } 
+            return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。(好感度 -1)' };
+          }
+
+          // Normal chat
+          const currentRelation = state.npcRelations[npcId] || 0;
+          const roll = Math.random();
+          let level: 'high' | 'medium' | 'low' = 'low';
+          let relationChange = 1;
+
+          // Probabilities based on intimacy level
+          if (currentRelation < 50) {
+            if (roll < 0.01) level = 'high';      // 1%
+            else if (roll < 0.11) level = 'medium'; // 10%
+            else level = 'low';                     // 89%
+          } else if (currentRelation <= 100) {
+            if (roll < 0.03) level = 'high';      // 3%
+            else if (roll < 0.18) level = 'medium'; // 15%
+            else level = 'low';                     // 82%
+          } else {
+            if (roll < 0.05) level = 'high';      // 5%
+            else if (roll < 0.25) level = 'medium'; // 20%
+            else level = 'low';                     // 75%
+          }
+
+          // Determine relation gain based on interaction level
+          if (level === 'high') relationChange = 5;
+          else if (level === 'medium') relationChange = 3;
+          else relationChange = 1;
+
+          // Determine message
+          const npc = npcs.find(n => n.id === npcId);
+          let message = '';
+
+          const dialogues = npc?.chatDialogues?.[level];
+
+          if (dialogues && dialogues.length > 0) {
+            message = dialogues[Math.floor(Math.random() * dialogues.length)];
+          } else {
+            if (level === 'high') message = '你们相谈甚欢，仿佛有说不完的话题！';
+            else if (level === 'medium') message = '你们愉快地聊了一会儿，气氛融洽。';
+            else message = '你们聊了一些家常琐事。';
+          }
+
+          message += ` (亲密度 +${relationChange})`;
+
+          set(prev => ({
+            npcInteractionStates: {
+              ...prev.npcInteractionStates,
+              [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
+            },
+            dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
+            npcRelations: {
+              ...prev.npcRelations,
+              [npcId]: (prev.npcRelations[npcId] || 0) + relationChange
+            }
+          }));
+          return { success: true, message };
+        }
         else if (type === 'gift') {
-            if (npcState.dailyGiftCount >= 20) {
-                return { success: false, message: '对方今天收礼收到手软，委婉地拒绝了你。' };
-            }
-            
-            // Logic for scroll drop (1% chance if relation > 100)
-            const currentRelation = state.npcRelations[npcId] || 0;
-            if (currentRelation > 100 && Math.random() < 0.01) {
-                // Drop Scroll logic
-                // For simplicity, generate a generic scroll if NPC specific ones aren't defined yet
-                const newScroll = {
-                    id: `scroll_${Date.now()}`,
-                    name: '神秘卷轴',
-                    description: '记载着一些不为人知的秘密。',
-                    npcId: npcId,
-                    obtainedAt: state.day
-                };
-                set(prev => ({
-                    collectedScrolls: [...prev.collectedScrolls, newScroll]
-                }));
-                get().addLog(`【奇遇】你在送礼时意外获得了一个${newScroll.name}！`);
-            }
+          if (npcState.dailyGiftCount >= 20) {
+            return { success: false, message: '对方今天收礼收到手软，委婉地拒绝了你。' };
+          }
 
+          // Logic for scroll drop (1% chance if relation > 100)
+          const currentRelation = state.npcRelations[npcId] || 0;
+          if (currentRelation > 100 && Math.random() < 0.01) {
+            // Drop Scroll logic
+            // For simplicity, generate a generic scroll if NPC specific ones aren't defined yet
+            const newScroll = {
+              id: `scroll_${Date.now()}`,
+              name: '神秘卷轴',
+              description: '记载着一些不为人知的秘密。',
+              npcId: npcId,
+              obtainedAt: state.day
+            };
             set(prev => ({
-                npcInteractionStates: {
-                    ...prev.npcInteractionStates,
-                    [npcId]: { ...npcState, dailyGiftCount: npcState.dailyGiftCount + 1 }
-                }
+              collectedScrolls: [...prev.collectedScrolls, newScroll]
             }));
-            
-            return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
+            get().addLog(`【奇遇】你在送礼时意外获得了一个${newScroll.name}！`);
+          }
+
+          set(prev => ({
+            npcInteractionStates: {
+              ...prev.npcInteractionStates,
+              [npcId]: { ...npcState, dailyGiftCount: npcState.dailyGiftCount + 1 }
+            }
+          }));
+
+          return { success: true, message: '' }; // Success, allow normal gift logic to proceed for relation/item removal
         }
         else if (['action', 'loan', 'work'].includes(type)) {
-            const currentActionCount = npcState.dailyActionCount || 0;
-            if (currentActionCount >= 5) {
-                return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
-            }
-            
-            let message = '';
-            let success = true;
+          const currentActionCount = npcState.dailyActionCount || 0;
+          if (currentActionCount >= 5) {
+            return { success: false, message: '你今天已经打扰对方太多次了，改天再来吧。' };
+          }
 
-            if (type === 'loan') {
-                get().loan(500);
-                message = '对方借给你 500 文应急。';
-            } else if (type === 'work') {
-                if (state.playerStats.health < 20) {
-                    return { success: false, message: '体力不足，无法帮工。' };
-                }
-                set(prev => ({ 
-                    playerStats: { 
-                        ...prev.playerStats, 
-                        money: prev.playerStats.money + 50,
-                        health: prev.playerStats.health - 20
-                    } 
-                }));
-                message = '你帮对方干了一些杂活，获得 50 文报酬。';
-            }
+          let message = '';
+          let success = true;
 
+          if (type === 'loan') {
+            get().loan(500);
+            message = '对方借给你 500 文应急。';
+          } else if (type === 'work') {
+            if (state.playerStats.health < 20) {
+              return { success: false, message: '体力不足，无法帮工。' };
+            }
             set(prev => ({
-                npcInteractionStates: {
-                    ...prev.npcInteractionStates,
-                    [npcId]: { 
-                        ...npcState, 
-                        dailyActionCount: currentActionCount + 1 
-                    }
-                }
+              playerStats: {
+                ...prev.playerStats,
+                money: prev.playerStats.money + 50,
+                health: prev.playerStats.health - 20
+              }
             }));
-            return { success, message };
+            message = '你帮对方干了一些杂活，获得 50 文报酬。';
+          }
+
+          set(prev => ({
+            npcInteractionStates: {
+              ...prev.npcInteractionStates,
+              [npcId]: {
+                ...npcState,
+                dailyActionCount: currentActionCount + 1
+              }
+            }
+          }));
+          return { success, message };
         }
 
         return { success: false, message: '未知操作' };
@@ -1103,9 +1105,9 @@ export const useGameStore = create<GameStore>()(
 
       resetGiftFailure: (npcId) => {
         set(state => {
-            const newCounts = { ...state.giftFailureCounts };
-            delete newCounts[npcId];
-            return { giftFailureCounts: newCounts };
+          const newCounts = { ...state.giftFailureCounts };
+          delete newCounts[npcId];
+          return { giftFailureCounts: newCounts };
         });
       },
 
@@ -1207,7 +1209,7 @@ export const useGameStore = create<GameStore>()(
         }
 
         const fortune = fortunes[Math.floor(Math.random() * fortunes.length)];
-        
+
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - 5 },
           dailyCounts: { ...state.dailyCounts, fortune: state.dailyCounts.fortune + 1 },
@@ -1238,214 +1240,214 @@ export const useGameStore = create<GameStore>()(
           let policyMessage = '';
           let newCountyStats = { ...state.countyStats };
           let newPlayerStats = { ...state.playerStats, health: newHealth };
-          
+
           if (state.activePolicyId) {
-             const policy = policies.find(p => p.id === state.activePolicyId);
-             if (policy) {
-                const effect = policy.dailyEffect;
-                policyMessage = `【政令生效】${policy.name}: `;
-                
-                if (effect.economy) {
-                   newCountyStats.economy += effect.economy;
-                   newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy));
-                }
-                if (effect.order) {
-                   newCountyStats.order += effect.order;
-                   newCountyStats.order = Math.min(100, Math.max(0, newCountyStats.order));
-                }
-                if (effect.culture) {
-                   newCountyStats.culture += effect.culture;
-                   newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture));
-                }
-                if (effect.livelihood) {
-                   newCountyStats.livelihood += effect.livelihood;
-                   newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood));
-                }
-                
-                if (effect.money) newPlayerStats.money += effect.money;
-                if (effect.reputation) newPlayerStats.reputation += effect.reputation;
-                
-                // Clamp player stats
-                newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
-             }
+            const policy = policies.find(p => p.id === state.activePolicyId);
+            if (policy) {
+              const effect = policy.dailyEffect;
+              policyMessage = `【政令生效】${policy.name}: `;
+
+              if (effect.economy) {
+                newCountyStats.economy += effect.economy;
+                newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy));
+              }
+              if (effect.order) {
+                newCountyStats.order += effect.order;
+                newCountyStats.order = Math.min(100, Math.max(0, newCountyStats.order));
+              }
+              if (effect.culture) {
+                newCountyStats.culture += effect.culture;
+                newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture));
+              }
+              if (effect.livelihood) {
+                newCountyStats.livelihood += effect.livelihood;
+                newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood));
+              }
+
+              if (effect.money) newPlayerStats.money += effect.money;
+              if (effect.reputation) newPlayerStats.reputation += effect.reputation;
+
+              // Clamp player stats
+              newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
+            }
           }
 
           // Voice loss logic
           const chatTotal = state.dailyCounts.chatTotal;
           let isVoiceLost = false;
           let voiceMessage = '';
-          
+
           if (chatTotal >= 100) {
-              isVoiceLost = true;
-              voiceMessage = '因为昨天说话太多，你今天嗓子彻底哑了，无法说话。';
+            isVoiceLost = true;
+            voiceMessage = '因为昨天说话太多，你今天嗓子彻底哑了，无法说话。';
           } else if (state.isVoiceLost) {
-              isVoiceLost = false;
-              voiceMessage = '经过一天的休息，你的嗓子终于恢复了。';
+            isVoiceLost = false;
+            voiceMessage = '经过一天的休息，你的嗓子终于恢复了。';
           }
 
           // Market Fluctuation
           const newMarketPrices = { ...state.marketPrices };
           const newMarketInventory: Record<string, number> = {};
-          
+
           // Randomize Market State (80% Normal, 10% Undercut, 10% Cooperative)
           const marketRoll = Math.random();
           let newMarketState: 'normal' | 'undercut' | 'cooperative' = 'normal';
           let marketStateMessage = '';
-          
+
           if (marketRoll < 0.1) {
-              newMarketState = 'undercut';
-              marketStateMessage = '【市场】今日有商贩恶意压价，市场动荡不安。';
+            newMarketState = 'undercut';
+            marketStateMessage = '【市场】今日有商贩恶意压价，市场动荡不安。';
           } else if (marketRoll < 0.2) {
-              newMarketState = 'cooperative';
-              marketStateMessage = '【市场】商会推行稳价协议，市场价格平稳。';
+            newMarketState = 'cooperative';
+            marketStateMessage = '【市场】商会推行稳价协议，市场价格平稳。';
           } else {
-              newMarketState = 'normal';
+            newMarketState = 'normal';
           }
 
           // Clean up expired price locks
           const currentPriceLocks = { ...state.priceLocks };
           const nextDayNum = state.day + 1;
           Object.keys(currentPriceLocks).forEach(key => {
-              if (currentPriceLocks[key].endDay < nextDayNum) {
-                  delete currentPriceLocks[key];
-              }
+            if (currentPriceLocks[key].endDay < nextDayNum) {
+              delete currentPriceLocks[key];
+            }
           });
 
           goods.forEach(good => {
-             const fluctuation = (Math.random() * 2 - 1) * good.volatility;
-             let newPrice = Math.floor(good.basePrice * (1 + fluctuation));
-             
-             // Check for Price Lock
-             if (currentPriceLocks[good.id]) {
-                 const minLockedPrice = Math.floor(good.basePrice * currentPriceLocks[good.id].minPriceMultiplier);
-                 // Ensure price is at least the locked multiplier
-                 if (newPrice < minLockedPrice) {
-                     // Generate a random price between minLockedPrice (1.5x) and Max (2.0x)
-                     // Formula: min + random * (max - min)
-                     const maxPrice = Math.floor(good.basePrice * 2.0);
-                     newPrice = Math.floor(minLockedPrice + Math.random() * (maxPrice - minLockedPrice));
-                 }
-             }
-             
-             // Check if good was purchased yesterday (dailyPurchasedGoods)
-             // If purchased, limit fluctuation to +/- 20% of YESTERDAY's price
-             if (state.dailyPurchasedGoods.includes(good.id)) {
-                 const oldPrice = state.marketPrices[good.id];
-                 const minAllowed = Math.floor(oldPrice * 0.8);
-                 const maxAllowed = Math.ceil(oldPrice * 1.2);
-                 newPrice = Math.max(minAllowed, Math.min(maxAllowed, newPrice));
-             }
+            const fluctuation = (Math.random() * 2 - 1) * good.volatility;
+            let newPrice = Math.floor(good.basePrice * (1 + fluctuation));
 
-             // Special logic for Antique: Min 0, Max 200% (2.0)
-             if (good.id === 'antique') {
-                 newPrice = Math.max(0, Math.min(Math.floor(good.basePrice * 2.0), newPrice));
-             } else {
-                 newPrice = Math.max(Math.floor(good.basePrice * 0.5), Math.min(Math.floor(good.basePrice * 2.0), newPrice));
-             }
-             
-             newMarketPrices[good.id] = newPrice;
-             newMarketInventory[good.id] = Math.floor(Math.random() * 51) + 50; // 50-100
+            // Check for Price Lock
+            if (currentPriceLocks[good.id]) {
+              const minLockedPrice = Math.floor(good.basePrice * currentPriceLocks[good.id].minPriceMultiplier);
+              // Ensure price is at least the locked multiplier
+              if (newPrice < minLockedPrice) {
+                // Generate a random price between minLockedPrice (1.5x) and Max (2.0x)
+                // Formula: min + random * (max - min)
+                const maxPrice = Math.floor(good.basePrice * 2.0);
+                newPrice = Math.floor(minLockedPrice + Math.random() * (maxPrice - minLockedPrice));
+              }
+            }
+
+            // Check if good was purchased yesterday (dailyPurchasedGoods)
+            // If purchased, limit fluctuation to +/- 20% of YESTERDAY's price
+            if (state.dailyPurchasedGoods.includes(good.id)) {
+              const oldPrice = state.marketPrices[good.id];
+              const minAllowed = Math.floor(oldPrice * 0.8);
+              const maxAllowed = Math.ceil(oldPrice * 1.2);
+              newPrice = Math.max(minAllowed, Math.min(maxAllowed, newPrice));
+            }
+
+            // Special logic for Antique: Min 0, Max 200% (2.0)
+            if (good.id === 'antique') {
+              newPrice = Math.max(0, Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+            } else {
+              newPrice = Math.max(Math.floor(good.basePrice * 0.5), Math.min(Math.floor(good.basePrice * 2.0), newPrice));
+            }
+
+            newMarketPrices[good.id] = newPrice;
+            newMarketInventory[good.id] = Math.floor(Math.random() * 51) + 50; // 50-100
           });
 
           // Facility Income
           let facilityIncome = 0;
           let facilityMessage = '';
           Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
-             const facility = facilities.find(f => f.id === facilityId);
-             if (facility && count > 0) {
-                 facilityIncome += facility.dailyIncome * count;
-             }
+            const facility = facilities.find(f => f.id === facilityId);
+            if (facility && count > 0) {
+              facilityIncome += facility.dailyIncome * count;
+            }
           });
-          
+
           if (facilityIncome > 0) {
-              // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
-              const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
-              facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
-              newPlayerStats.money += facilityIncome;
-              facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
+            // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
+            const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
+            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
+            newPlayerStats.money += facilityIncome;
+            facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
 
           // Mower Logic
           const hasMower = state.leekFacilities?.['mower'];
           const mowerHarvestedPlots = new Set<number>();
           let mowerHarvestCount = 0;
-          
+
           if (hasMower) {
-             (state.leekPlots || []).forEach(p => {
-                 const target = p.growthTarget || 3;
-                 if (p.varietyId && ((p.ready) || ((p.growthProgress || 0) >= target))) {
-                     const quality = p.quality || 0;
-                     const base = (p as any).baseYield || 3;
-                     const yieldAmount = base + Math.floor(quality / 25);
-                     mowerHarvestCount += yieldAmount;
-                     mowerHarvestedPlots.add(p.id);
-                 }
-             });
+            (state.leekPlots || []).forEach(p => {
+              const target = p.growthTarget || 3;
+              if (p.varietyId && ((p.ready) || ((p.growthProgress || 0) >= target))) {
+                const quality = p.quality || 0;
+                const base = (p as any).baseYield || 3;
+                const yieldAmount = base + Math.floor(quality / 25);
+                mowerHarvestCount += yieldAmount;
+                mowerHarvestedPlots.add(p.id);
+              }
+            });
           }
 
           // Inventory Spoilage Logic
           const newOwnedGoods = { ...state.ownedGoods };
           if (mowerHarvestCount > 0) {
-              newOwnedGoods['leek'] = (newOwnedGoods['leek'] || 0) + mowerHarvestCount;
+            newOwnedGoods['leek'] = (newOwnedGoods['leek'] || 0) + mowerHarvestCount;
           }
 
           let spoilageMessage = '';
           const spoiledItems: string[] = [];
-          
+
           const hasColdStorage = state.leekFacilities?.['cold_storage'];
           const hasProcessingTable = state.leekFacilities?.['processing_table'];
 
           goods.forEach(good => {
-             const count = newOwnedGoods[good.id] || 0;
-             if (count > 0 && good.spoilageRate && good.spoilageRate > 0) {
-                 let rate = good.spoilageRate;
-                 if (hasColdStorage) rate *= 0.5;
-                 if (good.id === 'leek_box' && hasProcessingTable) rate = 0.01; // Minimal spoilage
+            const count = newOwnedGoods[good.id] || 0;
+            if (count > 0 && good.spoilageRate && good.spoilageRate > 0) {
+              let rate = good.spoilageRate;
+              if (hasColdStorage) rate *= 0.5;
+              if (good.id === 'leek_box' && hasProcessingTable) rate = 0.01; // Minimal spoilage
 
-                 const exactSpoilage = count * rate;
-                 let finalSpoilage = Math.floor(exactSpoilage);
-                 if (Math.random() < (exactSpoilage - finalSpoilage)) {
-                     finalSpoilage += 1;
-                 }
+              const exactSpoilage = count * rate;
+              let finalSpoilage = Math.floor(exactSpoilage);
+              if (Math.random() < (exactSpoilage - finalSpoilage)) {
+                finalSpoilage += 1;
+              }
 
-                 if (finalSpoilage > 0) {
-                     newOwnedGoods[good.id] = Math.max(0, count - finalSpoilage);
-                     spoiledItems.push(`${good.name} ${finalSpoilage} ${good.id === 'grain' ? '石' : '个'}`);
-                 }
-             }
+              if (finalSpoilage > 0) {
+                newOwnedGoods[good.id] = Math.max(0, count - finalSpoilage);
+                spoiledItems.push(`${good.name} ${finalSpoilage} ${good.id === 'grain' ? '石' : '个'}`);
+              }
+            }
           });
 
           if (spoiledItems.length > 0) {
-              spoilageMessage = `【损耗】物资变质：${spoiledItems.join('，')}。`;
+            spoilageMessage = `【损耗】物资变质：${spoiledItems.join('，')}。`;
           }
-          
+
           // Debt Interest
           if (newPlayerStats.debt && newPlayerStats.debt > 0) {
-              const interest = Math.ceil(newPlayerStats.debt * 0.001); // 0.1% daily
-              newPlayerStats.debt += interest;
+            const interest = Math.ceil(newPlayerStats.debt * 0.001); // 0.1% daily
+            newPlayerStats.debt += interest;
           }
 
           // Tax Mechanism: 10% tax if money > 1,000,000
           let taxMessage = '';
           if (newPlayerStats.money > 1000000) {
-              const tax = Math.floor(newPlayerStats.money * 0.1);
-              newPlayerStats.money -= tax;
-              taxMessage = `【税收】由于家产丰厚（超过100万文），官府强制征收了 10% 的财产税，扣除 ${tax} 文。`;
+            const tax = Math.floor(newPlayerStats.money * 0.1);
+            newPlayerStats.money -= tax;
+            taxMessage = `【税收】由于家产丰厚（超过100万文），官府强制征收了 10% 的财产税，扣除 ${tax} 文。`;
           }
 
           // Weather Generation
           const nextDayVal = state.day + 1;
           const { seasonIndex, dayOfSeason } = getDateInfo(nextDayVal);
-          
+
           // Maintenance (Season Change)
           let maintenanceMessage = '';
           if (dayOfSeason === 1 && state.day > 1) {
-              let cost = 0;
-              if (state.leekFacilities?.['drip_irrigation']) cost += 10;
-              if (cost > 0) {
-                  newPlayerStats.money -= cost;
-                  maintenanceMessage = `【维护】支付设施维护费 ${cost} 文。`;
-              }
+            let cost = 0;
+            if (state.leekFacilities?.['drip_irrigation']) cost += 10;
+            if (cost > 0) {
+              newPlayerStats.money -= cost;
+              maintenanceMessage = `【维护】支付设施维护费 ${cost} 文。`;
+            }
           }
 
           const nextWeather = generateWeather(seasonIndex);
@@ -1461,36 +1463,36 @@ export const useGameStore = create<GameStore>()(
           // Disaster Logic
           let disasterMessage = '';
           let nextDisasterState = { ...state.disasterState };
-          
+
           if (state.disasterState.active) {
-              const newDuration = state.disasterState.duration - 1;
-              if (newDuration <= 0) {
-                  nextDisasterState = { ...nextDisasterState, active: false, type: 'none', duration: 0 };
-                  disasterMessage = '【灾情】洪水终于退去，百姓们开始重建家园。';
-              } else {
-                  nextDisasterState = { ...nextDisasterState, duration: newDuration };
-                  disasterMessage = `【灾情】洪水肆虐，由于灾情严重，百姓流离失所（剩余 ${newDuration} 天）。`;
-              }
+            const newDuration = state.disasterState.duration - 1;
+            if (newDuration <= 0) {
+              nextDisasterState = { ...nextDisasterState, active: false, type: 'none', duration: 0 };
+              disasterMessage = '【灾情】洪水终于退去，百姓们开始重建家园。';
+            } else {
+              nextDisasterState = { ...nextDisasterState, duration: newDuration };
+              disasterMessage = `【灾情】洪水肆虐，由于灾情严重，百姓流离失所（剩余 ${newDuration} 天）。`;
+            }
           } else {
-              // Try trigger
-              // Summer is index 1
-              // Once a year (360 days) or longer.
-              const lastTrigger = state.disasterState.lastTriggerDay || 0;
-              const daysSinceLast = nextDayVal - lastTrigger;
-              
-              if (seasonIndex === 1 && daysSinceLast > 300) {
-                   // 1% chance per day in Summer
-                   if (Math.random() < 0.01) {
-                       const duration = Math.floor(Math.random() * 5) + 3; // 3-7 days
-                       nextDisasterState = { 
-                           type: 'flood', 
-                           active: true, 
-                           duration, 
-                           lastTriggerDay: nextDayVal 
-                       };
-                       disasterMessage = '【突发】连日暴雨引发山洪，柳园以南一片汪洋，急需赈灾！';
-                   }
+            // Try trigger
+            // Summer is index 1
+            // Once a year (360 days) or longer.
+            const lastTrigger = state.disasterState.lastTriggerDay || 0;
+            const daysSinceLast = nextDayVal - lastTrigger;
+
+            if (seasonIndex === 1 && daysSinceLast > 300) {
+              // 1% chance per day in Summer
+              if (Math.random() < 0.01) {
+                const duration = Math.floor(Math.random() * 5) + 3; // 3-7 days
+                nextDisasterState = {
+                  type: 'flood',
+                  active: true,
+                  duration,
+                  lastTriggerDay: nextDayVal
+                };
+                disasterMessage = '【突发】连日暴雨引发山洪，柳园以南一片汪洋，急需赈灾！';
               }
+            }
           }
 
           // Reset daily flags
@@ -1511,11 +1513,11 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
-          
+
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
 
-          return { 
+          return {
             day: state.day + 1,
             weather: nextWeather,
             disasterState: nextDisasterState,
@@ -1538,17 +1540,17 @@ export const useGameStore = create<GameStore>()(
             leekPlots: (state.leekPlots || []).map(p => {
               // 0. Handle Mower Reset
               if (mowerHarvestedPlots.has(p.id)) {
-                  return {
-                      ...p,
-                      varietyId: undefined,
-                      growthProgress: 0,
-                      watered: false,
-                      fertilized: false,
-                      pest: 0,
-                      quality: 0,
-                      ready: false,
-                      fertility: Math.max(0, (p.fertility || 100) - 5)
-                  };
+                return {
+                  ...p,
+                  varietyId: undefined,
+                  growthProgress: 0,
+                  watered: false,
+                  fertilized: false,
+                  pest: 0,
+                  quality: 0,
+                  ready: false,
+                  fertility: Math.max(0, (p.fertility || 100) - 5)
+                };
               }
 
               // 1. Recover fertility if idle
@@ -1564,75 +1566,75 @@ export const useGameStore = create<GameStore>()(
               // Auto water
               let watered = p.watered;
               if (hasSprinkler) {
-                 watered = true; // Auto water
+                watered = true; // Auto water
               }
 
               let gp = (p.growthProgress || 0) + 1 + (p.fertilized ? 1 : 0);
               const target = p.growthTarget || 3;
               const heavySnowPenalty = nextWeather === 'snow_heavy' ? ((p as any).toughness && (p as any).toughness >= 75 ? 0 : -1) : 0;
               gp = Math.max(0, gp + heavySnowPenalty);
-              
+
               // Pest
               let pestChance = 0.3;
               if (hasLamp) pestChance = 0.05;
               const tough = (p as any).toughness || 0;
               pestChance = Math.max(0, Math.min(1, pestChance * (1 - tough / 200)));
               const pestRise = Math.random() < pestChance ? 5 : 0;
-              
+
               const wateredBonus = watered ? 1 : 0;
               const breedingBonus = hasBreedingShed ? 1 : 0;
               const quality = Math.max(0, Math.min(100, (p.quality || 0) + wateredBonus + breedingBonus - (pestRise > 0 ? 1 : 0)));
               const pest = Math.min(100, (p.pest || 0) + pestRise);
               const ready = gp >= target;
-              
+
               // Consume fertility daily
               const newFertility = Math.max(0, (p.fertility || 100) - 2);
 
-              return { 
-                ...p, 
-                growthProgress: gp, 
+              return {
+                ...p,
+                growthProgress: gp,
                 watered: false, // Reset watered status for next day manual (sprinkler applies next night)
-                fertilized: false, 
-                pest, 
-                quality, 
+                fertilized: false,
+                pest,
+                quality,
                 ready,
                 fertility: newFertility
               };
             }),
             // Generate Orders with relationship-driven priority and hedge on undercut days
             leekOrders: (() => {
-                const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
-                const baseChance = 0.5;
-                const relationBonus = Math.min(0.4, highRelationsCount * 0.1); // up to +40%
-                const hedgeBonus = newMarketState === 'undercut' ? 0.2 : 0; // more likely when market is undercut
-                const orderChance = Math.min(0.95, baseChance + relationBonus + hedgeBonus);
+              const highRelationsCount = Object.values(state.npcRelations).filter(r => r > 50).length;
+              const baseChance = 0.5;
+              const relationBonus = Math.min(0.4, highRelationsCount * 0.1); // up to +40%
+              const hedgeBonus = newMarketState === 'undercut' ? 0.2 : 0; // more likely when market is undercut
+              const orderChance = Math.min(0.95, baseChance + relationBonus + hedgeBonus);
 
-                const willGenerate = Math.random() < orderChance;
-                const existing = state.leekOrders || [];
-                if (!willGenerate) return existing;
+              const willGenerate = Math.random() < orderChance;
+              const existing = state.leekOrders || [];
+              if (!willGenerate) return existing;
 
-                const relationFactor = Math.min(5, highRelationsCount);
-                const baseQty = Math.floor(Math.random() * 5) + 3; // 3-7
-                const quantity = Math.max(1, baseQty - Math.floor(relationFactor / 2)); // reduce requirement up to -2
-                const minQuality = 60 - relationFactor * 2; // slightly lower threshold with trust
-                const priceMultiplier = 1.5 + relationFactor * 0.05; // up to +0.25
-                const expiresIn = relationFactor >= 3 ? 2 : 1; // priority/longer window
+              const relationFactor = Math.min(5, highRelationsCount);
+              const baseQty = Math.floor(Math.random() * 5) + 3; // 3-7
+              const quantity = Math.max(1, baseQty - Math.floor(relationFactor / 2)); // reduce requirement up to -2
+              const minQuality = 60 - relationFactor * 2; // slightly lower threshold with trust
+              const priceMultiplier = 1.5 + relationFactor * 0.05; // up to +0.25
+              const expiresIn = relationFactor >= 3 ? 2 : 1; // priority/longer window
 
-                const newOrder = {
-                    id: `order_${Date.now()}`,
-                    description: '合作社收购优质鲜韭',
-                    minQuality: Math.max(0, minQuality),
-                    quantity,
-                    priceMultiplier,
-                    expiresIn
-                };
+              const newOrder = {
+                id: `order_${Date.now()}`,
+                description: '合作社收购优质鲜韭',
+                minQuality: Math.max(0, minQuality),
+                quantity,
+                priceMultiplier,
+                expiresIn
+              };
 
-                const list = [newOrder, ...existing].slice(0, 3);
-                if (newMarketState === 'undercut') {
-                    // Log hedge info when undercut day and order exists
-                    get().addLog('【订单】合作社稳价对冲压价，订单价格不受市场压价影响。');
-                }
-                return list;
+              const list = [newOrder, ...existing].slice(0, 3);
+              if (newMarketState === 'undercut') {
+                // Log hedge info when undercut day and order exists
+                get().addLog('【订单】合作社稳价对冲压价，订单价格不受市场压价影响。');
+              }
+              return list;
             })()
           };
         });
@@ -1652,87 +1654,87 @@ export const useGameStore = create<GameStore>()(
         let abilityChange = 0;
         let healthChange = 0;
         let experienceChange = 0;
-        
+
         let economyChange = 0;
         let orderChange = 0;
         let cultureChange = 0;
         let livelihoodChange = 0;
 
         if (effect) {
-            // 1. Accumulate changes from nested objects (treating them as deltas)
-            if (effect.playerStats) {
-                if (effect.playerStats.money) moneyChange += effect.playerStats.money;
-                if (effect.playerStats.reputation) reputationChange += effect.playerStats.reputation;
-                if (effect.playerStats.ability) abilityChange += effect.playerStats.ability;
-                if (effect.playerStats.health) healthChange += effect.playerStats.health;
-                if (effect.playerStats.experience) experienceChange += effect.playerStats.experience;
-            }
-            
-            if (effect.countyStats) {
-                if (effect.countyStats.economy) economyChange += effect.countyStats.economy;
-                if (effect.countyStats.order) orderChange += effect.countyStats.order;
-                if (effect.countyStats.culture) cultureChange += effect.countyStats.culture;
-                if (effect.countyStats.livelihood) livelihoodChange += effect.countyStats.livelihood;
-            }
+          // 1. Accumulate changes from nested objects (treating them as deltas)
+          if (effect.playerStats) {
+            if (effect.playerStats.money) moneyChange += effect.playerStats.money;
+            if (effect.playerStats.reputation) reputationChange += effect.playerStats.reputation;
+            if (effect.playerStats.ability) abilityChange += effect.playerStats.ability;
+            if (effect.playerStats.health) healthChange += effect.playerStats.health;
+            if (effect.playerStats.experience) experienceChange += effect.playerStats.experience;
+          }
 
-            // 2. Accumulate changes from flat properties
-            if (effect.money) moneyChange += effect.money;
-            if (effect.reputation) reputationChange += effect.reputation;
-            if (effect.ability) abilityChange += effect.ability;
-            if (effect.health) healthChange += effect.health;
-            
-            if (effect.economy) economyChange += effect.economy;
-            if (effect.order) orderChange += effect.order;
-            if (effect.culture) cultureChange += effect.culture;
-            if (effect.livelihood) livelihoodChange += effect.livelihood;
+          if (effect.countyStats) {
+            if (effect.countyStats.economy) economyChange += effect.countyStats.economy;
+            if (effect.countyStats.order) orderChange += effect.countyStats.order;
+            if (effect.countyStats.culture) cultureChange += effect.countyStats.culture;
+            if (effect.countyStats.livelihood) livelihoodChange += effect.countyStats.livelihood;
+          }
 
-            // 3. Apply Talent Modifiers to positive gains
-            if (moneyChange > 0) {
-                 const level = state.talents['mercantile'] || 0;
-                 moneyChange = Math.floor(moneyChange * (1 + level * 0.1));
-            }
-            if (reputationChange > 0) {
-                 const level = state.talents['eloquence'] || 0;
-                 reputationChange = Math.floor(reputationChange * (1 + level * 0.1));
-            }
-            if (abilityChange > 0) {
-                 const level = state.talents['wisdom'] || 0;
-                 abilityChange = Math.floor(abilityChange * (1 + level * 0.1));
-            }
-            
-            // 4. Generate Log Strings
-            const formatChange = (name: string, value: number) => {
-                return `${name}${value > 0 ? '+' : ''}${value}`;
-            };
+          // 2. Accumulate changes from flat properties
+          if (effect.money) moneyChange += effect.money;
+          if (effect.reputation) reputationChange += effect.reputation;
+          if (effect.ability) abilityChange += effect.ability;
+          if (effect.health) healthChange += effect.health;
 
-            if (healthChange !== 0) statChanges.push(formatChange('体力', healthChange));
-            if (moneyChange !== 0) statChanges.push(formatChange('银两', moneyChange));
-            if (reputationChange !== 0) statChanges.push(formatChange('声望', reputationChange));
-            if (abilityChange !== 0) statChanges.push(formatChange('能力', abilityChange));
-            if (experienceChange !== 0) statChanges.push(formatChange('阅历', experienceChange));
-            
-            if (economyChange !== 0) statChanges.push(formatChange('经济', economyChange));
-            if (orderChange !== 0) statChanges.push(formatChange('治安', orderChange));
-            if (cultureChange !== 0) statChanges.push(formatChange('文化', cultureChange));
-            if (livelihoodChange !== 0) statChanges.push(formatChange('民生', livelihoodChange));
-            
-            if (effect.itemsAdd && effect.itemsAdd.length > 0) {
-                const itemNames = effect.itemsAdd.map(id => items.find(i => i.id === id)?.name || id);
-                statChanges.push(`获得 ${itemNames.join('、')}`);
-            }
+          if (effect.economy) economyChange += effect.economy;
+          if (effect.order) orderChange += effect.order;
+          if (effect.culture) cultureChange += effect.culture;
+          if (effect.livelihood) livelihoodChange += effect.livelihood;
 
-            if (effect.relationChange) {
-               Object.entries(effect.relationChange).forEach(([id, val]) => {
-                 const npc = npcs.find(n => n.id === id);
-                 const name = npc ? npc.name : id;
-                 statChanges.push(`${name}好感${val > 0 ? '+' : ''}${val}`);
-               });
-            }
+          // 3. Apply Talent Modifiers to positive gains
+          if (moneyChange > 0) {
+            const level = state.talents['mercantile'] || 0;
+            moneyChange = Math.floor(moneyChange * (1 + level * 0.1));
+          }
+          if (reputationChange > 0) {
+            const level = state.talents['eloquence'] || 0;
+            reputationChange = Math.floor(reputationChange * (1 + level * 0.1));
+          }
+          if (abilityChange > 0) {
+            const level = state.talents['wisdom'] || 0;
+            abilityChange = Math.floor(abilityChange * (1 + level * 0.1));
+          }
+
+          // 4. Generate Log Strings
+          const formatChange = (name: string, value: number) => {
+            return `${name}${value > 0 ? '+' : ''}${value}`;
+          };
+
+          if (healthChange !== 0) statChanges.push(formatChange('体力', healthChange));
+          if (moneyChange !== 0) statChanges.push(formatChange('银两', moneyChange));
+          if (reputationChange !== 0) statChanges.push(formatChange('声望', reputationChange));
+          if (abilityChange !== 0) statChanges.push(formatChange('能力', abilityChange));
+          if (experienceChange !== 0) statChanges.push(formatChange('阅历', experienceChange));
+
+          if (economyChange !== 0) statChanges.push(formatChange('经济', economyChange));
+          if (orderChange !== 0) statChanges.push(formatChange('治安', orderChange));
+          if (cultureChange !== 0) statChanges.push(formatChange('文化', cultureChange));
+          if (livelihoodChange !== 0) statChanges.push(formatChange('民生', livelihoodChange));
+
+          if (effect.itemsAdd && effect.itemsAdd.length > 0) {
+            const itemNames = effect.itemsAdd.map(id => items.find(i => i.id === id)?.name || id);
+            statChanges.push(`获得 ${itemNames.join('、')}`);
+          }
+
+          if (effect.relationChange) {
+            Object.entries(effect.relationChange).forEach(([id, val]) => {
+              const npc = npcs.find(n => n.id === id);
+              const name = npc ? npc.name : id;
+              statChanges.push(`${name}好感${val > 0 ? '+' : ''}${val}`);
+            });
+          }
         }
 
         let fullMessage = message || '';
         if (statChanges.length > 0) {
-            fullMessage += (fullMessage ? ' ' : '') + statChanges.join('，');
+          fullMessage += (fullMessage ? ' ' : '') + statChanges.join('，');
         }
 
         if (fullMessage) get().addLog(fullMessage);
@@ -1767,61 +1769,71 @@ export const useGameStore = create<GameStore>()(
 
             let newInventory = [...state.inventory];
             if (effect.itemsAdd) {
-               newInventory = [...newInventory, ...effect.itemsAdd];
+              newInventory = [...newInventory, ...effect.itemsAdd];
             }
             if (effect.itemsRemove) {
-               for (const itemId of effect.itemsRemove) {
-                   const index = newInventory.indexOf(itemId);
-                   if (index !== -1) {
-                       newInventory.splice(index, 1);
-                   }
-               }
+              for (const itemId of effect.itemsRemove) {
+                const index = newInventory.indexOf(itemId);
+                if (index !== -1) {
+                  newInventory.splice(index, 1);
+                }
+              }
             }
 
             const newNpcRelations = { ...state.npcRelations };
             if (effect.relationChange) {
-               Object.entries(effect.relationChange).forEach(([id, val]) => {
-                 newNpcRelations[id] = (newNpcRelations[id] || 0) + val;
-               });
+              Object.entries(effect.relationChange).forEach(([id, val]) => {
+                newNpcRelations[id] = (newNpcRelations[id] || 0) + val;
+              });
             }
 
             const newFlags = { ...state.flags, ...effect.flagsSet };
 
             if (effect.flagsIncrement) {
-                effect.flagsIncrement.forEach(key => {
-                    newFlags[key] = (newFlags[key] || 0) + 1;
-                });
+              effect.flagsIncrement.forEach(key => {
+                newFlags[key] = (newFlags[key] || 0) + 1;
+              });
             }
 
             return {
-               playerStats: newPlayerStats,
-               countyStats: newCountyStats,
-               inventory: newInventory,
-               npcRelations: newNpcRelations,
-               flags: newFlags,
-               currentEvent: null,
+              playerStats: newPlayerStats,
+              countyStats: newCountyStats,
+              inventory: newInventory,
+              npcRelations: newNpcRelations,
+              flags: newFlags,
+              currentEvent: null,
             };
           });
           // Check task completion after state update
           get().checkTaskCompletion();
           get().checkAchievements();
+
+          // Check for next event in queue
+          const currentState = get();
+          if (currentState.eventQueue && currentState.eventQueue.length > 0) {
+             const [nextEvent, ...remaining] = currentState.eventQueue;
+             set({ currentEvent: nextEvent, eventQueue: remaining });
+          } else {
+             set({ currentEvent: null });
+          }
         } else {
-            set({ currentEvent: null });
+            // Check for next event even if no effect (just message confirmation)
+            const currentState = get();
+            if (currentState.eventQueue && currentState.eventQueue.length > 0) {
+                const [nextEvent, ...remaining] = currentState.eventQueue;
+                set({ currentEvent: nextEvent, eventQueue: remaining });
+            } else {
+                set({ currentEvent: null });
+            }
         }
       },
       
       addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 50) })),
 
       triggerEvent: () => {
-         // Global 30% chance to trigger any event at the end of the day
-         if (Math.random() > 0.3) {
-             set({ currentEvent: null });
-             return;
-         }
-
          const state = get();
          
-         const checkCondition = (e: GameEvent) => {
+         const checkBasicCondition = (e: GameEvent) => {
             const cond = e.triggerCondition;
             if (!cond) return true;
             
@@ -1832,33 +1844,58 @@ export const useGameStore = create<GameStore>()(
             if (cond.minDay && state.day < cond.minDay) return false;
             if (cond.custom && !cond.custom(state)) return false;
             
-            if (cond.probability !== undefined) {
-               return Math.random() < cond.probability;
-            }
             return true;
          };
 
-         // 1. NPC events first (priority)
-         const possibleNpcEvents = npcEvents.filter(checkCondition);
+         const allEvents = [...npcEvents, ...randomEvents];
+         const candidates = allEvents.filter(checkBasicCondition);
 
-         // 2. Random events
-         const possibleRandomEvents = randomEvents.filter(checkCondition);
-
-         const allEvents = [...possibleNpcEvents, ...possibleRandomEvents];
+         // 1. Priority: Guaranteed events (probability === 1)
+         // Collect ALL guaranteed events
+         const guaranteedEvents = candidates.filter(e => e.triggerCondition?.probability === 1);
          
-         if (allEvents.length > 0) {
-           // Pick one random
-           const event = allEvents[Math.floor(Math.random() * allEvents.length)];
-           set({ currentEvent: event });
+         if (guaranteedEvents.length > 0) {
+             // If there are guaranteed events, trigger them all (queue them)
+             // We do NOT trigger random events if guaranteed events occur (to avoid event spam)
+             const [first, ...rest] = guaranteedEvents;
+             set({ currentEvent: first, eventQueue: rest });
+             return;
+         }
+
+         // 2. Global 30% chance for other events
+         if (Math.random() > 0.3) {
+             set({ currentEvent: null, eventQueue: [] });
+             return;
+         }
+
+         // 3. Filter remaining events by their specific probability
+         const possibleEvents = candidates.filter(e => {
+            // Guaranteed events are already handled, so we only look at others here
+            // undefined probability implies 100% chance IF global check passes (default behavior)
+            const prob = e.triggerCondition?.probability;
+            if (prob !== undefined) {
+               // Exclude probability 1 as they should have been caught above, 
+               // but if for some reason one slipped (e.g. logic error), we filter it to be safe or treat as 100%
+               if (prob === 1) return false; 
+               return Math.random() < prob;
+            }
+            return true;
+         });
+         
+         if (possibleEvents.length > 0) {
+           const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+           set({ currentEvent: event, eventQueue: [] });
+         } else {
+           set({ currentEvent: null, eventQueue: [] });
          }
       },
 
       triggerSpecificEvent: (eventId: string) => {
-          // Look in all event collections
-          const event = [...npcEvents, ...randomEvents].find(e => e.id === eventId);
-          if (event) {
-              set({ currentEvent: event });
-          }
+        // Look in all event collections
+        const event = [...npcEvents, ...randomEvents].find(e => e.id === eventId);
+        if (event) {
+          set({ currentEvent: event });
+        }
       },
 
       resetGame: () => {
@@ -1889,17 +1926,17 @@ export const useGameStore = create<GameStore>()(
       exportSave: () => {
         const state = get();
         const saveData = get().exportSaveString();
-        
+
         const blob = new Blob([saveData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0,10)}.json`;
+        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
+
         get().addLog('【系统】存档导出成功！');
       },
 
@@ -1919,6 +1956,7 @@ export const useGameStore = create<GameStore>()(
           npcRelations: state.npcRelations,
           logs: state.logs,
           currentEvent: state.currentEvent,
+          eventQueue: state.eventQueue,
           isGameOver: state.isGameOver,
           currentTaskId: state.currentTaskId,
           completedTaskIds: state.completedTaskIds,
@@ -1951,7 +1989,7 @@ export const useGameStore = create<GameStore>()(
       importSave: (dataStr: string) => {
         try {
           const data = JSON.parse(dataStr);
-          
+
           // Basic validation
           if (!data.role || !data.playerStats || !data.day) {
             get().addLog('【系统】存档文件格式错误，无法导入。');
@@ -1965,7 +2003,7 @@ export const useGameStore = create<GameStore>()(
             // but since we export the full object structure, direct spread should work 
             // for the top-level keys we care about.
           }));
-          
+
           get().addLog('【系统】存档导入成功！进度已加载。');
           return true;
         } catch (e) {
@@ -1976,13 +2014,13 @@ export const useGameStore = create<GameStore>()(
       },
 
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
-       setVolume: (volume) => set({ volume }),
-       setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
-     }),
-     {
-       name: 'textgame-storage', // name of the item in the storage (must be unique)
+      setVolume: (volume) => set({ volume }),
+      setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
+    }),
+    {
+      name: 'textgame-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         role: state.role,
         day: state.day,
         weather: state.weather,
@@ -1998,6 +2036,7 @@ export const useGameStore = create<GameStore>()(
         npcRelations: state.npcRelations,
         logs: state.logs,
         currentEvent: state.currentEvent,
+        eventQueue: state.eventQueue,
         isGameOver: state.isGameOver,
         currentTaskId: state.currentTaskId,
         completedTaskIds: state.completedTaskIds,

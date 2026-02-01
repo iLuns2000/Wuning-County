@@ -237,9 +237,9 @@ export const randomEvents: GameEvent[] = [
     description: '五年一度的武林大会召开了，各路高手云集。以你现在的武学修为，完全有资格去争夺盟主之位。',
     type: 'opportunity',
     stylePreference: { preferred: ['英气', '华贵'] },
-    triggerCondition: { 
-      probability: 0.2, 
-      requiredRole: 'hero', 
+    triggerCondition: {
+      probability: 0.2,
+      requiredRole: 'hero',
       minAbility: 60,
       custom: (state) => !state.flags['hero_alliance_leader']
     },
@@ -247,10 +247,10 @@ export const randomEvents: GameEvent[] = [
       {
         label: '参加大会',
         message: '你在大会上力挫群雄，技惊四座，被推举为武林盟主！',
-        effect: { 
-          reputation: 200, 
-          money: 500, 
-          health: -50, 
+        effect: {
+          reputation: 200,
+          money: 500,
+          health: -50,
           ability: 10,
           flagsSet: { hero_alliance_leader: true }
         }
@@ -268,15 +268,15 @@ export const randomEvents: GameEvent[] = [
     title: '偷鸡疑云',
     description: '集市上，老张拉着老李吵得不可开交，引来许多百姓围观。老张声称老李偷了他家的下蛋母鸡，老李则矢口否认。',
     type: 'npc',
-    triggerCondition: { 
-      probability: 0.3, 
+    triggerCondition: {
+      probability: 0.3,
       custom: (state) => !state.flags['chicken_case_started'] && !state.flags['chicken_case_solved_success'] && !state.flags['chicken_case_failed']
     },
     options: [
       {
         label: '协助县令调查',
         message: '你决定协助县令调查此事。老张和老李见有人出面，连忙拉着你评理。',
-        effect: { 
+        effect: {
           flagsSet: { chicken_case_started: true, chicken_stage: 1 },
           reputation: 5
         }
@@ -284,7 +284,7 @@ export const randomEvents: GameEvent[] = [
       {
         label: '无视',
         message: '你觉得这只是邻里小事，摇了摇头离开了。',
-        effect: { 
+        effect: {
           flagsSet: { chicken_case_ignored: true },
           reputation: -5
         }
@@ -296,7 +296,7 @@ export const randomEvents: GameEvent[] = [
     title: '案件调查',
     description: '受县令所托，你需要收集更多线索，以便协助县令断案。',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       // Always available if stage is 1, essentially forcing this to be a high priority if picked, 
       // but since we rely on random selection, probability 1.0 makes it likely to appear.
       probability: 1.0,
@@ -330,7 +330,7 @@ export const randomEvents: GameEvent[] = [
     title: '协助断案',
     description: '公堂之上，县令正在审问老张和老李。县令转头看向你：“对于此案，你有何高见？”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 1.0,
       custom: (state) => state.flags['chicken_stage'] === 2
     },
@@ -338,8 +338,8 @@ export const randomEvents: GameEvent[] = [
       {
         label: '建议定老李的罪',
         message: '你向县令呈上证据：“大人，那麻绳正是老李编竹筐所用，且上面粘有鸡毛。”县令听后一拍惊堂木，老李见证据确凿，瘫倒在地承认了事实。案情大白，县令对你赞赏有加。',
-        effect: { 
-          flagsSet: { chicken_case_solved_success: true, chicken_stage: 3 }, 
+        effect: {
+          flagsSet: { chicken_case_solved_success: true, chicken_stage: 3 },
           reputation: 50,
           money: 20, // Reward
           relationChange: { lao_zhang: 20, lao_li: -10 }
@@ -348,8 +348,8 @@ export const randomEvents: GameEvent[] = [
       {
         label: '建议定老张诬告',
         message: '你认为证据不足，建议县令惩戒老张。然而数日后，有人看见老李在偷偷吃鸡……你这才知道建议错了，不仅让县令断了错案，自己也成了笑柄。',
-        effect: { 
-          flagsSet: { chicken_case_failed: true, chicken_stage: 3 }, 
+        effect: {
+          flagsSet: { chicken_case_failed: true, chicken_stage: 3 },
           reputation: -30,
           relationChange: { lao_zhang: -30, lao_li: 10 }
         }
@@ -357,7 +357,7 @@ export const randomEvents: GameEvent[] = [
       {
         label: '建议证据不足',
         message: '你建议县令因证据不足暂时退堂。案子成了悬案，县令叹了口气，百姓也对你的能力颇有微词。',
-        effect: { 
+        effect: {
           flagsSet: { chicken_stage: 3 },
           reputation: -10
         }
@@ -404,13 +404,13 @@ export const randomEvents: GameEvent[] = [
     type: 'random',
     triggerCondition: {
       probability: 1.0, // Always triggers if condition met (handled by custom logic below, usually achievement unlocks are instant, but events need trigger)
-                        // Actually, achievements are checked automatically. This event is for flavor/narrative.
-                        // We can make it trigger once when stats are high.
+      // Actually, achievements are checked automatically. This event is for flavor/narrative.
+      // We can make it trigger once when stats are high.
       custom: (state) => {
         // Trigger if stats are high AND event hasn't happened yet
-        return state.countyStats.economy > 80 && 
-               state.countyStats.order > 80 && 
-               !state.flags['new_restaurant_event_shown'];
+        return state.countyStats.economy > 80 &&
+          state.countyStats.order > 80 &&
+          !state.flags['new_restaurant_event_shown'];
       }
     },
     options: [
@@ -448,10 +448,10 @@ export const randomEvents: GameEvent[] = [
         label: '静观雪景',
         message: '你静静地看着窗外，感受着这份天地间的寂静。',
         effect: {
-           flagsSet: { first_heavy_snow_encountered: true },
-           // We don't need to force achievement unlock here if we use the flag condition in achievements.ts
-           // But to be safe and provide immediate feedback:
-           // Actually achievements checks are run after events in gameStore.
+          flagsSet: { first_heavy_snow_encountered: true },
+          // We don't need to force achievement unlock here if we use the flag condition in achievements.ts
+          // But to be safe and provide immediate feedback:
+          // Actually achievements checks are run after events in gameStore.
         }
       }
     ]
@@ -471,15 +471,15 @@ export const randomEvents: GameEvent[] = [
         const adjustedDay = state.day - 1;
         const seasonIndex = Math.floor((adjustedDay % (SEASON_LENGTH * 4)) / SEASON_LENGTH);
         const dayOfSeason = (adjustedDay % SEASON_LENGTH) + 1;
-        
+
         // Autumn is index 2. 7th or 8th day.
         // "Still working late at night" -> check total actions. Assuming > 10 is getting late.
         // Also check if we already have the badge to avoid repeat.
-        return seasonIndex === 2 && 
-               (dayOfSeason === 7 || dayOfSeason === 8) && 
-               (state.dailyCounts.work + state.dailyCounts.rest >= 2) &&
-               !state.inventory.includes('crescent_moon_badge') &&
-               !state.achievements.includes('first_moon');
+        return seasonIndex === 2 &&
+          (dayOfSeason === 7 || dayOfSeason === 8) &&
+
+          !state.inventory.includes('crescent_moon_badge') &&
+          !state.achievements.includes('first_moon');
       }
     },
     options: [
@@ -487,7 +487,7 @@ export const randomEvents: GameEvent[] = [
         label: '收下月亮',
         message: '你捡起了那枚弯弯的月亮徽章，心中泛起一丝思乡之情。“在秋天掉落一枚弯月亮，无论凑近端详还是远望，都算吾乡”。',
         effect: {
-           itemsAdd: ['crescent_moon_badge']
+          itemsAdd: ['crescent_moon_badge']
         }
       }
     ]
@@ -503,38 +503,38 @@ export const randomEvents: GameEvent[] = [
       custom: () => false
     },
     options: [
-       {
-         label: '收下歌词',
-         message: '你听着这首歌，觉得心情格外舒畅。',
-         effect: {
-            // We use a flag to unlock the achievement
-            flagsSet: { achievement_slacking_unlocked: true },
-            // Important: We must set a flag to mark that we handled slacking for this day
-            // But we need the current day value. Effect doesn't support dynamic values easily here.
-            // Wait, Effect is static. 
-            // We need to solve the loop issue.
-            // TimeManager checks `flags['slacking_event_day'] === day`.
-            // But we can't set dynamic `day` in static `events.ts`.
-            
-            // Workaround: We can't use static `flagsSet` with dynamic value.
-            // We can use a boolean flag like `slacking_event_triggered_generic: true`?
-            // No, because `day` changes.
-            
-            // Better approach:
-            // In TimeManager, we are triggering the event.
-            // We can update the flag *immediately* before or after triggering the event in TimeManager?
-            // But we can't call `updateStats` easily from TimeManager without exposing it.
-            // `useGameStore` exposes `updateStats`.
-            // So in TimeManager, we can do:
-            // triggerSpecificEvent('slacking_off');
-            // updateStats({ flags: { ...flags, slacking_event_day: day } });
-            
-            // Let's modify TimeManager to do this.
-            // So we don't need to change events.ts for the loop prevention flag.
-            // Just the achievement flag.
-         }
-       }
-     ]
+      {
+        label: '收下歌词',
+        message: '你听着这首歌，觉得心情格外舒畅。',
+        effect: {
+          // We use a flag to unlock the achievement
+          flagsSet: { achievement_slacking_unlocked: true },
+          // Important: We must set a flag to mark that we handled slacking for this day
+          // But we need the current day value. Effect doesn't support dynamic values easily here.
+          // Wait, Effect is static. 
+          // We need to solve the loop issue.
+          // TimeManager checks `flags['slacking_event_day'] === day`.
+          // But we can't set dynamic `day` in static `events.ts`.
+
+          // Workaround: We can't use static `flagsSet` with dynamic value.
+          // We can use a boolean flag like `slacking_event_triggered_generic: true`?
+          // No, because `day` changes.
+
+          // Better approach:
+          // In TimeManager, we are triggering the event.
+          // We can update the flag *immediately* before or after triggering the event in TimeManager?
+          // But we can't call `updateStats` easily from TimeManager without exposing it.
+          // `useGameStore` exposes `updateStats`.
+          // So in TimeManager, we can do:
+          // triggerSpecificEvent('slacking_off');
+          // updateStats({ flags: { ...flags, slacking_event_day: day } });
+
+          // Let's modify TimeManager to do this.
+          // So we don't need to change events.ts for the loop prevention flag.
+          // Just the achievement flag.
+        }
+      }
+    ]
   }
 ];
 
@@ -1204,7 +1204,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '尝试射箭',
         message: '你拿起弓箭尝试了一次。',
-        effect: { 
+        effect: {
           // Logic for hit/miss needs randomness?
           // Using a simple 50/50 for now, or based on ability?
           // If ability > 50, hit.
@@ -1221,7 +1221,7 @@ export const npcEvents: GameEvent[] = [
           // Let's stick to "Cumulative" counts for now as "Continuous" requires deeper store changes (reset logic).
           // Or I can add `flagsReset` to Effect?
           // Let's add `flagsReset` to Effect! It's easy.
-          flagsIncrement: ['guanshan_hit_continuous'] 
+          flagsIncrement: ['guanshan_hit_continuous']
           // Ideally I should check probability here. But EventOption is static.
           // I'll make two options: "认真射箭" (Hit chance high) and "随意乱射" (Miss chance high).
         }
@@ -1690,7 +1690,7 @@ export const npcEvents: GameEvent[] = [
     title: '夜宵的提问',
     description: '夜宵死死盯着你，等待着你的回答：“是谁住在深海的大菠萝里？”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 1.0,
       custom: (state) => state.flags['ye_xiao_quiz_pending']
     },

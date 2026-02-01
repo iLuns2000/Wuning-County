@@ -232,7 +232,13 @@ export const NPCList: React.FC = () => {
                     </button>
                     <button 
                       onClick={() => handleInteraction(npc.id, 'gift')}
-                      className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors bg-secondary hover:bg-secondary/80 min-w-[80px]"
+                      disabled={playerStats.money < 50}
+                      className={`flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded transition-colors min-w-[80px] ${
+                        playerStats.money >= 50 
+                          ? 'bg-secondary hover:bg-secondary/80' 
+                          : 'bg-secondary/50 cursor-not-allowed opacity-60'
+                      }`}
+                      title={playerStats.money < 50 ? "金钱不足 (需50文)" : ""}
                     >
                       <Gift size={16} />
                       <span>送礼</span>
@@ -268,7 +274,11 @@ export const NPCList: React.FC = () => {
       </div>
       
       {currentEvent && (
-        <EventModal event={currentEvent} onOptionSelect={handleOptionSelect} />
+        <EventModal 
+          event={currentEvent} 
+          playerStats={playerStats}
+          onOptionSelect={handleOptionSelect} 
+        />
       )}
     </div>
   );

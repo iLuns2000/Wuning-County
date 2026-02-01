@@ -723,6 +723,7 @@ export const Game: React.FC = () => {
       {currentEvent && (
         <EventModal
           event={currentEvent}
+          playerStats={playerStats}
           onOptionSelect={handleOptionSelect}
           styleMatch={(() => {
             const preferred = currentEvent.stylePreference?.preferred || [];

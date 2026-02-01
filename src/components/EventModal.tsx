@@ -1,9 +1,10 @@
 import React from 'react';
-import { GameEvent } from '@/types/game';
+import { GameEvent, PlayerStats, Effect } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface EventModalProps {
   event: GameEvent;
+  playerStats: PlayerStats;
   onOptionSelect: (optionIndex: number) => void;
   styleMatch?: {
     preferred: string[];
@@ -14,8 +15,30 @@ interface EventModalProps {
   };
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect, styleMatch }) => {
+export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, styleMatch }) => {
   const vibrate = useGameVibrate();
+  
+  const checkRequirement = (effect?: Effect) => {
+    if (!effect) return { allowed: true, reason: '' };
+    
+    let moneyCost = 0;
+    if (effect.money && effect.money < 0) moneyCost += Math.abs(effect.money);
+    if (effect.playerStats?.money && effect.playerStats.money < 0) moneyCost += Math.abs(effect.playerStats.money);
+    
+    if (moneyCost > 0 && playerStats.money < moneyCost) {
+      return { allowed: false, reason: `金钱不足 (需 ${moneyCost} 文)` };
+    }
+
+    let healthCost = 0;
+    if (effect.health && effect.health < 0) healthCost += Math.abs(effect.health);
+    if (effect.playerStats?.health && effect.playerStats.health < 0) healthCost += Math.abs(effect.playerStats.health);
+    
+    if (healthCost > 0 && playerStats.health < healthCost) {
+      return { allowed: false, reason: `体力不足 (需 ${healthCost} 点)` };
+    }
+    
+    return { allowed: true, reason: '' };
+  };
   
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -46,18 +69,32 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onOptionSelect, s
         )}
         
         <div className="space-y-3">
-          {event.options.map((option, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                vibrate(VIBRATION_PATTERNS.MEDIUM);
-                onOptionSelect(index);
-              }}
-              className="w-full p-3 text-left bg-secondary hover:bg-secondary/80 rounded-md transition-colors border border-transparent hover:border-primary/20"
-            >
-              <div className="font-medium">{option.label}</div>
-            </button>
-          ))}
+          {event.options.map((option, index) => {
+            const { allowed, reason } = checkRequirement(option.effect);
+            
+            return (
+              <button
+                key={index}
+                disabled={!allowed}
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.MEDIUM);
+                  onOptionSelect(index);
+                }}
+                className={`w-full p-3 text-left rounded-md transition-colors border ${
+                  allowed 
+                    ? 'bg-secondary hover:bg-secondary/80 border-transparent hover:border-primary/20' 
+                    : 'bg-secondary/50 border-transparent cursor-not-allowed opacity-60'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{option.label}</span>
+                  {!allowed && (
+                    <span className="text-xs text-destructive">{reason}</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
