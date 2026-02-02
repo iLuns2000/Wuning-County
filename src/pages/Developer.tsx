@@ -19,6 +19,8 @@ export const Developer: React.FC = () => {
     livelihood: countyStats.livelihood,
     day: day,
     fortuneLevel: fortuneLevel || 'normal',
+    stone: inventory.filter(i => i === 'stone').length,
+    wood: inventory.filter(i => i === 'wood').length,
   });
   
   const [itemIdInput, setItemIdInput] = useState('');
@@ -47,9 +49,16 @@ export const Developer: React.FC = () => {
   };
 
   const handleSave = () => {
+    // Reconstruct inventory with new stone and wood counts
+    const otherItems = inventory.filter(i => i !== 'stone' && i !== 'wood');
+    const newStone = Array(Math.max(0, formData.stone)).fill('stone');
+    const newWood = Array(Math.max(0, formData.wood)).fill('wood');
+    const newInventory = [...otherItems, ...newStone, ...newWood];
+
     updateStats({
       day: formData.day,
       fortuneLevel: formData.fortuneLevel as any,
+      inventory: newInventory,
       playerStats: {
         money: formData.money,
         reputation: formData.reputation,
@@ -220,6 +229,32 @@ export const Developer: React.FC = () => {
                    type="number"
                    name="livelihood"
                    value={formData.livelihood}
+                   onChange={handleChange}
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
+                 />
+               </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="pb-2 text-lg font-bold border-b">资源管理</h2>
+            <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">木头</label>
+                 <input
+                   type="number"
+                   name="wood"
+                   value={formData.wood}
+                   onChange={handleChange}
+                   className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-sm font-medium">石头</label>
+                 <input
+                   type="number"
+                   name="stone"
+                   value={formData.stone}
                    onChange={handleChange}
                    className="flex px-3 py-2 w-full h-10 text-sm rounded-md border border-input bg-background"
                  />
