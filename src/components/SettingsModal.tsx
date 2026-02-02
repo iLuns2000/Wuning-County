@@ -318,8 +318,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
         </div>
         
-        <div className="text-xs text-center text-muted-foreground">
-            《无宁县志》 v1.0.0
+        <div className="space-y-1 text-xs text-center text-muted-foreground">
+          <div>《无宁县志》 v1.0.0</div>
+          <a
+            href="https://pan.quark.cn/s/b86b920b6063"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            APK 下载
+          </a>
         </div>
       </div>
     </div>
