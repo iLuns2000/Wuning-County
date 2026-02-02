@@ -41,13 +41,40 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
         <div className="overflow-y-auto p-4 space-y-4 bg-muted/30 flex-1">
           {facilities.map((facility) => {
             const owned = ownedFacilities[facility.id] || 0;
-            const canBuy = playerStats.money >= facility.cost;
+            const isResource = facility.type === 'resource';
+            
+            let cost = facility.cost;
+            let canBuy = false;
+            let isMax = false;
+            let statusLabel = '';
+            
+            if (isResource) {
+                // Upgrade logic
+                const maxLevel = facility.maxLevel || 10;
+                if (owned >= maxLevel) {
+                    isMax = true;
+                    statusLabel = '已满级';
+                } else {
+                    // Cost formula: base * 1.5 ^ level
+                    cost = Math.floor(facility.cost * Math.pow(1.5, owned));
+                    canBuy = playerStats.money >= cost;
+                }
+            } else {
+                // Quantity logic
+                const maxCount = facility.maxCount || 999;
+                if (owned >= maxCount) {
+                    isMax = true;
+                    statusLabel = '已达上限';
+                } else {
+                    canBuy = playerStats.money >= cost;
+                }
+            }
             
             return (
               <div key={facility.id} className="bg-card p-4 rounded-lg border border-border shadow-sm relative overflow-hidden">
                 {owned > 0 && (
                     <div className="absolute top-0 right-0 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 text-xs px-2 py-1 rounded-bl-lg font-bold">
-                        已拥有: {owned}
+                        {isResource ? `LV.${owned}` : `已拥有: ${owned}/${facility.maxCount || '∞'}`}
                     </div>
                 )}
                 
@@ -60,12 +87,23 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
 
                 <div className="grid grid-cols-2 gap-4 my-3 text-sm">
                     <div className="bg-muted p-2 rounded">
-                        <span className="text-muted-foreground block text-xs">置办费用</span>
-                        <span className="text-foreground font-mono font-bold">{facility.cost} 文</span>
+                        <span className="text-muted-foreground block text-xs">{isResource && owned > 0 ? '升级费用' : '置办费用'}</span>
+                        {isMax ? (
+                            <span className="text-muted-foreground font-bold">--</span>
+                        ) : (
+                            <span className="text-foreground font-mono font-bold">{cost} 文</span>
+                        )}
                     </div>
                     <div className="bg-green-50 dark:bg-green-950/30 p-2 rounded">
                         <span className="text-green-600 dark:text-green-400 block text-xs">预计日收</span>
-                        <span className="text-green-800 dark:text-green-200 font-mono font-bold">+{facility.dailyIncome} 文</span>
+                        {isResource ? (
+                            <span className="text-green-800 dark:text-green-200 font-mono font-bold">
+                                {owned > 0 ? `+${(facility.resourceAmount || 0) * owned}` : `+${facility.resourceAmount}`} 
+                                {facility.resourceType === 'wood' ? '木材' : '石料'}
+                            </span>
+                        ) : (
+                            <span className="text-green-800 dark:text-green-200 font-mono font-bold">+{facility.dailyIncome} 文</span>
+                        )}
                         <span className="text-xs text-green-600 dark:text-green-400 ml-1">({facility.incomeDescription})</span>
                     </div>
                 </div>
@@ -73,19 +111,25 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
                 <div className="flex justify-end pt-2">
                     <button
                       onClick={() => {
-                          vibrate(VIBRATION_PATTERNS.SUCCESS);
-                          buyFacility(facility.id);
+                          if (!isMax && canBuy) {
+                              vibrate(VIBRATION_PATTERNS.SUCCESS);
+                              buyFacility(facility.id);
+                          } else {
+                              vibrate(VIBRATION_PATTERNS.ERROR);
+                          }
                       }}
-                      disabled={!canBuy}
+                      disabled={isMax || !canBuy}
                       className={`
                         flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
-                        ${canBuy 
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg' 
-                            : 'bg-muted text-muted-foreground cursor-not-allowed'}
+                        ${isMax 
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                            : canBuy 
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg' 
+                                : 'bg-muted text-muted-foreground cursor-not-allowed'}
                       `}
                     >
                       <Coins className="w-4 h-4" />
-                      {canBuy ? '立即置办' : '资金不足'}
+                      {isMax ? statusLabel : (canBuy ? (isResource && owned > 0 ? '立即升级' : '立即置办') : '资金不足')}
                     </button>
                 </div>
               </div>

@@ -68,6 +68,11 @@ export interface Facility {
   dailyIncome: number;
   incomeDescription: string;
   condition?: (stats: CountyStats) => boolean;
+  maxCount?: number;
+  type?: 'normal' | 'resource';
+  resourceType?: 'wood' | 'stone';
+  resourceAmount?: number;
+  maxLevel?: number;
 }
 
 export interface CountyStats {
@@ -163,6 +168,9 @@ export interface GameState {
 
   // Disaster State
   disasterState: DisasterState;
+
+  // Office State
+  officeState: OfficeState;
 }
 
 export interface DisasterState {
@@ -170,6 +178,13 @@ export interface DisasterState {
   active: boolean;
   duration: number; // Days remaining
   lastTriggerDay: number; // To prevent frequent triggers
+}
+
+export interface OfficeState {
+  level: number;
+  upgradeStartTime?: number; // timestamp
+  upgradeEndTime?: number; // timestamp
+  isUpgrading: boolean;
 }
 
 export interface LeekOrder {

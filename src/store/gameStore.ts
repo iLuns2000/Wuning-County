@@ -15,6 +15,7 @@ import { leekFacilities } from '@/data/leekFacilities';
 import { items } from '@/data/items';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
+import { officeUpgrades } from '@/data/officeUpgrades';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -177,6 +178,12 @@ interface GameStore extends GameState {
 
   // Disaster Relief
   donateDisasterRelief: (type: 'grain' | 'cloth', amount: number) => void;
+
+  // Office Upgrades
+  startUpgradeOffice: () => void;
+  speedUpUpgrade: (type: 'free' | 'item' | 'ad', value: number) => void;
+  completeUpgrade: () => void;
+  checkUpgradeStatus: () => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -190,6 +197,7 @@ export const useGameStore = create<GameStore>()(
       volume: 0.5,
       // Haptic Defaults
       vibrationEnabled: true,
+      officeState: { level: 1, isUpgrading: false },
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -436,6 +444,43 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const facility = facilities.find(f => f.id === facilityId);
         if (!facility) return;
+
+        const currentCount = state.ownedFacilities[facilityId] || 0;
+
+        // Resource Facility Logic (Upgrade System)
+        if (facility.type === 'resource') {
+             const maxLevel = facility.maxLevel || 10;
+             if (currentCount >= maxLevel) {
+                 state.addLog('此设施已达最高等级。');
+                 return;
+             }
+             
+             // Cost scales with level: Base * 1.5^Level
+             const upgradeCost = Math.floor(facility.cost * Math.pow(1.5, currentCount));
+             
+             if (state.playerStats.money < upgradeCost) {
+                 state.addLog(`资金不足，升级需要 ${upgradeCost} 文。`);
+                 return;
+             }
+
+             set(state => ({
+                playerStats: { ...state.playerStats, money: state.playerStats.money - upgradeCost },
+                ownedFacilities: {
+                    ...state.ownedFacilities,
+                    [facilityId]: currentCount + 1
+                }
+            }));
+            const action = currentCount === 0 ? '置办' : '升级';
+            get().addLog(`【产业】花费 ${upgradeCost} 文${action}了 ${facility.name} (LV.${currentCount + 1})。`);
+            return;
+        }
+
+        // Normal Facility Logic (Quantity System)
+        const maxCount = facility.maxCount || 999;
+        if (currentCount >= maxCount) {
+          state.addLog(`此产业已达置办上限（${maxCount}）。`);
+          return;
+        }
 
         if (state.playerStats.money < facility.cost) {
           state.addLog('资金不足，无法置办此产业。');
@@ -1352,10 +1397,26 @@ export const useGameStore = create<GameStore>()(
           // Facility Income
           let facilityIncome = 0;
           let facilityMessage = '';
+          let resourceMessage = '';
+          let nextInventory = [...state.inventory];
+
           Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
             const facility = facilities.find(f => f.id === facilityId);
             if (facility && count > 0) {
-              facilityIncome += facility.dailyIncome * count;
+              if (facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
+                  // Resource Production
+                  const amount = facility.resourceAmount * count; // Base * Level
+                  for(let i=0; i<amount; i++) nextInventory.push(facility.resourceType!);
+                  
+                  const resName = facility.resourceType === 'wood' ? '木材' : '石料';
+                  // Append to message, check if already exists to avoid duplicates if multiple same type? 
+                  // But here we iterate facilities.
+                  // Simpler to just append string.
+                  resourceMessage += resourceMessage ? `，${resName} x${amount}` : `${resName} x${amount}`;
+              } else {
+                  // Money Income
+                  facilityIncome += facility.dailyIncome * count;
+              }
             }
           });
 
@@ -1365,6 +1426,10 @@ export const useGameStore = create<GameStore>()(
             facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
             newPlayerStats.money += facilityIncome;
             facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
+          }
+
+          if (resourceMessage) {
+              resourceMessage = `【产业产出】${resourceMessage}。`;
           }
 
           // Mower Logic
@@ -1387,6 +1452,7 @@ export const useGameStore = create<GameStore>()(
 
           // Inventory Spoilage Logic
           const newOwnedGoods = { ...state.ownedGoods };
+          const newOwnedFacilities = { ...state.ownedFacilities };
           if (mowerHarvestCount > 0) {
             newOwnedGoods['leek'] = (newOwnedGoods['leek'] || 0) + mowerHarvestCount;
           }
@@ -1507,6 +1573,7 @@ export const useGameStore = create<GameStore>()(
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
           if (facilityMessage) logs.unshift(facilityMessage);
+          if (resourceMessage) logs.unshift(resourceMessage);
           if (spoilageMessage) logs.unshift(spoilageMessage);
           if (marketStateMessage) logs.unshift(marketStateMessage);
           if (mowerHarvestCount > 0) logs.unshift(`【自动收割】割草机自动收割了 ${mowerHarvestCount} 捆韭菜。`);
@@ -1524,6 +1591,7 @@ export const useGameStore = create<GameStore>()(
             marketState: newMarketState,
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
+            ownedFacilities: newOwnedFacilities,
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
@@ -1531,6 +1599,7 @@ export const useGameStore = create<GameStore>()(
             isVoiceLost: isVoiceLost,
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },
             countyStats: newCountyStats,
+            inventory: nextInventory,
             logs: logs.slice(0, 50),
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
             priceLocks: currentPriceLocks,
@@ -1910,6 +1979,7 @@ export const useGameStore = create<GameStore>()(
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],
+          officeState: { level: 1, isUpgrading: false },
         });
       },
 
@@ -1999,10 +2069,12 @@ export const useGameStore = create<GameStore>()(
           set(state => ({
             ...state,
             ...data,
-            // Ensure nested objects are merged/overwritten correctly if needed, 
-            // but since we export the full object structure, direct spread should work 
-            // for the top-level keys we care about.
-          }));
+          // Ensure nested objects are merged/overwritten correctly if needed, 
+          // but since we export the full object structure, direct spread should work 
+          // for the top-level keys we care about.
+          // Fallback for legacy saves missing officeState
+          officeState: data.officeState || { level: 1, isUpgrading: false }
+        }));
 
           get().addLog('【系统】存档导入成功！进度已加载。');
           return true;
@@ -2016,6 +2088,206 @@ export const useGameStore = create<GameStore>()(
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
       setVolume: (volume) => set({ volume }),
       setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
+
+      // Office Upgrades Implementation
+      startUpgradeOffice: () => {
+        const state = get();
+        // Ensure officeState exists for legacy saves
+        const officeState = state.officeState || { level: 1, isUpgrading: false };
+        const { playerStats, inventory } = state;
+        
+        if (officeState.isUpgrading) {
+          get().addLog('官邸正在修缮中，请耐心等待。');
+          return;
+        }
+
+        const currentLevel = officeState.level;
+        const nextConfig = officeUpgrades.find(u => u.level === currentLevel + 1);
+        
+        if (!nextConfig) {
+          get().addLog('官邸已达到最高等级。');
+          return;
+        }
+
+        const cost = nextConfig.cost;
+        
+        // Check Money
+        if (playerStats.money < cost.money) {
+          get().addLog(`资金不足，需要 ${cost.money} 文。`);
+          return;
+        }
+
+        // Check Wood (in inventory)
+        const woodCount = inventory.filter(id => id === 'wood').length;
+        if (woodCount < cost.wood) {
+          get().addLog(`木材不足，需要 ${cost.wood} 根。`);
+          return;
+        }
+
+        // Check Stone (in inventory)
+        const stoneCount = inventory.filter(id => id === 'stone').length;
+        if (stoneCount < cost.stone) {
+          get().addLog(`石料不足，需要 ${cost.stone} 块。`);
+          return;
+        }
+
+        // Check Construction Order (L11+) - Assumed item id 'construction_order'
+        if (cost.constructionOrder && cost.constructionOrder > 0) {
+             const orderCount = inventory.filter(id => id === 'construction_order').length;
+             if (orderCount < cost.constructionOrder) {
+                 get().addLog(`建材令不足，需要 ${cost.constructionOrder} 个。`);
+                 return;
+             }
+        }
+
+        // Check Rare Stone (L16+) - Assumed item id 'rare_stone'
+        if (cost.rareStone && cost.rareStone > 0) {
+             const rareStoneCount = inventory.filter(id => id === 'rare_stone').length;
+             if (rareStoneCount < cost.rareStone) {
+                 get().addLog(`稀有石料不足，需要 ${cost.rareStone} 块。`);
+                 return;
+             }
+        }
+
+        // Deduct Resources
+        let newInventory = [...inventory];
+        
+        // Remove Wood
+        let woodRemoved = 0;
+        for (let i = newInventory.length - 1; i >= 0; i--) {
+            if (newInventory[i] === 'wood' && woodRemoved < cost.wood) {
+                newInventory.splice(i, 1);
+                woodRemoved++;
+            }
+        }
+
+        // Remove Stone
+        let stoneRemoved = 0;
+        for (let i = newInventory.length - 1; i >= 0; i--) {
+            if (newInventory[i] === 'stone' && stoneRemoved < cost.stone) {
+                newInventory.splice(i, 1);
+                stoneRemoved++;
+            }
+        }
+        
+        // Remove Construction Order
+        if (cost.constructionOrder) {
+            let removed = 0;
+            for (let i = newInventory.length - 1; i >= 0; i--) {
+                if (newInventory[i] === 'construction_order' && removed < cost.constructionOrder) {
+                    newInventory.splice(i, 1);
+                    removed++;
+                }
+            }
+        }
+        
+        // Remove Rare Stone
+        if (cost.rareStone) {
+            let removed = 0;
+            for (let i = newInventory.length - 1; i >= 0; i--) {
+                if (newInventory[i] === 'rare_stone' && removed < cost.rareStone) {
+                    newInventory.splice(i, 1);
+                    removed++;
+                }
+            }
+        }
+
+        const now = Date.now();
+        const durationMs = nextConfig.durationSeconds * 1000;
+
+        set({
+            playerStats: { ...playerStats, money: playerStats.money - cost.money },
+            inventory: newInventory,
+            officeState: {
+                ...officeState,
+                isUpgrading: true,
+                upgradeStartTime: now,
+                upgradeEndTime: now + durationMs
+            }
+        });
+
+        get().addLog(`【官邸】开始修缮官邸至等级 ${nextConfig.level}，预计耗时 ${Math.ceil(nextConfig.durationSeconds / 60)} 分钟。`);
+      },
+
+      speedUpUpgrade: (type, value) => {
+        const state = get();
+        // Ensure officeState exists for legacy saves
+        const officeState = state.officeState || { level: 1, isUpgrading: false };
+
+        if (!officeState.isUpgrading || !officeState.upgradeEndTime) return;
+
+        let reduceMs = 0;
+        if (type === 'free') {
+             // Free speedup logic (e.g. last 15 mins)
+             // Value is usually ignored or 0 here if we just finish it
+             // But let's say 'value' is ms to reduce
+             reduceMs = value;
+        } else if (type === 'item') {
+             // Item speedup
+             reduceMs = value;
+        } else if (type === 'ad') {
+             // Not supported in free version, but kept in interface just in case
+             return;
+        }
+
+        const newEndTime = officeState.upgradeEndTime - reduceMs;
+        
+        // If finished
+        if (newEndTime <= Date.now()) {
+            get().completeUpgrade();
+        } else {
+            set({
+                officeState: {
+                    ...officeState,
+                    upgradeEndTime: newEndTime
+                }
+            });
+            get().addLog(`【加速】官邸修缮进度加快了。`);
+        }
+      },
+
+      completeUpgrade: () => {
+          const state = get();
+          // Ensure officeState exists for legacy saves
+          const officeState = state.officeState || { level: 1, isUpgrading: false };
+          
+          if (!officeState.isUpgrading) return;
+
+          const nextLevel = officeState.level + 1;
+          const config = officeUpgrades.find(u => u.level === nextLevel);
+
+          set({
+              officeState: {
+                  level: nextLevel,
+                  isUpgrading: false,
+                  upgradeStartTime: undefined,
+                  upgradeEndTime: undefined
+              },
+              // Award experience for upgrade?
+              playerStats: {
+                  ...state.playerStats,
+                  experience: (state.playerStats.experience || 0) + nextLevel * 50
+              }
+          });
+
+          let logMsg = `【官邸】修缮完成！官邸等级提升至 ${nextLevel}。`;
+          if (config && config.benefits.unlocks) {
+              logMsg += ` 解锁功能：${config.benefits.unlocks.join('、')}。`;
+          }
+          get().addLog(logMsg);
+      },
+
+      checkUpgradeStatus: () => {
+          const state = get();
+          const { officeState } = state;
+          
+          if (officeState && officeState.isUpgrading && officeState.upgradeEndTime) {
+              if (Date.now() >= officeState.upgradeEndTime) {
+                  get().completeUpgrade();
+              }
+          }
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
@@ -2060,6 +2332,7 @@ export const useGameStore = create<GameStore>()(
         leekPlots: state.leekPlots,
         leekFacilities: state.leekFacilities,
         leekOrders: state.leekOrders,
+        officeState: state.officeState,
       }), // Save everything except actions
     }
   )

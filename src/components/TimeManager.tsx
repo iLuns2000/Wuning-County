@@ -63,6 +63,9 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
         const elapsed = (Date.now() - currentState.timeSettings.dayStartTime) / 1000;
         const remaining = Math.max(0, currentState.timeSettings.dayDurationSeconds - elapsed);
         
+        // Check office upgrade status periodically
+        currentState.checkUpgradeStatus();
+
         setTimeLeft(remaining);
 
         if (remaining <= 60 && remaining > 59) {

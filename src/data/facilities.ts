@@ -8,6 +8,8 @@ export const facilities: Facility[] = [
     cost: 500,
     dailyIncome: 15,
     incomeDescription: '田租收入',
+    maxCount: 20,
+    type: 'normal'
   },
   {
     id: 'fishpond',
@@ -16,6 +18,8 @@ export const facilities: Facility[] = [
     cost: 1200,
     dailyIncome: 40,
     incomeDescription: '水产收入',
+    maxCount: 10,
+    type: 'normal'
   },
   {
     id: 'shop',
@@ -24,6 +28,8 @@ export const facilities: Facility[] = [
     cost: 3000,
     dailyIncome: 110,
     incomeDescription: '店铺盈利',
+    maxCount: 5,
+    type: 'normal'
   },
   {
     id: 'restaurant',
@@ -32,6 +38,8 @@ export const facilities: Facility[] = [
     cost: 8000,
     dailyIncome: 300,
     incomeDescription: '酒楼分红',
+    maxCount: 3,
+    type: 'normal'
   },
   {
     id: 'bank',
@@ -40,5 +48,33 @@ export const facilities: Facility[] = [
     cost: 20000,
     dailyIncome: 800,
     incomeDescription: '钱庄红利',
+    maxCount: 1,
+    type: 'normal'
   },
+  {
+    id: 'quarry',
+    name: '采石场',
+    description: '开采山石，每日产出石料。可升级提高产量。',
+    cost: 1000,
+    dailyIncome: 0,
+    incomeDescription: '石料产出',
+    maxCount: 1,
+    type: 'resource',
+    resourceType: 'stone',
+    resourceAmount: 2, // Base amount per level
+    maxLevel: 10
+  },
+  {
+    id: 'forestry',
+    name: '林场',
+    description: '经营林场，每日产出木材。可升级提高产量。',
+    cost: 1000,
+    dailyIncome: 0,
+    incomeDescription: '木材产出',
+    maxCount: 1,
+    type: 'resource',
+    resourceType: 'wood',
+    resourceAmount: 2, // Base amount per level
+    maxLevel: 10
+  }
 ];

@@ -16,6 +16,7 @@ import { AchievementModal } from '@/components/AchievementModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { MarketModal } from '@/components/MarketModal';
 import { EstateModal } from '@/components/EstateModal';
+import { OfficeModal } from '@/components/OfficeModal';
 import { InventoryModal } from '@/components/InventoryModal';
 import { ExploreModal } from '@/components/ExploreModal';
 import { SnackStreetModal } from '@/components/SnackStreetModal';
@@ -41,6 +42,7 @@ export const Game: React.FC = () => {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showMarket, setShowMarket] = React.useState(false);
   const [showEstates, setShowEstates] = React.useState(false);
+  const [showOffice, setShowOffice] = React.useState(false);
   const [showInventory, setShowInventory] = React.useState(false);
   const [showExplore, setShowExplore] = React.useState(false);
   const [showSnackStreet, setShowSnackStreet] = React.useState(false);
@@ -377,6 +379,7 @@ export const Game: React.FC = () => {
             onEditProfile={() => setShowProfileModal(true)}
             onOpenTalents={() => setShowTalents(true)}
             onOpenAchievements={() => setShowAchievements(true)}
+            onOpenOffice={() => setShowOffice(true)}
             equippedApparel={equippedApparel}
             equippedAccessories={equippedAccessories}
           />
@@ -762,6 +765,7 @@ export const Game: React.FC = () => {
       {showMarket && <MarketModal onClose={() => setShowMarket(false)} />}
       {showSnackStreet && <SnackStreetModal onClose={() => setShowSnackStreet(false)} />}
       {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
+      {showOffice && <OfficeModal onClose={() => setShowOffice(false)} />}
       {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
       {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
       {showLeekGarden && <LeekGardenModal onClose={() => setShowLeekGarden(false)} />}
@@ -802,3 +806,4 @@ export const Game: React.FC = () => {
     </div>
   );
 };
+

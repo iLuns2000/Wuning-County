@@ -1,6 +1,6 @@
 import React from 'react';
 import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot } from '@/types/game';
-import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun } from 'lucide-react';
+import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun, Building2 } from 'lucide-react';
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
 
@@ -13,6 +13,7 @@ interface StatsDisplayProps {
   onEditProfile?: () => void;
   onOpenTalents?: () => void;
   onOpenAchievements?: () => void;
+  onOpenOffice?: () => void;
   equippedApparel: Partial<Record<ApparelSlot, string>>;
   equippedAccessories: string[];
 }
@@ -47,7 +48,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   onOpenTalents,
   onOpenAchievements,
   equippedApparel,
-  equippedAccessories
+  equippedAccessories,
+  onOpenOffice
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
   const itemMap = new Map(items.map(item => [item.id, item]));
@@ -184,6 +186,14 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           <StatItem icon={BookOpen} value={countyStats.culture} label="文化" color="text-pink-500" />
           <StatItem icon={Users} value={countyStats.livelihood} label="民生" color="text-orange-500" />
         </div>
+        
+        <button 
+          onClick={onOpenOffice}
+          className="w-full mt-3 flex items-center justify-center gap-2 p-2 rounded-md bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition-colors group"
+        >
+           <Building2 size={16} className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500" />
+           <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">官邸修缮</span>
+        </button>
       </div>
     </div>
   );
