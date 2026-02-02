@@ -2295,6 +2295,7 @@ export const useGameStore = create<GameStore>()(
           role: state.role,
           day: state.day,
           weather: state.weather,
+          marketState: state.marketState,
           playerStats: state.playerStats,
           countyStats: state.countyStats,
           dailyCounts: state.dailyCounts,
@@ -2318,6 +2319,14 @@ export const useGameStore = create<GameStore>()(
           achievements: state.achievements,
           playerProfile: state.playerProfile,
           timeSettings: state.timeSettings,
+          hasInteractedToday: state.hasInteractedToday,
+          soundEnabled: state.soundEnabled,
+          volume: state.volume,
+          vibrationEnabled: state.vibrationEnabled,
+          officeState: state.officeState,
+          disasterState: state.disasterState,
+          isExploring: state.isExploring,
+          exploreResult: state.exploreResult,
           marketPrices: state.marketPrices,
           marketInventory: state.marketInventory,
           ownedGoods: state.ownedGoods,
@@ -2345,15 +2354,72 @@ export const useGameStore = create<GameStore>()(
             return false;
           }
 
+          const allowedKeys = [
+            'role',
+            'day',
+            'weather',
+            'marketState',
+            'playerStats',
+            'countyStats',
+            'dailyCounts',
+            'inventory',
+            'equippedApparel',
+            'equippedAccessories',
+            'flags',
+            'npcRelations',
+            'logs',
+            'currentEvent',
+            'eventQueue',
+            'isGameOver',
+            'currentTaskId',
+            'completedTaskIds',
+            'giftFailureCounts',
+            'npcInteractionStates',
+            'isVoiceLost',
+            'collectedScrolls',
+            'activePolicyId',
+            'talents',
+            'achievements',
+            'playerProfile',
+            'timeSettings',
+            'hasInteractedToday',
+            'soundEnabled',
+            'volume',
+            'vibrationEnabled',
+            'officeState',
+            'disasterState',
+            'isExploring',
+            'exploreResult',
+            'marketPrices',
+            'marketInventory',
+            'ownedGoods',
+            'ownedFacilities',
+            'priceLocks',
+            'dailyPurchasedGoods',
+            'fortuneLevel',
+            'latestUnlockedAchievementId',
+            'leekPlots',
+            'leekFacilities',
+            'leekOrders',
+          ] as const;
+
+          const nextState: Partial<GameStore> = {};
+          for (const key of allowedKeys) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+              (nextState as any)[key] = data[key];
+            }
+          }
+
           set(state => ({
             ...state,
-            ...data,
-          // Ensure nested objects are merged/overwritten correctly if needed, 
-          // but since we export the full object structure, direct spread should work 
-          // for the top-level keys we care about.
-          // Fallback for legacy saves missing officeState
-          officeState: data.officeState || { level: 1, isUpgrading: false }
-        }));
+            ...nextState,
+            officeState:
+              (nextState as any).officeState ||
+              state.officeState ||
+              ({ level: 1, isUpgrading: false } as any),
+            disasterState: (nextState as any).disasterState || state.disasterState,
+            timeSettings: (nextState as any).timeSettings || state.timeSettings,
+          }));
 
           get().addLog('【系统】存档导入成功！进度已加载。');
           return true;
@@ -2643,10 +2709,13 @@ export const useGameStore = create<GameStore>()(
         activePolicyId: state.activePolicyId,
         talents: state.talents,
         achievements: state.achievements,
+        marketState: state.marketState,
         marketPrices: state.marketPrices,
         marketInventory: state.marketInventory,
         ownedGoods: state.ownedGoods,
         ownedFacilities: state.ownedFacilities,
+        priceLocks: state.priceLocks,
+        dailyPurchasedGoods: state.dailyPurchasedGoods,
         fortuneLevel: state.fortuneLevel,
         hasInteractedToday: state.hasInteractedToday,
         latestUnlockedAchievementId: state.latestUnlockedAchievementId,
@@ -2656,6 +2725,9 @@ export const useGameStore = create<GameStore>()(
         leekPlots: state.leekPlots,
         leekFacilities: state.leekFacilities,
         leekOrders: state.leekOrders,
+        disasterState: state.disasterState,
+        isExploring: state.isExploring,
+        exploreResult: state.exploreResult,
         officeState: state.officeState,
       }), // Save everything except actions
     }

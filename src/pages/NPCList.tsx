@@ -8,7 +8,7 @@
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Gift, MessageCircle, Sparkles, Search } from 'lucide-react';
 import { npcs } from '@/data/npcs';
@@ -40,29 +40,36 @@ export const NPCList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortType, setSortType] = useState<SortType>('default');
 
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+
   const filteredAndSortedNPCs = useMemo(() => {
-    let result = [...npcs];
+    const trimmedTerm = deferredSearchTerm.trim();
+    const lowerTerm = trimmedTerm.toLowerCase();
+    const source = npcs;
+    let result = trimmedTerm
+      ? source.filter((npc) => {
+          const name = npc.name ?? '';
+          const title = npc.title ?? '';
+          const description = npc.description ?? '';
+          return (
+            name.toLowerCase().includes(lowerTerm) ||
+            title.toLowerCase().includes(lowerTerm) ||
+            description.toLowerCase().includes(lowerTerm)
+          );
+        })
+      : source;
 
-    // Filter
-    if (searchTerm) {
-      const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(npc => 
-        npc.name.toLowerCase().includes(lowerTerm) ||
-        npc.title.toLowerCase().includes(lowerTerm) ||
-        npc.description.toLowerCase().includes(lowerTerm)
-      );
-    }
+    if (sortType === 'default') return result;
 
-    // Sort
-    result.sort((a, b) => {
-      const relationA = npcRelations[a.id] || 0;
-      const relationB = npcRelations[b.id] || 0;
+    const sorted = [...result].sort((a, b) => {
+      const relationA = npcRelations[a.id] ?? 0;
+      const relationB = npcRelations[b.id] ?? 0;
 
       switch (sortType) {
         case 'relation_desc':
-          return relationB - relationA;
+          return relationB - relationA || a.id.localeCompare(b.id);
         case 'relation_asc':
-          return relationA - relationB;
+          return relationA - relationB || a.id.localeCompare(b.id);
         case 'id_asc':
           return a.id.localeCompare(b.id);
         case 'id_desc':
@@ -72,8 +79,8 @@ export const NPCList: React.FC = () => {
       }
     });
 
-    return result;
-  }, [searchTerm, sortType, npcRelations]);
+    return sorted;
+  }, [deferredSearchTerm, sortType, npcRelations]);
 
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
@@ -156,7 +163,7 @@ export const NPCList: React.FC = () => {
                 type="text"
                 placeholder="搜索 NPC 姓名、称号、描述..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.currentTarget.value)}
                 className="py-2 pr-4 pl-9 w-full text-sm rounded-md border-none outline-none bg-secondary/50 focus:ring-1 focus:ring-primary"
               />
             </div>
