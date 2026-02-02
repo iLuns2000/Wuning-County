@@ -22,7 +22,10 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   }, [inventory, selectedItem]);
 
   // Map inventory IDs to Item objects
-  const inventoryItems = inventory.map(id => items.find(i => i.id === id)).filter((i): i is Item => !!i);
+  const inventoryItems = inventory
+    .filter(id => id !== 'wood' && id !== 'stone')
+    .map(id => items.find(i => i.id === id))
+    .filter((i): i is Item => !!i);
 
   // Group items by ID to show counts (if we allow duplicates in inventory array)
   // Currently inventory is string[], assuming it can contain duplicates.

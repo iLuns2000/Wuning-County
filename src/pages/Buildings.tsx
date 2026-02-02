@@ -13,7 +13,7 @@ import { ArcheryHall } from '@/components/ArcheryHall';
 const LingrongGarden: React.FC = () => {
   const { playerStats, handleEventOption, npcRelations, inventory } = useGameStore();
   const vibrate = useGameVibrate();
-  const npcId = 'mo_gu';
+  const npcId = 'mo_gu_1';
   const relation = npcRelations[npcId] || 0;
 
   const handlePickMushrooms = () => {
@@ -220,7 +220,7 @@ const XiaoyanTavern: React.FC = () => {
         {canBrew && (
             <button
             onClick={handleSelfBrew}
-            className="flex flex-col justify-center items-center p-4 col-span-2 rounded-lg border transition-all hover:bg-secondary"
+            className="flex flex-col col-span-2 justify-center items-center p-4 rounded-lg border transition-all hover:bg-secondary"
             >
             <FlaskConical className="mb-2" />
             <span className="font-bold">自行酿酒</span>

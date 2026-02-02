@@ -16,7 +16,8 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
     startUpgradeOffice,
     speedUpUpgrade,
     completeUpgrade,
-    checkUpgradeStatus
+    checkUpgradeStatus,
+    cancelUpgradeOffice
   } = useGameStore();
   
   // Safety check for legacy saves
@@ -108,7 +109,7 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
                         />
                     </div>
 
-                    <div className="flex justify-center pt-4">
+                    <div className="flex justify-center pt-4 gap-4">
                         {remainingMs <= 0 ? (
                             <button
                                 onClick={() => {
@@ -119,21 +120,37 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
                             >
                                 完成修缮
                             </button>
-                        ) : canFreeSpeedup ? (
-                             <button
-                                onClick={() => {
-                                    vibrate(VIBRATION_PATTERNS.LIGHT);
-                                    speedUpUpgrade('free', 15 * 60 * 1000);
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold shadow-lg flex items-center gap-2"
-                            >
-                                <Zap className="w-4 h-4" />
-                                免费完成
-                            </button>
                         ) : (
-                            <div className="text-sm text-muted-foreground">
-                                正在施工中，请耐心等待...
-                            </div>
+                            <>
+                                {canFreeSpeedup ? (
+                                    <button
+                                        onClick={() => {
+                                            vibrate(VIBRATION_PATTERNS.LIGHT);
+                                            speedUpUpgrade('free', 15 * 60 * 1000);
+                                        }}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold shadow-lg flex items-center gap-2"
+                                    >
+                                        <Zap className="w-4 h-4" />
+                                        免费完成
+                                    </button>
+                                ) : (
+                                    <div className="text-sm text-muted-foreground self-center">
+                                        正在施工中...
+                                    </div>
+                                )}
+                                
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('确定要取消修缮吗？投入的资源将全部返还。')) {
+                                            vibrate(VIBRATION_PATTERNS.LIGHT);
+                                            cancelUpgradeOffice();
+                                        }
+                                    }}
+                                    className="bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 px-4 py-2 rounded-full text-sm font-bold transition-colors border border-red-200 dark:border-red-800"
+                                >
+                                    取消
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

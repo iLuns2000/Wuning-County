@@ -95,7 +95,9 @@ export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
                         )}
                     </div>
                     <div className="bg-green-50 dark:bg-green-950/30 p-2 rounded">
-                        <span className="text-green-600 dark:text-green-400 block text-xs">预计日收</span>
+                        <span className="text-green-600 dark:text-green-400 block text-xs">
+                          {isResource ? '预计产出 (每2秒)' : '预计日收'}
+                        </span>
                         {isResource ? (
                             <span className="text-green-800 dark:text-green-200 font-mono font-bold">
                                 {owned > 0 ? `+${(facility.resourceAmount || 0) * owned}` : `+${facility.resourceAmount}`} 

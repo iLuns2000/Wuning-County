@@ -184,6 +184,8 @@ interface GameStore extends GameState {
   speedUpUpgrade: (type: 'free' | 'item' | 'ad', value: number) => void;
   completeUpgrade: () => void;
   checkUpgradeStatus: () => void;
+  cancelUpgradeOffice: () => void;
+  processResourceTick: () => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -258,7 +260,7 @@ export const useGameStore = create<GameStore>()(
         set({ isExploring: true, exploreResult: null });
 
         const state = get();
-        let failChance = 0.15;
+        let failChance = 0.1;
 
         // Ability reduction: 1 point = 0.01% = 0.0001
         failChance -= state.playerStats.ability * 0.0001;
@@ -1399,22 +1401,15 @@ export const useGameStore = create<GameStore>()(
           // Facility Income
           let facilityIncome = 0;
           let facilityMessage = '';
-          let resourceMessage = '';
+          // Resource logic moved to processResourceTick (real-time)
+          let resourceMessage = ''; 
           let nextInventory = [...state.inventory];
 
           Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
             const facility = facilities.find(f => f.id === facilityId);
             if (facility && count > 0) {
-              if (facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
-                  // Resource Production
-                  const amount = facility.resourceAmount * count; // Base * Level
-                  for(let i=0; i<amount; i++) nextInventory.push(facility.resourceType!);
-                  
-                  const resName = facility.resourceType === 'wood' ? '木材' : '石料';
-                  // Append to message, check if already exists to avoid duplicates if multiple same type? 
-                  // But here we iterate facilities.
-                  // Simpler to just append string.
-                  resourceMessage += resourceMessage ? `，${resName} x${amount}` : `${resName} x${amount}`;
+              if (facility.type === 'resource') {
+                  // Skip daily resource generation for resource facilities (handled in real-time tick)
               } else {
                   // Money Income
                   facilityIncome += facility.dailyIncome * count;
@@ -1430,9 +1425,9 @@ export const useGameStore = create<GameStore>()(
             facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
 
-          if (resourceMessage) {
-              resourceMessage = `【产业产出】${resourceMessage}。`;
-          }
+          // if (resourceMessage) {
+          //    resourceMessage = `【产业产出】${resourceMessage}。`;
+          // }
 
           // Mower Logic
           const hasMower = state.leekFacilities?.['mower'];
@@ -1581,7 +1576,7 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
-
+// 
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
 
@@ -1712,6 +1707,28 @@ export const useGameStore = create<GameStore>()(
         get().checkAchievements();
         get().checkTaskCompletion();
         get().triggerEvent();
+      },
+
+      processResourceTick: () => {
+        const state = get();
+        if (state.timeSettings.isPaused) return;
+
+        let newInventory = [...state.inventory];
+        let hasChanges = false;
+
+        Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
+            const facility = facilities.find(f => f.id === facilityId);
+            if (facility && count > 0 && facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
+                // Production per tick (every 2s)
+                const amount = facility.resourceAmount * count; 
+                for(let i=0; i<amount; i++) newInventory.push(facility.resourceType!);
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            set({ inventory: newInventory });
+        }
       },
 
       handleEventOption: (effect, message) => {
@@ -2287,6 +2304,51 @@ export const useGameStore = create<GameStore>()(
                   get().completeUpgrade();
               }
           }
+      },
+
+      cancelUpgradeOffice: () => {
+        const state = get();
+        const { officeState } = state;
+        if (!officeState || !officeState.isUpgrading) return;
+        
+        const nextLevel = officeState.level + 1;
+        const config = officeUpgrades.find(u => u.level === nextLevel);
+        
+        if (config) {
+             const cost = config.cost;
+             const refundMoney = cost.money;
+             const refundItems: string[] = [];
+             for(let i=0; i<cost.wood; i++) refundItems.push('wood');
+             for(let i=0; i<cost.stone; i++) refundItems.push('stone');
+             if (cost.constructionOrder) {
+                 for(let i=0; i<cost.constructionOrder; i++) refundItems.push('construction_order');
+             }
+             if (cost.rareStone) {
+                 for(let i=0; i<cost.rareStone; i++) refundItems.push('rare_stone');
+             }
+             
+             set(state => ({
+                 playerStats: { ...state.playerStats, money: state.playerStats.money + refundMoney },
+                 inventory: [...state.inventory, ...refundItems],
+                 officeState: {
+                     ...officeState,
+                     isUpgrading: false,
+                     upgradeStartTime: undefined,
+                     upgradeEndTime: undefined
+                 }
+             }));
+             get().addLog('【官邸】已取消修缮，投入资源已全部返还。');
+        } else {
+             set({
+                 officeState: {
+                     ...officeState,
+                     isUpgrading: false,
+                     upgradeStartTime: undefined,
+                     upgradeEndTime: undefined
+                 }
+             });
+             get().addLog('【官邸】修缮已取消。');
+        }
       },
 
     }),

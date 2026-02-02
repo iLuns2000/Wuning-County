@@ -78,7 +78,8 @@ export const Game: React.FC = () => {
     latestUnlockedAchievementId,
     dismissAchievementPopup,
     equippedApparel,
-    equippedAccessories
+    equippedAccessories,
+    processResourceTick
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -90,6 +91,14 @@ export const Game: React.FC = () => {
 
   // Meiwu Tea Seeking Logic
   const isTeaDay = ((day - 1) % 360 + 1) === 61 && weather === 'sunny';
+
+  // Resource Tick Timer (2 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+        processResourceTick();
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [processResourceTick]);
 
   useEffect(() => {
     if (isTeaDay && !flags['tea_seeking_popup_shown']) {

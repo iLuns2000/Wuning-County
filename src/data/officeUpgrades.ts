@@ -33,7 +33,7 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
     level: 3,
     cost: { money: 775, wood: 300, stone: 145 },
     durationSeconds: 8 * 60,
-    benefits: { resourceRate: 1.10, storageCap: 1.16, unlocks: ['解锁第二队列/第二建造槽'] }
+    benefits: { resourceRate: 1.10, storageCap: 1.16, unlocks: [] }
   },
   {
     level: 4,
@@ -45,7 +45,7 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
     level: 5,
     cost: { money: 1860, wood: 675, stone: 305 },
     durationSeconds: 21 * 60,
-    benefits: { resourceRate: 1.20, storageCap: 1.32, unlocks: ['解锁新兵种或新工坊'] }
+    benefits: { resourceRate: 1.20, storageCap: 1.32, unlocks: [] }
   },
   {
     level: 6,
@@ -57,7 +57,7 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
     level: 7,
     cost: { money: 4460, wood: 1515, stone: 640 },
     durationSeconds: 55 * 60,
-    benefits: { resourceRate: 1.30, storageCap: 1.48, unlocks: ['官邸外观升级', '城防功能'] }
+    benefits: { resourceRate: 1.30, storageCap: 1.48, unlocks: ['官邸外观升级', ] }
   },
   {
     level: 8,
@@ -69,7 +69,7 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
     level: 9,
     cost: { money: 10710, wood: 3405, stone: 1350 },
     durationSeconds: 150 * 60, // 2.5 hours
-    benefits: { resourceRate: 1.40, storageCap: 1.64, unlocks: ['高阶资源产线'] }
+    benefits: { resourceRate: 1.40, storageCap: 1.64, unlocks: [] }
   },
   {
     level: 10,
@@ -81,7 +81,7 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
     level: 11,
     cost: { money: 25600, wood: 7660, stone: 2840, constructionOrder: 1 },
     durationSeconds: 390 * 60, // 6.5 hours
-    benefits: { resourceRate: 1.50, storageCap: 1.80, unlocks: ['联盟功能', '官职'] }
+    benefits: { resourceRate: 1.50, storageCap: 1.80, unlocks: [] }
   },
   {
     level: 12,
