@@ -35,6 +35,185 @@ export const getDateInfo = (day: number) => {
   };
 };
 
+type RelationPenaltyEffect = {
+  money?: number;
+  reputation?: number;
+  ability?: number;
+  health?: number;
+  experience?: number;
+};
+
+type RelationPenalty = {
+  threshold: number;
+  flag: string;
+  effect: RelationPenaltyEffect;
+  message: string;
+};
+
+const npcFactions = [
+  { id: 'yamen', members: ['lou_xianling', 'qi_jiu'] },
+  { id: 'medical', members: ['song_songsheng', 'san_yue'] },
+  { id: 'craft', members: ['wuyan', 'guan_yuhe', 'baizhou', 'luhua'] },
+  { id: 'commerce', members: ['yun_xi_npc', 'feng_ge', 'ye_xiao'] },
+  { id: 'neighbors', members: ['lao_li', 'lao_zhang'] },
+  { id: 'tea', members: ['cha_du', 'qian_xiaolu', 'ying_yue'] }
+];
+
+const negativeRelationPenalties: RelationPenalty[] = [
+  {
+    threshold: -20,
+    flag: 'low',
+    effect: { reputation: -5, money: -5 },
+    message: '【嫌隙】{name}在坊间散布冷言，声望下降。'
+  },
+  {
+    threshold: -50,
+    flag: 'deep',
+    effect: { reputation: -10, money: -20, health: -5 },
+    message: '【反噬】{name}处处刁难，你付出了额外代价。'
+  }
+];
+
+const resolveRelationPenalties = (state: GameState, npcId: string, previousRelation: number, newRelation: number) => {
+  let moneyChange = 0;
+  let reputationChange = 0;
+  let abilityChange = 0;
+  let healthChange = 0;
+  let experienceChange = 0;
+  const messages: string[] = [];
+  const flags: string[] = [];
+  const events: GameEvent[] = [];
+
+  const npc = npcs.find(n => n.id === npcId);
+  const name = npc ? npc.name : npcId;
+
+  negativeRelationPenalties.forEach(penalty => {
+    const flagKey = `npc_relation_penalty_${penalty.flag}_${npcId}`;
+    const alreadyTriggered = state.flags[flagKey];
+    if (!alreadyTriggered && previousRelation > penalty.threshold && newRelation <= penalty.threshold) {
+      if (penalty.effect.money) moneyChange += penalty.effect.money;
+      if (penalty.effect.reputation) reputationChange += penalty.effect.reputation;
+      if (penalty.effect.ability) abilityChange += penalty.effect.ability;
+      if (penalty.effect.health) healthChange += penalty.effect.health;
+      if (penalty.effect.experience) experienceChange += penalty.effect.experience;
+      messages.push(penalty.message.replace('{name}', name));
+      flags.push(flagKey);
+      if (penalty.flag === 'low') {
+        const event = buildFactionRippleEvent(npcId);
+        if (event) events.push(event);
+      }
+      if (penalty.flag === 'deep') {
+        events.push(buildRedemptionEvent(npcId, 1));
+      }
+    }
+  });
+
+  return {
+    moneyChange,
+    reputationChange,
+    abilityChange,
+    healthChange,
+    experienceChange,
+    messages,
+    flags,
+    events
+  };
+};
+
+const getFactionMembers = (npcId: string) => {
+  const faction = npcFactions.find(group => group.members.includes(npcId));
+  if (!faction) return [];
+  return faction.members.filter(id => id !== npcId);
+};
+
+const buildFactionRippleEvent = (npcId: string): GameEvent | null => {
+  const members = getFactionMembers(npcId);
+  if (members.length === 0) return null;
+  const npc = npcs.find(n => n.id === npcId);
+  const name = npc ? npc.name : npcId;
+
+  const hardChange: Record<string, number> = {};
+  const softChange: Record<string, number> = {};
+  members.forEach(id => {
+    hardChange[id] = -4;
+    softChange[id] = -1;
+  });
+
+  return {
+    id: `faction_backlash_${npcId}_${Date.now()}`,
+    title: '派系连坐',
+    description: `你与${name}结怨，相关圈子开始对你冷眼相待。`,
+    type: 'npc',
+    options: [
+      {
+        label: '登门解释(20文)',
+        message: `你四处解释，与${name}相关的人对你的不满稍有缓解。`,
+        effect: { money: -20, relationChange: softChange }
+      },
+      {
+        label: '置之不理',
+        message: `你不愿解释，流言愈演愈烈。`,
+        effect: { relationChange: hardChange }
+      }
+    ]
+  };
+};
+
+const buildRedemptionEvent = (npcId: string, stage: 1 | 2): GameEvent => {
+  const npc = npcs.find(n => n.id === npcId);
+  const name = npc ? npc.name : npcId;
+
+  if (stage === 1) {
+    return {
+      id: `redemption_stage1_${npcId}_${Date.now()}`,
+      title: '赎罪·赔礼',
+      description: `你与${name}的矛盾已传开，是时候想个补救之法。`,
+      type: 'npc',
+      options: [
+        {
+          label: '备礼上门(30文)',
+          message: `你带着薄礼登门赔罪，${name}神色稍缓。`,
+          effect: { money: -30, relationChange: { [npcId]: 10 }, flagsIncrement: [`redemption_stage2_${npcId}`] }
+        },
+        {
+          label: '登门道歉',
+          message: `你郑重道歉，${name}勉强应下。`,
+          effect: { reputation: -2, relationChange: { [npcId]: 6 }, flagsIncrement: [`redemption_stage2_${npcId}`] }
+        },
+        {
+          label: '置之不理',
+          message: `你选择冷处理，裂痕进一步扩大。`,
+          effect: { relationChange: { [npcId]: -5 } }
+        }
+      ]
+    };
+  }
+
+  return {
+    id: `redemption_stage2_${npcId}_${Date.now()}`,
+    title: '赎罪·补偿',
+    description: `${name}提出一项补偿要求，愿意给你挽回的机会。`,
+    type: 'npc',
+    options: [
+      {
+        label: '亲自帮忙(体力-15)',
+        message: `你亲自出力补偿，${name}态度缓和。`,
+        effect: { health: -15, relationChange: { [npcId]: 15 }, reputation: 5, flagsSet: { [`redemption_done_${npcId}`]: true } }
+      },
+      {
+        label: '银两补偿(80文)',
+        message: `你用银两补偿损失，${name}接受了你的诚意。`,
+        effect: { money: -80, relationChange: { [npcId]: 20 }, reputation: 3, flagsSet: { [`redemption_done_${npcId}`]: true } }
+      },
+      {
+        label: '拖延',
+        message: `你迟迟不肯补偿，${name}更加不满。`,
+        effect: { relationChange: { [npcId]: -5 } }
+      }
+    ]
+  };
+};
+
 const generateWeather = (seasonIndex: number): WeatherType => {
   const rand = Math.random();
 
@@ -998,19 +1177,57 @@ export const useGameStore = create<GameStore>()(
           }
 
           if (npcState.dailyChatCount >= 10) {
-            // Annoyance mechanic
-            set(prev => ({
-              npcInteractionStates: {
-                ...prev.npcInteractionStates,
-                [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
-              },
-              dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
-              npcRelations: {
-                ...prev.npcRelations,
-                [npcId]: (prev.npcRelations[npcId] || 0) - 1
+            const previousRelation = state.npcRelations[npcId] || 0;
+            const newRelation = previousRelation - 1;
+            const penalty = resolveRelationPenalties(state, npcId, previousRelation, newRelation);
+            const penaltyEvents = penalty.events || [];
+
+            set(prev => {
+              const newPlayerStats = { ...prev.playerStats };
+              newPlayerStats.money += penalty.moneyChange;
+              newPlayerStats.reputation += penalty.reputationChange;
+              newPlayerStats.ability += penalty.abilityChange;
+              newPlayerStats.health += penalty.healthChange;
+              newPlayerStats.experience += penalty.experienceChange;
+
+              const fitnessLevel = prev.talents['fitness'] || 0;
+              const maxHealth = 100 + fitnessLevel * 10;
+              newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
+              newPlayerStats.ability = Math.min(120, Math.max(0, newPlayerStats.ability));
+              newPlayerStats.health = Math.min(maxHealth, Math.max(0, newPlayerStats.health));
+
+              const newFlags = { ...prev.flags };
+              penalty.flags.forEach(flag => {
+                newFlags[flag] = 1;
+              });
+
+              const nextState = {
+                npcInteractionStates: {
+                  ...prev.npcInteractionStates,
+                  [npcId]: { ...npcState, dailyChatCount: npcState.dailyChatCount + 1 }
+                },
+                dailyCounts: { ...prev.dailyCounts, chatTotal: prev.dailyCounts.chatTotal + 1 },
+                npcRelations: {
+                  ...prev.npcRelations,
+                  [npcId]: newRelation
+                },
+                playerStats: newPlayerStats,
+                flags: newFlags
+              } as const;
+
+              if (penaltyEvents.length > 0) {
+                return {
+                  ...nextState,
+                  currentEvent: penaltyEvents[0],
+                  eventQueue: [...prev.eventQueue, ...penaltyEvents.slice(1)]
+                };
               }
-            }));
-            return { success: true, message: '对方显然已经有些不耐烦了，好感度降低了。(好感度 -1)' };
+
+              return nextState;
+            });
+
+            const penaltyText = penalty.messages.length > 0 ? ` ${penalty.messages.join(' ')}` : '';
+            return { success: true, message: `对方显然已经有些不耐烦了，好感度降低了。(好感度 -1)${penaltyText}` };
           }
 
           // Normal chat
@@ -1746,6 +1963,10 @@ export const useGameStore = create<GameStore>()(
         let orderChange = 0;
         let cultureChange = 0;
         let livelihoodChange = 0;
+        const relationPenaltyMessages: string[] = [];
+        const relationPenaltyFlags: string[] = [];
+        const relationPenaltyEvents: GameEvent[] = [];
+        const redemptionStage2Events: GameEvent[] = [];
 
         if (effect) {
           // 1. Accumulate changes from nested objects (treating them as deltas)
@@ -1789,6 +2010,33 @@ export const useGameStore = create<GameStore>()(
             abilityChange = Math.floor(abilityChange * (1 + level * 0.1));
           }
 
+          if (effect.relationChange) {
+            Object.entries(effect.relationChange).forEach(([id, val]) => {
+              const previousRelation = state.npcRelations[id] || 0;
+              const newRelation = previousRelation + val;
+              const penalty = resolveRelationPenalties(state, id, previousRelation, newRelation);
+              moneyChange += penalty.moneyChange;
+              reputationChange += penalty.reputationChange;
+              abilityChange += penalty.abilityChange;
+              healthChange += penalty.healthChange;
+              experienceChange += penalty.experienceChange;
+              relationPenaltyMessages.push(...penalty.messages);
+              relationPenaltyFlags.push(...penalty.flags);
+              if (penalty.events && penalty.events.length > 0) {
+                relationPenaltyEvents.push(...penalty.events);
+              }
+            });
+          }
+
+          if (effect.flagsIncrement) {
+            effect.flagsIncrement.forEach(key => {
+              if (key.startsWith('redemption_stage2_') && !state.flags[key]) {
+                const npcId = key.replace('redemption_stage2_', '');
+                redemptionStage2Events.push(buildRedemptionEvent(npcId, 2));
+              }
+            });
+          }
+
           // 4. Generate Log Strings
           const formatChange = (name: string, value: number) => {
             return `${name}${value > 0 ? '+' : ''}${value}`;
@@ -1822,6 +2070,9 @@ export const useGameStore = create<GameStore>()(
         let fullMessage = message || '';
         if (statChanges.length > 0) {
           fullMessage += (fullMessage ? ' ' : '') + statChanges.join('，');
+        }
+        if (relationPenaltyMessages.length > 0) {
+          fullMessage += (fullMessage ? ' ' : '') + relationPenaltyMessages.join(' ');
         }
 
         if (fullMessage) get().addLog(fullMessage);
@@ -1882,12 +2133,22 @@ export const useGameStore = create<GameStore>()(
               });
             }
 
+            if (relationPenaltyFlags.length > 0) {
+              relationPenaltyFlags.forEach(key => {
+                newFlags[key] = 1;
+              });
+            }
+
+            const queuedEvents = [...relationPenaltyEvents, ...redemptionStage2Events];
+            const nextEventQueue = queuedEvents.length > 0 ? [...state.eventQueue, ...queuedEvents] : state.eventQueue;
+
             return {
               playerStats: newPlayerStats,
               countyStats: newCountyStats,
               inventory: newInventory,
               npcRelations: newNpcRelations,
               flags: newFlags,
+              eventQueue: nextEventQueue,
               currentEvent: null,
             };
           });
