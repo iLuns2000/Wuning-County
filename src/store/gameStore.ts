@@ -1265,6 +1265,7 @@ export const useGameStore = create<GameStore>()(
 
       nextDay: () => {
         set(state => {
+          const newOwnedFacilities = { ...state.ownedFacilities };
           const currentHealth = state.playerStats.health;
           const fitnessLevel = state.talents['fitness'] || 0;
           const maxHealth = 100 + fitnessLevel * 10;
@@ -1394,6 +1395,7 @@ export const useGameStore = create<GameStore>()(
             newMarketInventory[good.id] = Math.floor(Math.random() * 51) + 50; // 50-100
           });
 
+         // Monopoly / Limit Check (Anti-Trust)
           // Facility Income
           let facilityIncome = 0;
           let facilityMessage = '';
@@ -1452,7 +1454,6 @@ export const useGameStore = create<GameStore>()(
 
           // Inventory Spoilage Logic
           const newOwnedGoods = { ...state.ownedGoods };
-          const newOwnedFacilities = { ...state.ownedFacilities };
           if (mowerHarvestCount > 0) {
             newOwnedGoods['leek'] = (newOwnedGoods['leek'] || 0) + mowerHarvestCount;
           }

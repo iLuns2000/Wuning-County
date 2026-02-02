@@ -8,7 +8,7 @@ export const facilities: Facility[] = [
     cost: 500,
     dailyIncome: 15,
     incomeDescription: '田租收入',
-    maxCount: 20,
+    maxCount: 680,
     type: 'normal'
   },
   {
@@ -18,7 +18,7 @@ export const facilities: Facility[] = [
     cost: 1200,
     dailyIncome: 40,
     incomeDescription: '水产收入',
-    maxCount: 10,
+    maxCount: 340,
     type: 'normal'
   },
   {
@@ -28,7 +28,7 @@ export const facilities: Facility[] = [
     cost: 3000,
     dailyIncome: 110,
     incomeDescription: '店铺盈利',
-    maxCount: 5,
+    maxCount: 170,
     type: 'normal'
   },
   {
@@ -38,7 +38,7 @@ export const facilities: Facility[] = [
     cost: 8000,
     dailyIncome: 300,
     incomeDescription: '酒楼分红',
-    maxCount: 3,
+    maxCount: 102,
     type: 'normal'
   },
   {
@@ -48,7 +48,7 @@ export const facilities: Facility[] = [
     cost: 20000,
     dailyIncome: 800,
     incomeDescription: '钱庄红利',
-    maxCount: 1,
+    maxCount: 34,
     type: 'normal'
   },
   {
