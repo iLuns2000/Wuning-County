@@ -109,7 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
-      <div className="p-6 space-y-6 w-full max-w-md rounded-xl border shadow-xl bg-card text-card-foreground">
+      <div className="overflow-y-auto p-6 space-y-6 w-full max-w-md max-h-full rounded-xl border shadow-xl bg-card text-card-foreground">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 items-center">
             <Settings className="w-5 h-5 text-primary" />

@@ -384,6 +384,7 @@ export const useGameStore = create<GameStore>()(
         isTimeFlowEnabled: true,
         dayStartTime: Date.now(),
         isPaused: false,
+        mobileToastSeconds: 1.5,
       },
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
@@ -501,6 +502,12 @@ export const useGameStore = create<GameStore>()(
         // INCREASED DROP RATE: 25% chance to get an item (was 15%)
         if (Math.random() < 0.25) {
           const pool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
+          itemId = pool[Math.floor(Math.random() * pool.length)];
+          droppedItems.push(itemId);
+        }
+
+          if (Math.random() < 0.01) {
+          const pool = ['construction_order'];
           itemId = pool[Math.floor(Math.random() * pool.length)];
           droppedItems.push(itemId);
         }

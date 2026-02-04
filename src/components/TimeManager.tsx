@@ -26,6 +26,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
   const [timeLeft, setTimeLeft] = useState(timeSettings.dayDurationSeconds);
   const [showSettings, setShowSettings] = useState(false);
   const [durationInput, setDurationInput] = useState(timeSettings.dayDurationSeconds / 60);
+  const [toastSecondsInput, setToastSecondsInput] = useState(timeSettings.mobileToastSeconds ?? 1.5);
 
   // Track user interaction
   useEffect(() => {
@@ -107,6 +108,10 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
      setDurationInput(timeSettings.dayDurationSeconds / 60);
   }, [timeSettings.dayDurationSeconds, showSettings]);
 
+  useEffect(() => {
+     if (showSettings) return;
+     setToastSecondsInput(timeSettings.mobileToastSeconds ?? 1.5);
+  }, [timeSettings.mobileToastSeconds, showSettings]);
   // Update timeLeft immediately on re-render to avoid visual jump if paused
   useEffect(() => {
      const elapsed = (Date.now() - timeSettings.dayStartTime) / 1000;
@@ -122,7 +127,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
 
   const handleDurationSave = () => {
     const seconds = Math.max(60, Math.floor(durationInput * 60)); // Min 1 minute
-    updateTimeSettings({ dayDurationSeconds: seconds });
+    updateTimeSettings({ dayDurationSeconds: seconds, mobileToastSeconds: Math.max(1, Math.min(5, toastSecondsInput)) });
     setShowSettings(false);
     resetDayTimer(); // Reset timer when changing duration
   };
@@ -200,6 +205,26 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
                         <span>1m</span>
                         <span>5m</span>
                         <span>10m</span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="flex justify-between text-xs text-muted-foreground">
+                        <span>手机提示时长 (秒)</span>
+                        <span className="font-bold">{toastSecondsInput} 秒</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        step="0.5"
+                        value={toastSecondsInput}
+                        onChange={(e) => setToastSecondsInput(parseFloat(e.target.value))}
+                        className="w-full"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground px-1">
+                        <span>1s</span>
+                        <span>3s</span>
+                        <span>5s</span>
                     </div>
                 </div>
                 

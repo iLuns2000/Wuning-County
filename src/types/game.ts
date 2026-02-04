@@ -122,6 +122,7 @@ export interface TimeSettings {
   isTimeFlowEnabled: boolean; // Whether natural time flow is active
   dayStartTime: number; // Timestamp when the current day started (or was resumed)
   isPaused: boolean; // Whether the timer is currently paused (e.g. during events)
+  mobileToastSeconds: number;
 }
 
 export interface GameState {
