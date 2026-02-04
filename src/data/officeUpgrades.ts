@@ -38,43 +38,43 @@ export const officeUpgrades: OfficeUpgradeConfig[] = [
   {
     level: 4,
     cost: { money: 1200, wood: 450, stone: 210 },
-    durationSeconds: 1 * 60,
+    durationSeconds: 13 * 60,
     benefits: { resourceRate: 1.15, storageCap: 1.24 }
   },
   {
     level: 5,
     cost: { money: 1860, wood: 675, stone: 305 },
-    durationSeconds: 1 * 60,
+    durationSeconds: 21 * 60,
     benefits: { resourceRate: 1.20, storageCap: 1.32, unlocks: [] }
   },
   {
     level: 6,
     cost: { money: 2880, wood: 1010, stone: 440 },
-    durationSeconds: 1 * 60,
+    durationSeconds: 34 * 60,
     benefits: { resourceRate: 1.25, storageCap: 1.40 }
   },
   {
     level: 7,
     cost: { money: 4460, wood: 1515, stone: 640 },
-    durationSeconds: 1 * 60,
+    durationSeconds: 55 * 60,
     benefits: { resourceRate: 1.30, storageCap: 1.48, unlocks: ['官邸外观升级', ] }
   },
   {
     level: 8,
     cost: { money: 6910, wood: 2270, stone: 930 },
-    durationSeconds: 1 * 60, // 1.5 hours
+    durationSeconds: 90 * 60, // 1.5 hours
     benefits: { resourceRate: 1.35, storageCap: 1.56 }
   },
   {
     level: 9,
     cost: { money: 10710, wood: 3405, stone: 1350 },
-    durationSeconds: 1 * 60, // 2.5 hours
+    durationSeconds: 150 * 60, // 2.5 hours
     benefits: { resourceRate: 1.40, storageCap: 1.64, unlocks: [] }
   },
   {
     level: 10,
     cost: { money: 16500, wood: 5105, stone: 1960 },
-    durationSeconds: 1 * 60, // 4 hours
+    durationSeconds: 240 * 60, // 4 hours
     benefits: { resourceRate: 1.45, storageCap: 1.72 }
   },
   {
