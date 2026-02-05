@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
@@ -23,13 +23,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setVolume,
     setVibrationEnabled,
     addLog,
-    resetGame
+    resetGame,
+    saveToFile,
+    shareSave
   } = useGameStore();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClipboard, setShowClipboard] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [downloadInfo, setDownloadInfo] = useState<{ url: string; filename: string } | null>(null);
+  const hasSavePicker = typeof (window as any).showSaveFilePicker === 'function';
+
+  useEffect(() => {
+    return () => {
+      if (downloadInfo?.url) {
+        URL.revokeObjectURL(downloadInfo.url);
+      }
+    };
+  }, [downloadInfo]);
 
   if (!isOpen) return null;
 
@@ -231,11 +243,47 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 <div className="flex flex-col gap-3">
                     <div className="flex gap-3">
                         <button 
-                            onClick={exportSave}
+                            onClick={() => {
+                              const info = exportSave();
+                              setDownloadInfo(info);
+                            }}
                             className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                             <Download size={18} />
                             <span>导出文件</span>
+                        </button>
+                        <button 
+                            onClick={async () => {
+                              const ok = await saveToFile();
+                              if (!ok && !hasSavePicker) {
+                                addLog('【系统】当前浏览器不支持保存对话框，请使用下载链接或复制存档码。');
+                              }
+                            }}
+                            disabled={!hasSavePicker}
+                            title={hasSavePicker ? '' : '当前浏览器不支持保存对话框（建议使用 Chrome/Edge）'}
+                            className={`flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors ${hasSavePicker ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground'}`}
+                        >
+                            <Download size={18} />
+                            <span>保存到指定位置</span>
+                        </button>
+                        <button 
+                            onClick={() => {
+                              onClose();
+                              navigate('/save-view');
+                            }}
+                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Share2 size={18} />
+                            <span>查看存档JSON</span>
+                        </button>
+                        <button 
+                            onClick={async () => {
+                              await shareSave();
+                            }}
+                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Share2 size={18} />
+                            <span>分享存档</span>
                         </button>
                         
                         <button 
@@ -246,6 +294,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                             <span>导入文件</span>
                         </button>
                     </div>
+                    {downloadInfo && (
+                      <div className="flex gap-2 items-center text-sm">
+                        <a
+                          href={downloadInfo.url}
+                          download={downloadInfo.filename}
+                          className="underline underline-offset-2 text-primary hover:text-primary/80"
+                        >
+                          点击此处下载存档（{downloadInfo.filename}）
+                        </a>
+                        <button
+                          onClick={() => {
+                            URL.revokeObjectURL(downloadInfo.url);
+                            setDownloadInfo(null);
+                          }}
+                          className="px-2 py-1 rounded-md bg-muted hover:bg-muted/70"
+                        >
+                          清理链接
+                        </button>
+                      </div>
+                    )}
                     <div className="flex gap-3">
                         <button 
                             onClick={handleCopyExport}

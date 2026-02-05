@@ -256,6 +256,7 @@ interface GameStore extends GameState {
   addLog: (message: string) => void;
   triggerEvent: () => void;
   triggerSpecificEvent: (eventId: string) => void;
+  dismissEvent: () => void;
   resetGame: () => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
@@ -322,9 +323,11 @@ interface GameStore extends GameState {
   performExplore: () => void;
 
   // Save/Load Methods
-  exportSave: () => void;
+  exportSave: () => { url: string; filename: string };
   exportSaveString: () => string; // New method for clipboard export
   importSave: (data: string) => boolean;
+  saveToFile: () => Promise<boolean>;
+  shareSave: () => Promise<boolean>;
 
   // Sound Settings
   soundEnabled: boolean;
@@ -2252,6 +2255,10 @@ export const useGameStore = create<GameStore>()(
           set({ currentEvent: event });
         }
       },
+      
+      dismissEvent: () => {
+        set({ currentEvent: null, eventQueue: [] });
+      },
 
       resetGame: () => {
         set({
@@ -2285,17 +2292,77 @@ export const useGameStore = create<GameStore>()(
 
         const blob = new Blob([saveData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        get().addLog('【系统】存档导出成功！');
+        const filename = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0, 10)}.json`;
+        get().addLog('【系统】已生成下载链接，请手动点击下载。');
+        return { url, filename };
       },
 
+      saveToFile: async () => {
+        try {
+          const state = get();
+          const saveData = get().exportSaveString();
+          const filename = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0, 10)}.json`;
+          const anyWindow = window as any;
+          if (typeof anyWindow.showSaveFilePicker === 'function') {
+            const handle = await anyWindow.showSaveFilePicker({
+              suggestedName: filename,
+              types: [
+                {
+                  description: 'JSON 文件',
+                  accept: { 'application/json': ['.json'] },
+                },
+              ],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(new Blob([saveData], { type: 'application/json' }));
+            await writable.close();
+            get().addLog('【系统】存档已保存到本地文件。');
+            return true;
+          } else {
+            const { url } = get().exportSave();
+            get().addLog('【系统】当前浏览器不支持保存对话框，已生成下载链接。');
+            URL.revokeObjectURL(url);
+            return true;
+          }
+        } catch (e) {
+          console.error('Save to file failed:', e);
+          get().addLog('【系统】保存失败，请稍后再试。');
+          return false;
+        }
+      },
+
+      shareSave: async () => {
+        try {
+          const state = get();
+          const saveData = get().exportSaveString();
+          const filename = `wuning_save_${state.role}_day${state.day}_${new Date().toISOString().slice(0, 10)}.json`;
+          const file = new File([saveData], filename, { type: 'application/json' });
+          const anyNavigator = navigator as any;
+          if (typeof anyNavigator.share === 'function' && typeof anyNavigator.canShare === 'function' && anyNavigator.canShare({ files: [file] })) {
+            await anyNavigator.share({
+              files: [file],
+              title: '无宁县志存档',
+              text: '分享存档文件',
+            });
+            get().addLog('【系统】已调用系统分享。');
+            return true;
+          } else if (typeof anyNavigator.share === 'function') {
+            await anyNavigator.share({
+              title: '无宁县志存档',
+              text: saveData,
+            });
+            get().addLog('【系统】已分享存档文本。');
+            return true;
+          } else {
+            get().addLog('【系统】当前浏览器不支持分享。');
+            return false;
+          }
+        } catch (e) {
+          console.error('Share failed:', e);
+          get().addLog('【系统】分享失败，请稍后再试。');
+          return false;
+        }
+      },
       exportSaveString: () => {
         const state = get();
         const saveData = {

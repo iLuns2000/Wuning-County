@@ -79,7 +79,8 @@ export const Game: React.FC = () => {
     dismissAchievementPopup,
     equippedApparel,
     equippedAccessories,
-    processResourceTick
+    processResourceTick,
+    dismissEvent
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -737,6 +738,7 @@ export const Game: React.FC = () => {
           event={currentEvent}
           playerStats={playerStats}
           onOptionSelect={handleOptionSelect}
+          onClose={() => dismissEvent()}
           styleMatch={(() => {
             const preferred = currentEvent.stylePreference?.preferred || [];
             const match = computeStyleScores(preferred);

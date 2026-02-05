@@ -1,11 +1,13 @@
 import React from 'react';
 import { GameEvent, PlayerStats, Effect } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { X } from 'lucide-react';
 
 interface EventModalProps {
   event: GameEvent;
   playerStats: PlayerStats;
   onOptionSelect: (optionIndex: number) => void;
+  onClose?: () => void;
   styleMatch?: {
     preferred: string[];
     totalScore: number;
@@ -15,7 +17,7 @@ interface EventModalProps {
   };
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, styleMatch }) => {
+export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, onClose, styleMatch }) => {
   const vibrate = useGameVibrate();
   
   const checkRequirement = (effect?: Effect) => {
@@ -41,21 +43,33 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
   };
   
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-card text-card-foreground rounded-lg shadow-lg max-w-md w-full p-6 border border-border animate-in fade-in zoom-in duration-200">
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
+      <div className="relative p-6 w-full max-w-md rounded-lg border shadow-lg duration-200 bg-card text-card-foreground border-border animate-in fade-in zoom-in">
+        {onClose && (
+          <button
+            onClick={() => {
+              vibrate(VIBRATION_PATTERNS.LIGHT);
+              onClose();
+            }}
+            className="absolute top-3 right-3 p-2 rounded-full transition-colors hover:bg-muted"
+            title="关闭"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
         <div className="mb-4">
-          <span className="text-xs font-bold px-2 py-1 rounded bg-primary/10 text-primary uppercase">
+          <span className="px-2 py-1 text-xs font-bold uppercase rounded bg-primary/10 text-primary">
             {event.type === 'daily' ? '日常' : event.type === 'opportunity' ? '机遇' : event.type === 'challenge' ? '挑战' : 'NPC'}
           </span>
         </div>
-        <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
-        <p className="text-muted-foreground mb-6 leading-relaxed">
+        <h2 className="mb-2 text-2xl font-bold">{event.title}</h2>
+        <p className="mb-6 leading-relaxed text-muted-foreground">
           {event.description}
         </p>
 
         {styleMatch && styleMatch.preferred.length > 0 && (
-          <div className="mb-6 p-3 rounded-md border bg-secondary/40 text-sm">
-            <div className="flex items-center justify-between text-muted-foreground">
+          <div className="p-3 mb-6 text-sm rounded-md border bg-secondary/40">
+            <div className="flex justify-between items-center text-muted-foreground">
               <span>场景偏好：{styleMatch.preferred.join('、')}</span>
               <span>风格评分：{styleMatch.matchScore}/{styleMatch.totalScore}</span>
             </div>
@@ -82,8 +96,8 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
                 }}
                 className={`w-full p-3 text-left rounded-md transition-colors border ${
                   allowed 
-                    ? 'bg-secondary hover:bg-secondary/80 border-transparent hover:border-primary/20' 
-                    : 'bg-secondary/50 border-transparent cursor-not-allowed opacity-60'
+                    ? 'border-transparent bg-secondary hover:bg-secondary/80 hover:border-primary/20' 
+                    : 'border-transparent opacity-60 cursor-not-allowed bg-secondary/50'
                 }`}
               >
                 <div className="flex justify-between items-center">
@@ -95,6 +109,18 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
               </button>
             );
           })}
+          
+          {event.type === 'npc' && onClose && (
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                onClose();
+              }}
+              className="p-3 w-full text-center rounded-md border border-transparent transition-colors bg-secondary hover:bg-secondary/80"
+            >
+              拜拜了您嘞下次再见
+            </button>
+          )}
         </div>
       </div>
     </div>

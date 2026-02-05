@@ -34,7 +34,8 @@ export const NPCList: React.FC = () => {
     resetGiftFailure,
     interactWithNPC,
     currentEvent,
-    triggerSpecificEvent
+    triggerSpecificEvent,
+    dismissEvent
   } = useGameStore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -284,7 +285,8 @@ export const NPCList: React.FC = () => {
         <EventModal 
           event={currentEvent} 
           playerStats={playerStats}
-          onOptionSelect={handleOptionSelect} 
+          onOptionSelect={handleOptionSelect}
+          onClose={() => dismissEvent()} 
         />
       )}
     </div>
