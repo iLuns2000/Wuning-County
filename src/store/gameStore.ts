@@ -528,7 +528,7 @@ export const useGameStore = create<GameStore>()(
           extraMessage += ` 捡得一份${matName}。`;
         }
 
-          if (Math.random() < 0.01) {
+        if (Math.random() < 0.01) {
           const pool = ['construction_order'];
           itemId = pool[Math.floor(Math.random() * pool.length)];
           droppedItems.push(itemId);
@@ -659,30 +659,30 @@ export const useGameStore = create<GameStore>()(
 
         // Resource Facility Logic (Upgrade System)
         if (facility.type === 'resource') {
-             const maxLevel = facility.maxLevel || 10;
-             if (currentCount >= maxLevel) {
-                 state.addLog('此设施已达最高等级。');
-                 return;
-             }
-             
-             // Cost scales with level: Base * 1.5^Level
-             const upgradeCost = Math.floor(facility.cost * Math.pow(1.5, currentCount));
-             
-             if (state.playerStats.money < upgradeCost) {
-                 state.addLog(`资金不足，升级需要 ${upgradeCost} 文。`);
-                 return;
-             }
-
-             set(state => ({
-                playerStats: { ...state.playerStats, money: state.playerStats.money - upgradeCost },
-                ownedFacilities: {
-                    ...state.ownedFacilities,
-                    [facilityId]: currentCount + 1
-                }
-            }));
-            const action = currentCount === 0 ? '置办' : '升级';
-            get().addLog(`【产业】花费 ${upgradeCost} 文${action}了 ${facility.name} (LV.${currentCount + 1})。`);
+          const maxLevel = facility.maxLevel || 10;
+          if (currentCount >= maxLevel) {
+            state.addLog('此设施已达最高等级。');
             return;
+          }
+
+          // Cost scales with level: Base * 1.5^Level
+          const upgradeCost = Math.floor(facility.cost * Math.pow(1.5, currentCount));
+
+          if (state.playerStats.money < upgradeCost) {
+            state.addLog(`资金不足，升级需要 ${upgradeCost} 文。`);
+            return;
+          }
+
+          set(state => ({
+            playerStats: { ...state.playerStats, money: state.playerStats.money - upgradeCost },
+            ownedFacilities: {
+              ...state.ownedFacilities,
+              [facilityId]: currentCount + 1
+            }
+          }));
+          const action = currentCount === 0 ? '置办' : '升级';
+          get().addLog(`【产业】花费 ${upgradeCost} 文${action}了 ${facility.name} (LV.${currentCount + 1})。`);
+          return;
         }
 
         // Normal Facility Logic (Quantity System)
@@ -901,8 +901,8 @@ export const useGameStore = create<GameStore>()(
           get().addLog('资金不足，无法购买此珍宝。');
           return;
         }
-
-        if (state.inventory.includes(treasureId)) {
+        // construction_order 是一个特殊的珍宝，可以重复购买
+        if (state.inventory.includes(treasureId) && treasureId !== 'construction_order') {
           get().addLog('你已经拥有此珍宝了。');
           return;
         }
@@ -1643,22 +1643,22 @@ export const useGameStore = create<GameStore>()(
             newMarketInventory[good.id] = Math.floor(Math.random() * 51) + 50; // 50-100
           });
 
-         // Monopoly / Limit Check (Anti-Trust)
+          // Monopoly / Limit Check (Anti-Trust)
           // Facility Income
           let facilityIncome = 0;
           let facilityMessage = '';
           // Resource logic moved to processResourceTick (real-time)
-          let resourceMessage = ''; 
+          let resourceMessage = '';
           let nextInventory = [...state.inventory];
 
           Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
             const facility = facilities.find(f => f.id === facilityId);
             if (facility && count > 0) {
               if (facility.type === 'resource') {
-                  // Skip daily resource generation for resource facilities (handled in real-time tick)
+                // Skip daily resource generation for resource facilities (handled in real-time tick)
               } else {
-                  // Money Income
-                  facilityIncome += facility.dailyIncome * count;
+                // Money Income
+                facilityIncome += facility.dailyIncome * count;
               }
             }
           });
@@ -1822,7 +1822,7 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
-// 
+          // 
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
 
@@ -1963,17 +1963,17 @@ export const useGameStore = create<GameStore>()(
         let hasChanges = false;
 
         Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
-            const facility = facilities.find(f => f.id === facilityId);
-            if (facility && count > 0 && facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
-                // Production per tick (every 2s)
-                const amount = facility.resourceAmount * count; 
-                for(let i=0; i<amount; i++) newInventory.push(facility.resourceType!);
-                hasChanges = true;
-            }
+          const facility = facilities.find(f => f.id === facilityId);
+          if (facility && count > 0 && facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
+            // Production per tick (every 2s)
+            const amount = facility.resourceAmount * count;
+            for (let i = 0; i < amount; i++) newInventory.push(facility.resourceType!);
+            hasChanges = true;
+          }
         });
 
         if (hasChanges) {
-            set({ inventory: newInventory });
+          set({ inventory: newInventory });
         }
       },
 
@@ -2188,83 +2188,83 @@ export const useGameStore = create<GameStore>()(
           // Check for next event in queue
           const currentState = get();
           if (currentState.eventQueue && currentState.eventQueue.length > 0) {
-             const [nextEvent, ...remaining] = currentState.eventQueue;
-             set({ currentEvent: nextEvent, eventQueue: remaining });
+            const [nextEvent, ...remaining] = currentState.eventQueue;
+            set({ currentEvent: nextEvent, eventQueue: remaining });
           } else {
-             set({ currentEvent: null });
+            set({ currentEvent: null });
           }
         } else {
-            // Check for next event even if no effect (just message confirmation)
-            const currentState = get();
-            if (currentState.eventQueue && currentState.eventQueue.length > 0) {
-                const [nextEvent, ...remaining] = currentState.eventQueue;
-                set({ currentEvent: nextEvent, eventQueue: remaining });
-            } else {
-                set({ currentEvent: null });
-            }
+          // Check for next event even if no effect (just message confirmation)
+          const currentState = get();
+          if (currentState.eventQueue && currentState.eventQueue.length > 0) {
+            const [nextEvent, ...remaining] = currentState.eventQueue;
+            set({ currentEvent: nextEvent, eventQueue: remaining });
+          } else {
+            set({ currentEvent: null });
+          }
         }
       },
-      
+
       addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 50) })),
 
       triggerEvent: () => {
-         const state = get();
-         
-         const checkBasicCondition = (e: GameEvent) => {
-            const cond = e.triggerCondition;
-            if (!cond) return true;
-            
-            if (cond.requiredRole && state.role !== cond.requiredRole) return false;
-            if (cond.minReputation && state.playerStats.reputation < cond.minReputation) return false;
-            if (cond.minMoney && state.playerStats.money < cond.minMoney) return false;
-            if (cond.minAbility && state.playerStats.ability < cond.minAbility) return false;
-            if (cond.minDay && state.day < cond.minDay) return false;
-            if (cond.custom && !cond.custom(state)) return false;
-            
-            return true;
-         };
+        const state = get();
 
-         const allEvents = [...npcEvents, ...randomEvents];
-         const candidates = allEvents.filter(checkBasicCondition);
+        const checkBasicCondition = (e: GameEvent) => {
+          const cond = e.triggerCondition;
+          if (!cond) return true;
 
-         // 1. Priority: Guaranteed events (probability === 1)
-         // Collect ALL guaranteed events
-         const guaranteedEvents = candidates.filter(e => e.triggerCondition?.probability === 1);
-         
-         if (guaranteedEvents.length > 0) {
-             // If there are guaranteed events, trigger them all (queue them)
-             // We do NOT trigger random events if guaranteed events occur (to avoid event spam)
-             const [first, ...rest] = guaranteedEvents;
-             set({ currentEvent: first, eventQueue: rest });
-             return;
-         }
+          if (cond.requiredRole && state.role !== cond.requiredRole) return false;
+          if (cond.minReputation && state.playerStats.reputation < cond.minReputation) return false;
+          if (cond.minMoney && state.playerStats.money < cond.minMoney) return false;
+          if (cond.minAbility && state.playerStats.ability < cond.minAbility) return false;
+          if (cond.minDay && state.day < cond.minDay) return false;
+          if (cond.custom && !cond.custom(state)) return false;
 
-         // 2. Global 30% chance for other events
-         if (Math.random() > 0.3) {
-             set({ currentEvent: null, eventQueue: [] });
-             return;
-         }
+          return true;
+        };
 
-         // 3. Filter remaining events by their specific probability
-         const possibleEvents = candidates.filter(e => {
-            // Guaranteed events are already handled, so we only look at others here
-            // undefined probability implies 100% chance IF global check passes (default behavior)
-            const prob = e.triggerCondition?.probability;
-            if (prob !== undefined) {
-               // Exclude probability 1 as they should have been caught above, 
-               // but if for some reason one slipped (e.g. logic error), we filter it to be safe or treat as 100%
-               if (prob === 1) return false; 
-               return Math.random() < prob;
-            }
-            return true;
-         });
-         
-         if (possibleEvents.length > 0) {
-           const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
-           set({ currentEvent: event, eventQueue: [] });
-         } else {
-           set({ currentEvent: null, eventQueue: [] });
-         }
+        const allEvents = [...npcEvents, ...randomEvents];
+        const candidates = allEvents.filter(checkBasicCondition);
+
+        // 1. Priority: Guaranteed events (probability === 1)
+        // Collect ALL guaranteed events
+        const guaranteedEvents = candidates.filter(e => e.triggerCondition?.probability === 1);
+
+        if (guaranteedEvents.length > 0) {
+          // If there are guaranteed events, trigger them all (queue them)
+          // We do NOT trigger random events if guaranteed events occur (to avoid event spam)
+          const [first, ...rest] = guaranteedEvents;
+          set({ currentEvent: first, eventQueue: rest });
+          return;
+        }
+
+        // 2. Global 30% chance for other events
+        if (Math.random() > 0.3) {
+          set({ currentEvent: null, eventQueue: [] });
+          return;
+        }
+
+        // 3. Filter remaining events by their specific probability
+        const possibleEvents = candidates.filter(e => {
+          // Guaranteed events are already handled, so we only look at others here
+          // undefined probability implies 100% chance IF global check passes (default behavior)
+          const prob = e.triggerCondition?.probability;
+          if (prob !== undefined) {
+            // Exclude probability 1 as they should have been caught above, 
+            // but if for some reason one slipped (e.g. logic error), we filter it to be safe or treat as 100%
+            if (prob === 1) return false;
+            return Math.random() < prob;
+          }
+          return true;
+        });
+
+        if (possibleEvents.length > 0) {
+          const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+          set({ currentEvent: event, eventQueue: [] });
+        } else {
+          set({ currentEvent: null, eventQueue: [] });
+        }
       },
 
       triggerSpecificEvent: (eventId: string) => {
@@ -2274,7 +2274,7 @@ export const useGameStore = create<GameStore>()(
           set({ currentEvent: event });
         }
       },
-      
+
       dismissEvent: () => {
         set({ currentEvent: null, eventQueue: [] });
       },
@@ -2533,7 +2533,7 @@ export const useGameStore = create<GameStore>()(
         // Ensure officeState exists for legacy saves
         const officeState = state.officeState || { level: 1, isUpgrading: false };
         const { playerStats, inventory } = state;
-        
+
         if (officeState.isUpgrading) {
           get().addLog('官邸正在修缮中，请耐心等待。');
           return;
@@ -2541,14 +2541,14 @@ export const useGameStore = create<GameStore>()(
 
         const currentLevel = officeState.level;
         const nextConfig = officeUpgrades.find(u => u.level === currentLevel + 1);
-        
+
         if (!nextConfig) {
           get().addLog('官邸已达到最高等级。');
           return;
         }
 
         const cost = nextConfig.cost;
-        
+
         // Check Money
         if (playerStats.money < cost.money) {
           get().addLog(`资金不足，需要 ${cost.money} 文。`);
@@ -2571,77 +2571,77 @@ export const useGameStore = create<GameStore>()(
 
         // Check Construction Order (L11+) - Assumed item id 'construction_order'
         if (cost.constructionOrder && cost.constructionOrder > 0) {
-             const orderCount = inventory.filter(id => id === 'construction_order').length;
-             if (orderCount < cost.constructionOrder) {
-                 get().addLog(`建材令不足，需要 ${cost.constructionOrder} 个。`);
-                 return;
-             }
+          const orderCount = inventory.filter(id => id === 'construction_order').length;
+          if (orderCount < cost.constructionOrder) {
+            get().addLog(`建材令不足，需要 ${cost.constructionOrder} 个。`);
+            return;
+          }
         }
 
         // Check Rare Stone (L16+) - Assumed item id 'rare_stone'
         if (cost.rareStone && cost.rareStone > 0) {
-             const rareStoneCount = inventory.filter(id => id === 'rare_stone').length;
-             if (rareStoneCount < cost.rareStone) {
-                 get().addLog(`稀有石料不足，需要 ${cost.rareStone} 块。`);
-                 return;
-             }
+          const rareStoneCount = inventory.filter(id => id === 'rare_stone').length;
+          if (rareStoneCount < cost.rareStone) {
+            get().addLog(`稀有石料不足，需要 ${cost.rareStone} 块。`);
+            return;
+          }
         }
 
         // Deduct Resources
         let newInventory = [...inventory];
-        
+
         // Remove Wood
         let woodRemoved = 0;
         for (let i = newInventory.length - 1; i >= 0; i--) {
-            if (newInventory[i] === 'wood' && woodRemoved < cost.wood) {
-                newInventory.splice(i, 1);
-                woodRemoved++;
-            }
+          if (newInventory[i] === 'wood' && woodRemoved < cost.wood) {
+            newInventory.splice(i, 1);
+            woodRemoved++;
+          }
         }
 
         // Remove Stone
         let stoneRemoved = 0;
         for (let i = newInventory.length - 1; i >= 0; i--) {
-            if (newInventory[i] === 'stone' && stoneRemoved < cost.stone) {
-                newInventory.splice(i, 1);
-                stoneRemoved++;
-            }
+          if (newInventory[i] === 'stone' && stoneRemoved < cost.stone) {
+            newInventory.splice(i, 1);
+            stoneRemoved++;
+          }
         }
-        
+
         // Remove Construction Order
         if (cost.constructionOrder) {
-            let removed = 0;
-            for (let i = newInventory.length - 1; i >= 0; i--) {
-                if (newInventory[i] === 'construction_order' && removed < cost.constructionOrder) {
-                    newInventory.splice(i, 1);
-                    removed++;
-                }
+          let removed = 0;
+          for (let i = newInventory.length - 1; i >= 0; i--) {
+            if (newInventory[i] === 'construction_order' && removed < cost.constructionOrder) {
+              newInventory.splice(i, 1);
+              removed++;
             }
+          }
         }
-        
+
         // Remove Rare Stone
         if (cost.rareStone) {
-            let removed = 0;
-            for (let i = newInventory.length - 1; i >= 0; i--) {
-                if (newInventory[i] === 'rare_stone' && removed < cost.rareStone) {
-                    newInventory.splice(i, 1);
-                    removed++;
-                }
+          let removed = 0;
+          for (let i = newInventory.length - 1; i >= 0; i--) {
+            if (newInventory[i] === 'rare_stone' && removed < cost.rareStone) {
+              newInventory.splice(i, 1);
+              removed++;
             }
+          }
         }
 
         const now = Date.now();
         const durationMs = nextConfig.durationSeconds * 1000;
 
         set({
-            playerStats: { ...playerStats, money: playerStats.money - cost.money },
-            inventory: newInventory,
-            officeState: {
-                ...officeState,
-                isUpgrading: true,
-                upgradeStartTime: now,
-                upgradeEndTime: now + durationMs
-            }
+          playerStats: { ...playerStats, money: playerStats.money - cost.money },
+          inventory: newInventory,
+          officeState: {
+            ...officeState,
+            isUpgrading: true,
+            upgradeStartTime: now,
+            upgradeEndTime: now + durationMs
+          }
         });
 
         get().addLog(`【官邸】开始修缮官邸至等级 ${nextConfig.level}，预计耗时 ${Math.ceil(nextConfig.durationSeconds / 60)} 分钟。`);
@@ -2656,118 +2656,118 @@ export const useGameStore = create<GameStore>()(
 
         let reduceMs = 0;
         if (type === 'free') {
-             // Free speedup logic (e.g. last 15 mins)
-             // Value is usually ignored or 0 here if we just finish it
-             // But let's say 'value' is ms to reduce
-             reduceMs = value;
+          // Free speedup logic (e.g. last 15 mins)
+          // Value is usually ignored or 0 here if we just finish it
+          // But let's say 'value' is ms to reduce
+          reduceMs = value;
         } else if (type === 'item') {
-             // Item speedup
-             reduceMs = value;
+          // Item speedup
+          reduceMs = value;
         } else if (type === 'ad') {
-             // Not supported in free version, but kept in interface just in case
-             return;
+          // Not supported in free version, but kept in interface just in case
+          return;
         }
 
         const newEndTime = officeState.upgradeEndTime - reduceMs;
-        
+
         // If finished
         if (newEndTime <= Date.now()) {
-            get().completeUpgrade();
+          get().completeUpgrade();
         } else {
-            set({
-                officeState: {
-                    ...officeState,
-                    upgradeEndTime: newEndTime
-                }
-            });
-            get().addLog(`【加速】官邸修缮进度加快了。`);
+          set({
+            officeState: {
+              ...officeState,
+              upgradeEndTime: newEndTime
+            }
+          });
+          get().addLog(`【加速】官邸修缮进度加快了。`);
         }
       },
 
       completeUpgrade: () => {
-          const state = get();
-          // Ensure officeState exists for legacy saves
-          const officeState = state.officeState || { level: 1, isUpgrading: false };
-          
-          if (!officeState.isUpgrading) return;
+        const state = get();
+        // Ensure officeState exists for legacy saves
+        const officeState = state.officeState || { level: 1, isUpgrading: false };
 
-          const nextLevel = officeState.level + 1;
-          const config = officeUpgrades.find(u => u.level === nextLevel);
+        if (!officeState.isUpgrading) return;
 
-          set({
-              officeState: {
-                  level: nextLevel,
-                  isUpgrading: false,
-                  upgradeStartTime: undefined,
-                  upgradeEndTime: undefined
-              },
-              // Award experience for upgrade?
-              playerStats: {
-                  ...state.playerStats,
-                  experience: (state.playerStats.experience || 0) + nextLevel * 50
-              }
-          });
+        const nextLevel = officeState.level + 1;
+        const config = officeUpgrades.find(u => u.level === nextLevel);
 
-          let logMsg = `【官邸】修缮完成！官邸等级提升至 ${nextLevel}。`;
-          if (config && config.benefits.unlocks) {
-              logMsg += ` 解锁功能：${config.benefits.unlocks.join('、')}。`;
+        set({
+          officeState: {
+            level: nextLevel,
+            isUpgrading: false,
+            upgradeStartTime: undefined,
+            upgradeEndTime: undefined
+          },
+          // Award experience for upgrade?
+          playerStats: {
+            ...state.playerStats,
+            experience: (state.playerStats.experience || 0) + nextLevel * 50
           }
-          get().addLog(logMsg);
+        });
+
+        let logMsg = `【官邸】修缮完成！官邸等级提升至 ${nextLevel}。`;
+        if (config && config.benefits.unlocks) {
+          logMsg += ` 解锁功能：${config.benefits.unlocks.join('、')}。`;
+        }
+        get().addLog(logMsg);
       },
 
       checkUpgradeStatus: () => {
-          const state = get();
-          const { officeState } = state;
-          
-          if (officeState && officeState.isUpgrading && officeState.upgradeEndTime) {
-              if (Date.now() >= officeState.upgradeEndTime) {
-                  get().completeUpgrade();
-              }
+        const state = get();
+        const { officeState } = state;
+
+        if (officeState && officeState.isUpgrading && officeState.upgradeEndTime) {
+          if (Date.now() >= officeState.upgradeEndTime) {
+            get().completeUpgrade();
           }
+        }
       },
 
       cancelUpgradeOffice: () => {
         const state = get();
         const { officeState } = state;
         if (!officeState || !officeState.isUpgrading) return;
-        
+
         const nextLevel = officeState.level + 1;
         const config = officeUpgrades.find(u => u.level === nextLevel);
-        
+
         if (config) {
-             const cost = config.cost;
-             const refundMoney = cost.money;
-             const refundItems: string[] = [];
-             for(let i=0; i<cost.wood; i++) refundItems.push('wood');
-             for(let i=0; i<cost.stone; i++) refundItems.push('stone');
-             if (cost.constructionOrder) {
-                 for(let i=0; i<cost.constructionOrder; i++) refundItems.push('construction_order');
-             }
-             if (cost.rareStone) {
-                 for(let i=0; i<cost.rareStone; i++) refundItems.push('rare_stone');
-             }
-             
-             set(state => ({
-                 playerStats: { ...state.playerStats, money: state.playerStats.money + refundMoney },
-                 inventory: [...state.inventory, ...refundItems],
-                 officeState: {
-                     ...officeState,
-                     isUpgrading: false,
-                     upgradeStartTime: undefined,
-                     upgradeEndTime: undefined
-                 }
-             }));
-             get().addLog('【官邸】已取消修缮，投入资源已全部返还。');
+          const cost = config.cost;
+          const refundMoney = cost.money;
+          const refundItems: string[] = [];
+          for (let i = 0; i < cost.wood; i++) refundItems.push('wood');
+          for (let i = 0; i < cost.stone; i++) refundItems.push('stone');
+          if (cost.constructionOrder) {
+            for (let i = 0; i < cost.constructionOrder; i++) refundItems.push('construction_order');
+          }
+          if (cost.rareStone) {
+            for (let i = 0; i < cost.rareStone; i++) refundItems.push('rare_stone');
+          }
+
+          set(state => ({
+            playerStats: { ...state.playerStats, money: state.playerStats.money + refundMoney },
+            inventory: [...state.inventory, ...refundItems],
+            officeState: {
+              ...officeState,
+              isUpgrading: false,
+              upgradeStartTime: undefined,
+              upgradeEndTime: undefined
+            }
+          }));
+          get().addLog('【官邸】已取消修缮，投入资源已全部返还。');
         } else {
-             set({
-                 officeState: {
-                     ...officeState,
-                     isUpgrading: false,
-                     upgradeStartTime: undefined,
-                     upgradeEndTime: undefined
-                 }
-             });
-             get().addLog('【官邸】修缮已取消。');
+          set({
+            officeState: {
+              ...officeState,
+              isUpgrading: false,
+              upgradeStartTime: undefined,
+              upgradeEndTime: undefined
+            }
+          });
+          get().addLog('【官邸】修缮已取消。');
         }
       },
 
