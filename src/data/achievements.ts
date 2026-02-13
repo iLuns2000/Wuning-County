@@ -524,4 +524,29 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 200,
     condition: (state) => !!state.flags['can_brew_wine']
   }
+  ,
+  {
+    id: 'dugu_nine_swords',
+    name: '独孤九剑',
+    description: '同时拥有八把县好剑与绝世好剑',
+    rewardExp: 500,
+    condition: (state) => 
+      state.inventory.includes('county_eight_swords') &&
+      state.inventory.includes('peerless_sword')
+  },
+  {
+    id: 'evil_meets_evil',
+    name: '恶人自有恶人磨',
+    description: '抢走锻造品后只得一根惊鹊的羽毛',
+    rewardExp: 100,
+    condition: (state) => state.inventory.includes('startled_magpie_feather')
+  }
+  ,
+  {
+    id: 'lingyin_listen_20',
+    name: '今日无事，乐坊听曲儿',
+    description: '在泠音乐坊听曲儿达 20 次',
+    rewardExp: 100,
+    condition: (state) => (state.flags['lingyin_listen_count'] || 0) >= 20
+  }
 ];

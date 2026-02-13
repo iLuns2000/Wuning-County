@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Hammer, Sword, Utensils, Clock, UserX, BookOpen, Beer, Bed, Mountain, HelpCircle, Scroll, Wine, FlaskConical, Sprout } from 'lucide-react';
+import { ArrowLeft, Hammer, Sword, Utensils, Clock, UserX, BookOpen, Beer, Bed, Mountain, HelpCircle, Scroll, Wine, FlaskConical, Sprout, Music } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { questions, Question } from '@/data/questions';
 import { MobileStall } from '@/components/MobileStall';
 import { BarberShop } from '@/components/BarberShop';
 import { ArcheryHall } from '@/components/ArcheryHall';
+import { items } from '@/data/items';
 
 // Lingrong Garden Component
 const LingrongGarden: React.FC = () => {
@@ -773,6 +774,253 @@ const BlacksmithShop: React.FC = () => {
   );
 };
 
+// FengE Pavilion Component
+const FengEGe: React.FC = () => {
+  const { playerStats, handleEventOption, inventory } = useGameStore();
+  const vibrate = useGameVibrate();
+
+  const forgeMaterials = new Set([
+    'metal_xuantie_mixed',
+    'metal_xuantie_pure',
+    'metal_hanyue_mixed',
+    'metal_hanyue_pure',
+    'metal_chitong_mixed',
+    'metal_chitong_pure',
+    'wood_lingxi_core',
+    'wood_jinsong',
+    'wood_niujin',
+  ]);
+
+  const [selected, setSelected] = useState<string[]>([]);
+  const [pendingItem, setPendingItem] = useState<string | null>(null);
+  const [pendingLabel, setPendingLabel] = useState<string>('');
+
+  const getName = (id: string) => items.find(i => i.id === id)?.name || id;
+
+  const classify = (id: string): 'metal_pure' | 'metal_mixed' | 'wood' => {
+    if (id.startsWith('metal_')) {
+      return id.includes('_pure') ? 'metal_pure' : 'metal_mixed';
+    }
+    return 'wood';
+  };
+
+  const onToggleSelect = (id: string) => {
+    if (!forgeMaterials.has(id)) return;
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+    setSelected(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length >= 3) return prev;
+      return [...prev, id];
+    });
+  };
+
+  const handleForge = () => {
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
+    if (selected.length !== 3) {
+      handleEventOption(undefined, '【锋锷阁】需提交三种材料方可开炉。');
+      return;
+    }
+
+    const ownedCount = selected.reduce((ok, id) => ok && inventory.includes(id), true);
+    if (!ownedCount) {
+      handleEventOption(undefined, '【锋锷阁】材料不足，无法锻造。');
+      return;
+    }
+
+    const kinds = selected.map(classify);
+    const mixedCount = kinds.filter(k => k === 'metal_mixed').length;
+    const pureCount = kinds.filter(k => k !== 'metal_mixed').length;
+
+    const specialSet = new Set(selected);
+    const isSpecial = specialSet.has('metal_hanyue_mixed') && specialSet.has('metal_xuantie_pure') && specialSet.has('wood_lingxi_core');
+
+    let product = '';
+    let label = '';
+
+    if (isSpecial) {
+      product = 'peerless_sword';
+      label = '绝世好剑';
+    } else if (mixedCount === 3) {
+      product = 'weapon_common';
+      label = '普通武器';
+    } else if (pureCount === 3) {
+      const roll = Math.random();
+      if (roll < 0.1) {
+        product = 'county_eight_swords';
+        label = '八把县好剑';
+      } else if (roll < 0.55) {
+        product = 'weapon_legend';
+        label = '传说武器';
+      } else {
+        product = 'weapon_fine';
+        label = '精良武器';
+      }
+    } else {
+      const roll = Math.random();
+      if (roll < 0.5) {
+        product = 'weapon_common';
+        label = '普通武器';
+      } else {
+        product = 'weapon_fine';
+        label = '精良武器';
+      }
+    }
+
+    handleEventOption({ itemsRemove: selected }, `【锋锷阁】炉火正旺，材料入炉。`);
+    setPendingItem(product);
+    setPendingLabel(label);
+    setSelected([]);
+  };
+
+  const handlePayTail = () => {
+    if (!pendingItem) return;
+    vibrate(VIBRATION_PATTERNS.MEDIUM);
+    if (playerStats.money < 50) {
+      handleEventOption(undefined, '【锋锷阁】囊中羞涩，付不起尾款。');
+      return;
+    }
+    handleEventOption({ money: -50, itemsAdd: [pendingItem] }, `【锋锷阁】交付尾款，取走【${getName(pendingItem)}】。`);
+    setPendingItem(null);
+    setPendingLabel('');
+  };
+
+  const handleRob = () => {
+    if (!pendingItem) return;
+    vibrate(VIBRATION_PATTERNS.HEAVY);
+    handleEventOption({ reputation: -50, itemsAdd: ['startled_magpie_feather'], flagsSet: { forge_robbed: true } }, '【锋锷阁】你跑到角落打开武器盒发现只有一根惊鹊的羽毛。');
+    setPendingItem(null);
+    setPendingLabel('');
+  };
+
+  const weaponSellPrice = (id: string) => {
+    if (id === 'weapon_common') return 150;
+    if (id === 'weapon_fine') return 350;
+    if (id === 'weapon_legend') return 650;
+    return 0;
+  };
+
+  const sellWeapon = (id: string) => {
+    const price = weaponSellPrice(id);
+    if (price <= 0) return;
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+    handleEventOption({ money: price, itemsRemove: [id] }, `【锋锷阁】售出${getName(id)}，获得 ${price} 文。`);
+  };
+
+  const forgeInventory = inventory.filter(id => forgeMaterials.has(id));
+  const weaponInventory = inventory.filter(id => ['weapon_common', 'weapon_fine', 'weapon_legend'].includes(id));
+
+  return (
+    <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
+      <div className="flex gap-2 items-center pb-2 border-b">
+        <Hammer className="text-gray-700" />
+        <h2 className="text-xl font-bold">锋锷阁</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">委托铸剑之所，先提交材料后再付尾款取件，亦可售剑换钱。</p>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold">提交材料（需三种）</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {forgeInventory.length === 0 && (
+            <div className="col-span-3 text-xs text-muted-foreground">无可用材料，可外出探索获取（约40%概率）。</div>
+          )}
+          {forgeInventory.map(id => (
+            <button
+              key={id}
+              onClick={() => onToggleSelect(id)}
+              className={`p-3 rounded-lg border text-xs ${selected.includes(id) ? 'bg-secondary' : ''}`}
+            >
+              {getName(id)}
+            </button>
+          ))}
+        </div>
+        <div className="text-xs text-muted-foreground">已选：{selected.map(getName).join('、') || '无'}</div>
+        <button onClick={handleForge} disabled={selected.length !== 3} className="w-full p-3 rounded-lg border hover:bg-secondary disabled:opacity-50">
+          开炉锻造
+        </button>
+      </div>
+
+      {pendingItem && (
+        <div className="space-y-2 pt-2 border-t">
+          <h3 className="text-sm font-semibold">锻造完成：{pendingLabel}</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={handlePayTail} disabled={playerStats.money < 50} className="p-3 rounded-lg border hover:bg-secondary disabled:opacity-50">
+              付尾款（-50文）
+            </button>
+            <button onClick={handleRob} className="p-3 rounded-lg border hover:bg-secondary">
+              直接抢（-50声望）
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 pt-2 border-t">
+        <h3 className="text-sm font-semibold">售卖武器</h3>
+        {weaponInventory.length === 0 ? (
+          <div className="text-xs text-muted-foreground">暂无可售武器。</div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {weaponInventory.map(id => (
+              <button key={id} onClick={() => sellWeapon(id)} className="p-3 rounded-lg border text-xs hover:bg-secondary">
+                {getName(id)}（+{weaponSellPrice(id)}）
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Lingyin Music House Component
+const LingyinMusicHouse: React.FC = () => {
+  const { playerStats, handleEventOption, flags, inventory } = useGameStore();
+  const vibrate = useGameVibrate();
+  const listenCount = flags['lingyin_listen_count'] || 0;
+
+  const handleListen = () => {
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+    if (playerStats.money < 50) {
+      handleEventOption(undefined, '【泠音乐坊】囊中羞涩，付不起听曲钱。');
+      return;
+    }
+    const newCount = listenCount + 1;
+    const updates: any = {
+      money: -50,
+      health: 10,
+      flagsSet: { lingyin_listen_count: newCount }
+    };
+    let msg = '【泠音乐坊】你在乐坊静听一曲，心旷神怡。';
+    if (newCount >= 100 && !inventory.includes('gold_microphone')) {
+      updates.itemsAdd = ['gold_microphone'];
+      msg += ' 坊主泠音笑意温柔，赠你一支“金话筒”。';
+    }
+    handleEventOption(updates, msg);
+  };
+
+  return (
+    <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
+      <div className="flex gap-2 items-center pb-2 border-b">
+        <Music className="text-pink-600" />
+        <h2 className="text-xl font-bold">泠音乐坊</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">付 50 文听曲儿，体力 +10。累计 20 次达成成就，累计 100 次获赠“金话筒”。</p>
+
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          onClick={handleListen}
+          disabled={playerStats.money < 50}
+          className="flex flex-col justify-center items-center p-4 rounded-lg border transition-all hover:bg-secondary disabled:opacity-50"
+        >
+          <Music className="mb-2" />
+          <span className="font-bold">听曲儿</span>
+          <span className="text-xs text-muted-foreground">-50 文 / +10 体力</span>
+          <span className="text-[10px] text-muted-foreground">累计：{listenCount}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const Buildings: React.FC = () => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
@@ -798,6 +1046,8 @@ export const Buildings: React.FC = () => {
           </header>
 
           <BlacksmithShop />
+          <FengEGe />
+          <LingyinMusicHouse />
           <YuntuntunShop />
           <XingyueRestaurant />
           <XimengTower />

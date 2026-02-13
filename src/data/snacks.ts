@@ -99,6 +99,27 @@ export const snacks: Item[] = [
     type: 'consumable', 
     effect: { health: 4 } 
   },
+  {
+    id: 'gouqi_gao',
+    name: '枸杞膏',
+    description: '小鹤自制的枸杞膏，可补元气益荣卫。',
+    type: 'consumable',
+    effect: { health: 5 }
+  },
+  {
+    id: 'hongyan_jiu',
+    name: '红颜酒',
+    description: '小鹤自制的润肤养颜红颜酒。',
+    type: 'consumable',
+    effect: { health: 10 }
+  },
+  {
+    id: 'meiran_dan',
+    name: '七宝美髯蛋',
+    description: '小鹤自制的补肝肾强筋骨乌须发的煮鸡蛋。',
+    type: 'consumable',
+    effect: { health: 15 }
+  },
   { 
     id: 'snack_xiaoyutangmian', 
     name: '小鱼汤面', 

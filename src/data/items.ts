@@ -768,6 +768,104 @@ export const items: Item[] = [
     slot: 'waist',
     style: '俏皮'
   }
+  ,
+  {
+    id: 'metal_xuantie_mixed',
+    name: '杂玄铁精',
+    description: '玄铁精，杂质较多，适合作为打铁入门材料。',
+    type: 'material'
+  },
+  {
+    id: 'metal_xuantie_pure',
+    name: '纯玄铁精',
+    description: '玄铁精，去杂提纯，铸剑上乘之材。',
+    type: 'material'
+  },
+  {
+    id: 'metal_hanyue_mixed',
+    name: '杂寒月钢',
+    description: '寒月钢，含杂未尽，尚需精炼。',
+    type: 'material'
+  },
+  {
+    id: 'metal_hanyue_pure',
+    name: '纯寒月钢',
+    description: '寒月钢，锻炼纯熟，纹理如月华清冷。',
+    type: 'material'
+  },
+  {
+    id: 'metal_chitong_mixed',
+    name: '杂赤铜',
+    description: '赤铜略显浑浊，尚可用以铸件。',
+    type: 'material'
+  },
+  {
+    id: 'metal_chitong_pure',
+    name: '纯赤铜',
+    description: '赤铜纯净，色如朝霞，适合精工。',
+    type: 'material'
+  },
+  {
+    id: 'wood_lingxi_core',
+    name: '灵犀木芯',
+    description: '灵犀古木之心材，坚韧通灵。',
+    type: 'material'
+  },
+  {
+    id: 'wood_jinsong',
+    name: '金松木',
+    description: '金松木纹理紧致，常用于兵器辅材。',
+    type: 'material'
+  },
+  {
+    id: 'wood_niujin',
+    name: '牛筋木',
+    description: '牛筋木韧性极佳，适合作为兵器握柄。',
+    type: 'material'
+  },
+  {
+    id: 'weapon_common',
+    name: '普通武器',
+    description: '锋锷阁铸造的常品兵器，可售卖换取金钱。',
+    type: 'misc'
+  },
+  {
+    id: 'weapon_fine',
+    name: '精良武器',
+    description: '锋锷阁铸造的精良兵器，做工出色。',
+    type: 'misc'
+  },
+  {
+    id: 'weapon_legend',
+    name: '传说武器',
+    description: '锋锷阁倾力打造的传说兵器，价值不菲。',
+    type: 'misc'
+  },
+  {
+    id: 'county_eight_swords',
+    name: '八把县好剑',
+    description: '嚯！金色传说！ 锋锷阁锻造',
+    type: 'treasure'
+  },
+  {
+    id: 'peerless_sword',
+    name: '绝世好剑',
+    description: '这是颛孙鹤铸剑以来的最高杰作，是其铸剑生涯的里程碑也是他对《论金》更深入理解的证明。哈哈哈！爹！娘！我悟了！',
+    type: 'treasure'
+  },
+  {
+    id: 'startled_magpie_feather',
+    name: '惊鹊的羽毛',
+    description: '你跑到角落打开武器盒发现只有一根惊鹊的羽毛。',
+    type: 'misc'
+  }
+  ,
+  {
+    id: 'gold_microphone',
+    name: '金话筒',
+    description: '坊主为了回馈喜欢听他唱歌的人的礼物。真的是金的吗？',
+    type: 'treasure'
+  }
 ];
 
 export const getItemById = (id: string): Item | undefined => {

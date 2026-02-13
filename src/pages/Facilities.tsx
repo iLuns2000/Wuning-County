@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText, FlaskConical, Gamepad2 } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 import { AlchemyGame } from '@/components/AlchemyGame';
+import { SnakeGame } from '@/components/SnakeGame';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 // Alchemy Facility Component
@@ -392,10 +393,39 @@ const ArcheryRange: React.FC = () => {
   );
 };
 
+// Big Bite (Snake) Facility
+const BigBiteSnake: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
+  const vibrate = useGameVibrate();
+  return (
+    <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
+      <div className="flex gap-2 items-center pb-2 border-b">
+        <Gamepad2 className="text-emerald-600" />
+        <h2 className="text-xl font-bold">大吃一口</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        操控贪吃蛇吞食果子，分数可兑换少量金钱。
+      </p>
+      <div className="flex flex-col gap-4 items-center">
+        <button
+          onClick={() => {
+            vibrate(VIBRATION_PATTERNS.LIGHT);
+            onEnter();
+          }}
+          className="flex gap-2 justify-center items-center py-3 w-full font-bold text-white bg-emerald-600 rounded-lg transition-all hover:bg-emerald-700"
+        >
+          <Gamepad2 size={20} />
+          开始游戏 (小游戏)
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const Facilities: React.FC = () => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
   const [showAlchemy, setShowAlchemy] = useState(false);
+  const [showSnake, setShowSnake] = useState(false);
   const vibrate = useGameVibrate();
 
   return (
@@ -421,6 +451,7 @@ export const Facilities: React.FC = () => {
           <AlchemyFacility onEnter={() => setShowAlchemy(true)} />
           <GamblingHouse />
           <ArcheryRange />
+          <BigBiteSnake onEnter={() => setShowSnake(true)} />
         </div>
 
         {/* Right: Log Panel */}
@@ -430,6 +461,7 @@ export const Facilities: React.FC = () => {
       </div>
       
       {showAlchemy && <AlchemyGame onClose={() => setShowAlchemy(false)} />}
+      {showSnake && <SnakeGame onClose={() => setShowSnake(false)} />}
     </div>
   );
 };

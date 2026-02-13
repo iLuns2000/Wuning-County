@@ -43,6 +43,12 @@ export const treasures: Item[] = [
     description: '用于建造建筑的指令，每个指令的价值都是1000000。',
     type: 'treasure',
   },
+  {
+    id: 'xiao_he_tie',
+    name: '小鹤的领带',
+    description: '印有小鹤憧憬的楼县令水墨风头像的领带，也可当小发带。',
+    type: 'treasure',
+  },
 ];
 
 export const treasurePrices: Record<string, number> = {
@@ -53,4 +59,5 @@ export const treasurePrices: Record<string, number> = {
   'ivory_tower': 300000,
   'celestial_globe': 1000000,
   'construction_order': 1000000,
+  'xiao_he_tie': 520,
 };
