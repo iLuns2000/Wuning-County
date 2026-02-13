@@ -25,6 +25,8 @@ import { ScrollToTop } from '@/components/ScrollToTop';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
+import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
+import { FireworksSplash } from '@/components/FireworksSplash';
 
 const Router = HashRouter;
 
@@ -47,6 +49,8 @@ function App() {
         <Route path="/developer" element={<Developer />} />
         <Route path="/save-view" element={<SaveViewer />} />
       </Routes>
+      <NewYearCountdownBanner />
+      <FireworksSplash />
       <MobileLogToast />
       <Watermark />
       <div className="fixed bottom-2 left-0 w-full text-center z-40 text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
