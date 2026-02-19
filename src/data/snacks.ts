@@ -4,7 +4,7 @@ export const snacks: Item[] = [
   { 
     id: 'snack_potato', 
     name: '土豆', 
-    description: '武宁街头的经典小吃，看似普通却有着令人怀念的味道。', 
+    description: '无宁街头的经典小吃，看似普通却有着令人怀念的味道。', 
     type: 'consumable', 
     effect: { health: 2 } 
   },

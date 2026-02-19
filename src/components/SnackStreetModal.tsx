@@ -55,7 +55,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
         <div className="p-4 bg-amber-800 dark:bg-amber-900 text-amber-50 flex justify-between items-center shadow-md">
           <div className="flex items-center gap-3">
             <Utensils className="w-6 h-6" />
-            <h2 className="text-2xl font-bold tracking-wider">武宁小吃街</h2>
+            <h2 className="text-2xl font-bold tracking-wider">无宁小吃街</h2>
           </div>
           <button 
             onClick={onClose}
