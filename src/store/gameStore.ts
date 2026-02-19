@@ -52,11 +52,11 @@ type RelationPenalty = {
 
 const npcFactions = [
   { id: 'yamen', members: ['lou_xianling', 'qi_jiu'] },
-  { id: 'medical', members: ['song_songsheng', 'san_yue'] },
+  { id: 'medical', members: ['song_songsheng', 'san_yue', 'mingyue_qingfeng', 'xiao_he'] },
   { id: 'craft', members: ['wuyan', 'guan_yuhe', 'baizhou', 'luhua'] },
   { id: 'commerce', members: ['yun_xi_npc', 'feng_ge', 'ye_xiao'] },
   { id: 'neighbors', members: ['lao_li', 'lao_zhang'] },
-  { id: 'tea', members: ['cha_du', 'qian_xiaolu', 'ying_yue'] }
+  { id: 'tea', members: ['cha_du', 'qian_xiaolu', 'ying_yue', 'wan_lai_qiu'] }
 ];
 
 const negativeRelationPenalties: RelationPenalty[] = [
@@ -507,6 +507,25 @@ export const useGameStore = create<GameStore>()(
           const pool = ['lovesickness_tablet', 'wolf_claw', 'goose_feather', 'holy_water'];
           itemId = pool[Math.floor(Math.random() * pool.length)];
           droppedItems.push(itemId);
+        }
+
+        // 40% chance to find forging material (single piece)
+        if (Math.random() < 0.4) {
+          const materialPool = [
+            'metal_xuantie_mixed',
+            'metal_xuantie_pure',
+            'metal_hanyue_mixed',
+            'metal_hanyue_pure',
+            'metal_chitong_mixed',
+            'metal_chitong_pure',
+            'wood_lingxi_core',
+            'wood_jinsong',
+            'wood_niujin'
+          ];
+          const mat = materialPool[Math.floor(Math.random() * materialPool.length)];
+          droppedItems.push(mat);
+          const matName = items.find(i => i.id === mat)?.name || '材料';
+          extraMessage += ` 捡得一份${matName}。`;
         }
 
         if (Math.random() < 0.01) {
@@ -1263,7 +1282,7 @@ export const useGameStore = create<GameStore>()(
 
           // Determine relation gain based on interaction level
           if (level === 'high') relationChange = 5;
-          else if (level === 'medium') relationChange = 3;
+          else if (level === 'medium') relationChange = 2;
           else relationChange = 1;
 
           // Determine message

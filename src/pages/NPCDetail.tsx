@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Scroll, Lock } from 'lucide-react';
+import { ArrowLeft, User, Scroll, Lock, Briefcase, Package, Fingerprint } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
@@ -43,9 +43,17 @@ export const NPCDetail: React.FC = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold">{npc.name}</h2>
-              <span className="px-2 py-1 text-sm rounded-full bg-secondary text-muted-foreground">
-                {npc.title}
-              </span>
+              <div className="flex gap-2 items-center mt-1">
+                <span className="px-2 py-1 text-sm rounded-full bg-secondary text-muted-foreground">
+                  {npc.title}
+                </span>
+                {npc.identityCode && (
+                  <span className="flex items-center gap-1 px-2 py-1 text-xs font-mono rounded-full bg-secondary/50 text-muted-foreground/70">
+                    <Fingerprint size={12} />
+                    {npc.identityCode}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           
@@ -67,13 +75,33 @@ export const NPCDetail: React.FC = () => {
             <p>{npc.description}</p>
           </div>
 
-          {relation >= 100 && (
+          {relation >= 80 && npc.dailyLife && (
+            <div className="p-4 rounded-md bg-secondary/30">
+               <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
+                 <Briefcase size={16} />
+                 <span>县居日常</span>
+               </h3>
+               <p className="text-sm">{npc.dailyLife}</p>
+            </div>
+          )}
+
+          {relation >= 100 && npc.background && (
             <div className="p-4 rounded-md bg-secondary/50">
                <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
                  <Scroll size={16} />
                  <span>身世背景</span>
                </h3>
                <p className="text-sm">{npc.background}</p>
+            </div>
+          )}
+
+          {relation >= 100 && npc.hiddenTreasure && (
+            <div className="p-4 rounded-md bg-primary/5">
+               <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
+                 <Package size={16} />
+                 <span>藏珍匣</span>
+               </h3>
+               <p className="text-sm italic">{npc.hiddenTreasure}</p>
             </div>
           )}
         </div>

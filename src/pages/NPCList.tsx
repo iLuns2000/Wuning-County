@@ -255,6 +255,13 @@ export const NPCList: React.FC = () => {
                     {npc.interactionEventIds?.map(eventId => {
                       const event = npcEvents.find(e => e.id === eventId);
                       if (!event) return null;
+                      
+                      // Check trigger conditions if they exist
+                      if (event.triggerCondition?.custom) {
+                        const state = useGameStore.getState();
+                        if (!event.triggerCondition.custom(state)) return null;
+                      }
+
                       return (
                         <button
                           key={eventId}

@@ -535,10 +535,199 @@ export const randomEvents: GameEvent[] = [
         }
       }
     ]
+  },
+  {
+    id: 'shier_qiu_wine',
+    title: '品尝佳酿',
+    description: '秋老板邀请你尝一杯自酿的青梅酒。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '欣然接受',
+        message: '“这青梅酒的味道……怎么怪怪的。不会是馊了吧”',
+        effect: { health: -5, relationChange: { shier_qiu: 3 } }
+      },
+      {
+        label: '还是算了',
+        message: '那青梅酒看起来就不对劲，还是别喝了。',
+        effect: { relationChange: { shier_qiu: -1 } }
+      }
+    ]
+  },
+  {
+    id: 'shier_qiu_browse',
+    title: '进店闲逛',
+    description: '秋老板向你推荐店里的招牌茯苓糕',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '买些回去尝尝 (50文)',
+        message: '秋老板把装着糕点的纸包递给你，“客官您拿稳了，好吃再来。”',
+        effect: { money: -50, health: 5, relationChange: { shier_qiu: 3 } }
+      },
+      {
+        label: '还是算了',
+        message: '”那客官您继续逛着，有什么需要随时叫在下。“秋老板说罢转身离开',
+        effect: { relationChange: { shier_qiu: -1 } }
+      }
+    ]
+  },
+  {
+    id: 'shier_qiu_recruit',
+    title: '应聘后厨糕点师傅',
+    description: '店门口贴着招收糕点师傅的告示',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '试上一试',
+        message: '秋老板把你带进后厨，让你现场制作一款自己的拿手糕点。你看着台面上的原材料，抓耳挠腮半天，最后蒸了一锅死面馒头。秋老板看着锅里冒着热气的面疙瘩，叹了口气，把你和你的死面馒头一起打包好送出了店门。',
+        effect: { relationChange: { shier_qiu: -3 } }
+      },
+      {
+        label: '还是算了',
+        message: '你转身正要离开，却被店里的猫咪缠住脚步。你蹲下摸摸猫咪的脑袋，秋老板隔着窗子笑着看你和小猫玩闹。',
+        effect: { relationChange: { shier_qiu: 0.5 } }
+      }
+    ]
+  },
+  {
+    id: 'shier_qiu_loquat',
+    title: '偷摘枇杷',
+    description: '店门口的枇杷树结满了黄澄澄的枇杷',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '偷偷采摘 (30文)',
+        message: '秋老板听见树枝折断的声音，从店内走出来查看情况，将你当场抓获，无奈之下你只能按市价买下了刚才摘下来的枇杷',
+        effect: { money: -30, relationChange: { shier_qiu: -5 } }
+      },
+      {
+        label: '还是算了',
+        message: '你站在枇杷树下仰头看了会便转身离开了，一阵小风吹过，什么都没有发生'
+      }
+    ]
+  },
+  {
+    id: 'xiao_he_gouqi',
+    title: '买枸杞',
+    description: '“你要买我家药园的枸杞？”小鹤兴奋地咧嘴傻笑。',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 20
+    },
+    options: [
+      {
+        label: '购买 (50文)',
+        message: '小鹤兴奋地咧嘴傻笑，并赠送了一罐可补元气益荣卫的自制枸杞膏。',
+        effect: { 
+          money: -50, 
+          itemsAdd: ['gouqi_gao'],
+          relationChange: { xiao_he: 2 }
+        }
+      },
+      {
+        label: '再看看',
+        message: '小鹤憨憨地抓了抓头，继续忙活去了。'
+      }
+    ]
+  },
+  {
+    id: 'xiao_he_ginseng',
+    title: '买人参',
+    description: '“你要买我家药园的人参？”小鹤兴奋地咧嘴傻笑。',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 80
+    },
+    options: [
+      {
+        label: '购买 (200文)',
+        message: '小鹤兴奋地咧嘴傻笑，并赠送了一小瓶润肤养颜的红颜酒。',
+        effect: { 
+          money: -200, 
+          itemsAdd: ['hongyan_jiu'],
+          relationChange: { xiao_he: 5 }
+        }
+      },
+      {
+        label: '再看看',
+        message: '小鹤憨憨地抓了抓头，继续忙活去了。'
+      }
+    ]
+  },
+  {
+    id: 'xiao_he_hair_loss',
+    title: '抱怨脱发',
+    description: '“唉……最近不知怎么回事，头发掉了好多，我心里好难受啊。”',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 99
+    },
+    options: [
+      {
+        label: '向小鹤诉苦',
+        message: '路过的小鹤听罢把你拉到了她的药园，并给你赠送了一些自制的七宝美髯蛋，说是补肝肾强筋骨乌须发，叮嘱你每日吃上2-3个，饮食清淡一点。你抱着几十个颜色奇怪的煮鸡蛋将信将疑地走了。',
+        effect: { 
+          itemsAdd: ['meiran_dan'],
+          relationChange: { xiao_he: 10 }
+        }
+      }
+    ]
+  },
+  {
+    id: 'xiao_he_fishing',
+    title: '一起钓鱼',
+    description: '“今儿天气不错，一起去钓鱼啊~”',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 520
+    },
+    options: [
+      {
+        label: '愉快地钓鱼',
+        message: '“今天玩得很开心，钓到大鱼了，嘿嘿嘿嘿谢谢你呀~”小鹤开心地从她的藏珍匣拿出一条精美的带子，放到了你的手中。',
+        effect: { 
+          itemsAdd: ['xiao_he_tie'],
+          relationChange: { xiao_he: 20 }
+        }
+      }
+    ]
   }
 ];
 
 export const npcEvents: GameEvent[] = [
+  {
+    id: 'duxun_tianya_shuanrou',
+    title: '进店坐下',
+    description: '独寻天涯问：“客官想吃点什么”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '点了一桌涮肉，吃完后评价味道极好，付钱离开',
+        message: '客官走好，欢迎下次再来',
+        effect: { money: -200, relationChange: { duxun_tianya: 5 }, health: 20 }
+      },
+      {
+        label: '点了一桌涮肉，吃完后付钱离开',
+        message: '客官走好，欢迎下次再来',
+        effect: { money: -200, relationChange: { duxun_tianya: 2 }, health: 20 }
+      },
+      {
+        label: '吃霸王餐',
+        message: '“居然敢吃霸王餐，葵花点穴手，也不打听打听，我以前是干啥的”',
+        effect: { money: -200, relationChange: { duxun_tianya: -2 }, health: -20, reputation: -20 }
+      }
+    ]
+  },
   {
     id: 'npc_lou_invite',
     title: '县令邀请',
@@ -848,6 +1037,106 @@ export const npcEvents: GameEvent[] = [
         label: '委托锻造',
         message: '你提交了材料，颛孙鹤答应一旬后交货。',
         effect: { relationChange: { zhuansun_he: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'zhuansun_meal',
+    title: '请客吃饭',
+    description: '你想请颛孙鹤吃顿饭，叙叙旧。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '请客',
+        message: '嘿！我正好知道一家面馆好吃，走！',
+        effect: { relationChange: { zhuansun_he: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'zhuansun_forge_theory',
+    title: '请教锻造理论',
+    description: '颛孙鹤似乎在研究什么高深的锻造理论，你上前请教。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '请教庚金',
+        message: '你可知什么是庚金？庚，即为变更，更替之意，亦是天干之一，主肃杀、折损，平时我们用于锻造刀剑之锋的金属如常见的玄铁、寒铁多为此属',
+        effect: { relationChange: { zhuansun_he: 3 } }
+      },
+      {
+        label: '请教匮金',
+        message: '你可知什么是匮金？匮是取匮藏之意，如同土壤匮藏金属，以柔软的宝土孕育锋利的金属一般，匮金亦能藏锋，与齐金相似却不相同，能藏锋于钝，多用于制造刀剑之鞘',
+        effect: { relationChange: { zhuansun_he: 3 } }
+      },
+      {
+        label: '请教齐金',
+        message: '你可知什么是齐金？齐即为汇聚收容、保养，能容纳他物并且保养他物，与匮金相似但又不同，更与庚金的锋芒毕露相反，多用于制作盔甲一类的护具',
+        effect: { relationChange: { zhuansun_he: 3 } }
+      }
+    ]
+  },
+  {
+    id: 'shuihan_fortune',
+    title: '问一卦',
+    description: '你路过算命小摊，突然想要问上一卦',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '选择第一枚铜钱',
+        message: '“风雷益。风雷相薄，是为‘益’卦。小往而大利。阁下今日凡有资财往来，皆可得意外之喜。此卦利市。”',
+        effect: { money: 90, relationChange: { shui_han: 2 } }
+      },
+      {
+        label: '选择第二枚铜钱',
+        message: '“雷天大壮。正合体力充盈、精力恢复之象。卦金在此，兑取天地刚健之气。今日阁下诸事，当觉步履轻健，如得神助。”',
+        effect: { money: -10, health: 100, relationChange: { shui_han: 2 } }
+      },
+      {
+        label: '选择第三枚铜钱',
+        message: '“风地观。爻辞有云：‘观国之光，利用宾于王。’阁下近日言行，自有人仰慕，声名自来。”',
+        effect: { money: -10, reputation: 50, relationChange: { shui_han: 2 } }
+      }
+    ]
+  },
+  {
+    id: 'shuihan_read_book',
+    title: '借阅《无宁见闻》',
+    description: '你看到算命小摊上有本《无宁见闻》心生好奇，想要借阅一看',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '请她喝杯茶做答谢',
+        message: '“......这是，秦川的雪雾茶？谢谢你...有心了”',
+        effect: { health: -10, ability: 50, relationChange: { shui_han: 5 } }
+      },
+      {
+        label: '借给她画本做交换',
+        message: '“嗯？是楼县令看过的那本吗？我等了好久书店里都没货，谢了。”',
+        effect: { health: -10, experience: 50, relationChange: { shui_han: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'shuihan_fortune_again',
+    title: '再问一卦',
+    description: '听说问卦不能多问，你还要再问卦吗？',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '我就要再问',
+        message: '“卦不可多问”（收起铜钱）“再问下去，窥见的天机会成为你的债。另外，你问过太多次了，卦金要加倍。”',
+        effect: { money: -20, health: -10, relationChange: { shui_han: -2 } }
+      },
+      {
+        label: '算了不问了',
+        message: '（笑着点点头）“是了，运虽由天定，但命由己定，福自我求，知道了命数，却要多行好事，尽己所能去改写命运。不可寄托虚妄，更不可能随意窥泄天机。”',
+        effect: { experience: 50, relationChange: { shui_han: 5 } }
       }
     ]
   },
@@ -1921,7 +2210,7 @@ export const npcEvents: GameEvent[] = [
     title: '你我可有缘',
     description: '银河看着你，眼神中透着期许：“听说小友也有一个音乐梦？”',
     type: 'npc',
-    triggerCondition: { probability: 0 },
+    triggerCondition: { probability: 0, custom: (state) => !state.flags['yinhe_music_dream_reward_claimed'] },
     options: [
       {
         label: '是的，我有',
@@ -1931,7 +2220,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '不好意思，我只是路过',
         message: '“我相信缘分还会再来，但相逢既是有缘。”（银河塞给了你一大笔盘缠）',
-        effect: { money: 50000, relationChange: { yin_he: 1 } }
+        effect: { money: 50000, relationChange: { yin_he: 1 }, flagsSet: { yinhe_music_dream_reward_claimed: true } }
       }
     ]
   },
@@ -2093,6 +2382,202 @@ export const npcEvents: GameEvent[] = [
       {
         label: '暂不祈愿',
         message: '你决定择日再来。'
+      }
+    ]
+  },
+  {
+    id: 'wan_lai_qiu_tea_house',
+    title: '进店坐下',
+    description: '晚来秋问：“请问客官来点什么？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '“请问掌柜的什么时候说书，我就是冲着她来的”',
+        message: '晚来秋微微一笑，为你倒上一杯茶。',
+        effect: { money: 200, reputation: 40, relationChange: { wan_lai_qiu: 40 }, health: 40 }
+      },
+      {
+        label: '“花生瓜子再来一壶西湖龙井”',
+        message: '“好嘞，马上就来”',
+        effect: { money: 100, reputation: 20, relationChange: { wan_lai_qiu: 20 } }
+      },
+      {
+        label: '“什么都不用，我自带了”',
+        message: '“好的，那我先给您安排座位”',
+        effect: { money: 50, reputation: 10, relationChange: { wan_lai_qiu: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'wan_lai_qiu_steal_manuscript',
+    title: '偷偷拿走手稿',
+    description: '你试图趁晚来秋不注意，偷偷拿走桌上的手稿。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '动手',
+        message: '“竟敢偷我手稿！我打死你！”你被晚来秋发现并暴打了一顿。',
+        effect: { money: -50, reputation: -10, relationChange: { wan_lai_qiu: -10 }, health: -10 }
+      }
+    ]
+  },
+  {
+    id: 'mingyue_consultation',
+    title: '问诊',
+    description: '明月正百无聊赖地转着手里的银亮小刀，看见你进来，眼神在你身上扫了一圈。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '我觉得浑身乏力，头晕脑胀',
+        message: '明月叹了口气，眼皮都没抬：“又是这种无聊……咳，常见病。回去多喝热水，早点睡觉。”',
+        effect: { money: -50, health: 5, relationChange: { mingyue_qingfeng: -1 } }
+      },
+      {
+        label: '我不小心被刀划伤了，血流不止！',
+        message: '“明月瞬间从椅子上弹了起来，眼中精光大盛：‘好极了！……我是说，伤势严重，速速躺下！这伤口切面整齐，正好试试我新学的缝合术！’ (你获得了堪称艺术品的缝合治疗)”',
+        effect: { money: -50, health: 20, relationChange: { mingyue_qingfeng: 5 } }
+      },
+      {
+        label: '没事，我就来看看你在干嘛',
+        message: '“去去去，没看见我在研究昨晚从肉铺买回来的猪大腿吗？没事别占着病床。”',
+        effect: { relationChange: { mingyue_qingfeng: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'mingyue_research',
+    title: '协助研究',
+    description: '明月正对着一副挂在墙上的人体骨骼图发愁，“这块骨头连接处的韧带，总是画不准确……”他看向你，眼神突然变得狂热。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '自告奋勇当模特',
+        message: '你僵硬地摆着姿势，任由明月在你关节处摸来摸去，嘴里还念叨着“妙啊，妙啊”。虽然过程有点惊悚，但他似乎很有收获。',
+        effect: { health: -10, experience: 5, relationChange: { mingyue_qingfeng: 5 } }
+      },
+      {
+        label: '给他推荐一本从黑市淘来的西洋画册',
+        message: '明月接过画册，双手颤抖，如获至宝：“这……这是达芬奇的手稿？！你是哪里弄来的？以后你就是我明月医馆的终身VIP！”',
+        effect: { money: -100, reputation: 10, relationChange: { mingyue_qingfeng: 10 } }
+      },
+      {
+        label: '赶紧跑路',
+        message: '你觉得那个眼神太像看尸体了，转身就跑。明月在你身后遗憾地叹气。',
+        effect: { relationChange: { mingyue_qingfeng: -10 } }
+      }
+    ]
+  },
+  {
+    id: 'mingyue_trial',
+    title: '试药请求',
+    description: '明月手里晃着一瓶颜色诡异的液体（像是某种西洋试剂），眉头紧锁：“我刚调配了一种新型‘麻沸散’，理论上能让人瞬间失去痛觉，但还缺个……咳，志愿者。”他目光灼灼地看向你',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '为了科学！我喝！',
+        message: '“你豪迈地一口闷下。视线瞬间模糊，感觉自己像是在云端飘浮，甚至看见了过世的太奶……醒来后，明月正拿着笔记本疯狂记录，并塞给你一笔‘营养费’。 (虽然赚了钱，但精神受到了巨大的冲击)”',
+        effect: { money: 200, relationChange: { mingyue_qingfeng: 2 }, health: -10 }
+      },
+      {
+        label: '坚决拒绝，看着就像毒药',
+        message: '“切，凡夫俗子，不懂为医学献身的伟大。”明月失望地撇撇嘴，转身把药倒进了花盆里（那盆花瞬间枯萎了）。 (你保住了小命，但也错失了发财的机会)',
+        effect: { relationChange: { mingyue_qingfeng: -5 } }
+      }
+    ]
+  },
+  {
+    id: 'si_li_cen_vegetables',
+    title: '买蔬菜',
+    description: '司卿从柜台下搬出一筐新鲜蔬菜，“这是今早从城郊菜农那儿收来的，带着露水呢。这青菜嫩得很，清炒最佳；萝卜水灵，炖汤滋补。要多少？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '买青菜',
+        message: '司卿用草绳利索地捆好青菜，又往你篮子里塞了两根葱，“送你，炒菜提鲜。”',
+        effect: { money: -10, relationChange: { si_li_cen: 5 } }
+      },
+      {
+        label: '买萝卜',
+        message: '司卿挑了个最大的萝卜给你，“这萝卜炖排骨，暖胃。”',
+        effect: { money: -15, relationChange: { si_li_cen: 5 } }
+      }
+    ]
+  },
+  {
+    id: 'si_li_cen_misc',
+    title: '买杂货',
+    description: '司卿的杂货铺琳琅满目，针线、油盐、糖果、小玩具应有尽有。她倚在柜台边，“要什么自己看，看完后结账即可。”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '买针线包',
+        message: '你衣裳破了，遂来购买针线包。司卿察觉你可能是寒门弟子来参加科举，于是不伤自尊地将价格调整为1文钱。你付完钱后离开店铺。',
+        effect: { money: -1, relationChange: { si_li_cen: 3 } }
+      },
+      {
+        label: '买桂花糖',
+        message: '你直奔桂花糖，拿了一大把并诉说旧时记忆。司卿默默多装了一些，说：“吃了桂花糖的你，一定会生活幸福的。”',
+        effect: { money: -8, relationChange: { si_li_cen: 5 }, health: 3 }
+      },
+      {
+        label: '买竹蜻蜓',
+        message: '司卿将竹蜻蜓递给你：“闲暇时可以拿来放飞一下，感受生活的美好，希望你爱生活，爱自己！”',
+        effect: { relationChange: { si_li_cen: 2 }, health: 2 }
+      }
+    ]
+  },
+  {
+    id: 'si_li_cen_news',
+    title: '打听江湖消息',
+    description: '司卿眸光微闪，指尖轻叩柜台，“消息嘛……我这杂货铺确实会有些江湖朋友路过。你想知道什么？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '对暗号成功',
+        message: '你说出暗号：“杂货为掩，红衣为信。”司卿确认你并非歹人，告知所需消息。',
+        effect: { relationChange: { si_li_cen: 5 }, health: 3, reputation: 2 }
+      },
+      {
+        label: '对暗号失败',
+        message: '你神色慌张且说不出暗号，且意图打听他人隐秘。司卿认定你不怀好意，遂报官交由楼县令处置。',
+        effect: { relationChange: { si_li_cen: -3 }, health: -3, reputation: -3 }
+      },
+      {
+        label: '另辟蹊径',
+        message: '你说不出暗号但需求恳切亦不违法。司卿表示只要做一件善事也可获得江湖消息。',
+        effect: { relationChange: { si_li_cen: 3 }, health: -2, reputation: 1 }
+      }
+    ]
+  },
+  {
+    id: 'si_li_cen_disguise',
+    title: '易容术',
+    description: '司卿上下打量你一番：“易容术可不是变戏法，要观察入微，更要心思缜密。你为何要易容？说来听听，若理由正当，我便帮你这一次。”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '易容助人',
+        message: '你希望以此技艺在不违法的前提下造福他人。司卿见你诚恳，答应传授一次。',
+        effect: { relationChange: { si_li_cen: 5 }, health: -2, reputation: 3 }
+      },
+      {
+        label: '学来玩玩',
+        message: '你态度傲慢只想玩耍一二。司卿大怒，将你逐出门外。',
+        effect: { relationChange: { si_li_cen: -5 }, health: -5, reputation: -3 }
+      },
+      {
+        label: '暂时作罢',
+        message: '虽理由正当，但你犹犹豫豫、神色不定。司卿认为你不适合学习此术，表示再考虑。',
+        effect: { relationChange: { si_li_cen: 2 }, health: -2 }
       }
     ]
   }

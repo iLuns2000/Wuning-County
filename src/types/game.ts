@@ -271,6 +271,7 @@ export interface NPC {
   background: string;
   danqing?: string; // Danqing portrait description or image URL
   dailyLife?: string; // Daily life description (县居日常)
+  hiddenTreasure?: string; // Hidden treasure description (藏珍匣)
   avatar?: string;
   chatDialogues?: {
     high?: string[];
