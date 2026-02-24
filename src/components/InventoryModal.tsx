@@ -13,6 +13,10 @@ const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = (
   const [error, setError] = useState(false);
   const imagePath = `/images/${item.id}.jpg`;
 
+  useEffect(() => {
+    setError(false);
+  }, [item.id]);
+
   if (error) {
     return <Package size={size} className={className} />;
   }
