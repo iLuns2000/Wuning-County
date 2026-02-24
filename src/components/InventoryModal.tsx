@@ -9,6 +9,26 @@ interface InventoryModalProps {
   onClose: () => void;
 }
 
+const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = ({ item, size = 24, className }) => {
+  const [error, setError] = useState(false);
+  const imagePath = `/images/${item.id}.jpg`;
+
+  if (error) {
+    return <Package size={size} className={className} />;
+  }
+
+  return (
+    <div className={`flex overflow-hidden justify-center items-center rounded-md bg-secondary/20 ${className}`} style={{ width: size, height: size }}>
+      <img 
+        src={imagePath} 
+        alt={item.name} 
+        className="object-contain w-full h-full"
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+};
+
 export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   const { inventory, useItem } = useGameStore();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -80,7 +100,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
                         : 'bg-secondary/30 border-border hover:bg-secondary hover:border-primary/50'
                       }`}
                   >
-                    <Package size={24} className="mb-2 text-primary/80" />
+                    <ItemImage item={item} size={24} className="mb-2 text-primary/80" />
                     <span className="text-xs font-medium text-center line-clamp-1">{item.name}</span>
                     <span className="text-[10px] text-muted-foreground mt-1 bg-secondary px-1.5 rounded-full">
                       x{itemCounts[item.id]}
@@ -96,7 +116,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
             {selectedItem ? (
               <div className="space-y-4 duration-200 animate-in slide-in-from-right-4">
                 <div className="flex flex-col items-center p-4 rounded-lg border shadow-sm bg-card border-border">
-                  <Package size={48} className="mb-2 text-primary" />
+                  <ItemImage item={selectedItem} size={48} className="mb-2 text-primary" />
                   <h3 className="text-lg font-bold">{selectedItem.name}</h3>
                   <span className="text-xs text-muted-foreground px-2 py-0.5 bg-secondary rounded-full mt-1">
                     {selectedItem.type === 'consumable' ? '消耗品' : 
