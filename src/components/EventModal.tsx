@@ -83,7 +83,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
         )}
         
         <div className="space-y-3">
-          {event.options.map((option, index) => {
+          {(event.options || []).map((option, index) => {
             const { allowed, reason } = checkRequirement(option.effect);
             
             return (

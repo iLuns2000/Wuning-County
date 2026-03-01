@@ -321,6 +321,7 @@ interface GameStore extends GameState {
 
   // Explore Actions
   performExplore: () => void;
+  fillCave: () => void;
 
   // Save/Load Methods
   exportSave: () => { url: string; filename: string };
@@ -392,7 +393,7 @@ export const useGameStore = create<GameStore>()(
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
       npcInteractionStates: {},
       isVoiceLost: false,
       collectedScrolls: [],
@@ -444,6 +445,11 @@ export const useGameStore = create<GameStore>()(
 
         const state = get();
         let failChance = 0.1;
+
+        // If cave has been filled today, reduce fail chance to 0
+        if (state.dailyCounts.caveFilled) {
+          failChance = 0;
+        }
 
         // Ability reduction: 1 point = 0.01% = 0.0001
         failChance -= state.playerStats.ability * 0.0001;
@@ -938,6 +944,28 @@ export const useGameStore = create<GameStore>()(
         get().addLog(`【善行】${charity.logMessage}`);
       },
 
+      fillCave: () => {
+        const state = get();
+        const cost = 100; // 填洞成本
+
+        if (state.playerStats.money < cost) {
+          get().addLog('囊中羞涩，无法填洞。');
+          return;
+        }
+
+        if (state.dailyCounts.caveFilled) {
+          get().addLog('今日已经填过洞了。');
+          return;
+        }
+
+        set(state => ({
+          playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
+          dailyCounts: { ...state.dailyCounts, caveFilled: true }
+        }));
+
+        get().addLog(`【填洞】花费 ${cost} 文填洞，今日探险不会再掉入盗洞。`);
+      },
+
       donateDisasterRelief: (type, amount) => {
         const state = get();
         if (!state.disasterState.active || state.disasterState.type !== 'flood') {
@@ -1116,7 +1144,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
           npcInteractionStates: {},
           isVoiceLost: false,
           collectedScrolls: [],
@@ -1834,7 +1862,7 @@ export const useGameStore = create<GameStore>()(
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
             ownedFacilities: newOwnedFacilities,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
@@ -2287,7 +2315,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],
