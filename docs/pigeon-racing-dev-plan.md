@@ -254,3 +254,100 @@
 - [ ] 日志长度受上限裁剪时，确保关键比赛日志优先入列
 - [ ] 存档兼容老版本：无 `pigeons` 字段时要自动补默认值
 
+
+---
+
+## 七、怎么把这份清单交给 AI 编辑器执行（实操模板）
+
+下面给你一套可以直接复制给 AI 编辑器（Cursor / Windsurf / Trae / Copilot Chat 等）的流程。
+
+### Step 0：先让 AI 理解边界（一次性）
+把这段先发给 AI：
+
+```text
+你现在是这个仓库的协作开发者。请严格按 docs/pigeon-racing-dev-plan.md 执行。
+要求：
+1) 每次只完成一个小迭代（不要一次改太多文件）。
+2) 修改后必须运行可执行检查（至少 npm run build）。
+3) 输出变更文件列表、关键函数、风险点。
+4) 给出 git commit message（Conventional Commit）。
+5) 如果遇到不确定设计，先给 2 个方案对比再动手。
+```
+
+### Step 1：按里程碑拆任务给 AI（推荐顺序）
+- 第一次对话只做 **M1-1：类型 + store 最小闭环（无 UI）**
+- 第二次对话做 **M1-2：PigeonRaceModal + Game.tsx 入口**
+- 第三次对话做 **M1-3：成就/事件接入 + 文案**
+
+> 原则：一次 PR 控制在 4~8 个文件，便于你 review。
+
+### Step 2：可直接复制的 Prompt（分阶段）
+
+#### Prompt A（先打通数据与逻辑）
+```text
+请实现 docs/pigeon-racing-dev-plan.md 中以下内容：
+- 1) src/types/game.ts 的赛鸽类型与 GameState 字段
+- 2) src/store/gameStore.ts 的 buyPigeon/trainPigeon/enterPigeonRace/selectPigeon
+- 3) nextDay 中加入赛鸽疲劳恢复与每日次数重置
+限制：
+- 先不做 UI
+- 不改动无关逻辑
+- 所有新增逻辑必须写日志
+完成后请执行 npm run build，并贴出关键 diff 摘要。
+```
+
+#### Prompt B（接入界面）
+```text
+在已有赛鸽 store 能力基础上，继续实现：
+- 新建 src/components/PigeonRaceModal.tsx
+- 在 src/pages/Game.tsx 增加“赛鸽场”入口与弹窗挂载
+要求：
+- 风格与现有 modal 一致
+- currentEvent 时按钮禁用
+- 操作路径 3 步内完成“选鸽-报名-结算”
+完成后执行 npm run build，并列出手测步骤。
+```
+
+#### Prompt C（内容层增强）
+```text
+继续实现 docs/pigeon-racing-dev-plan.md 的内容层：
+- src/data/achievements.ts 新增 3~5 个赛鸽成就
+- src/data/events.ts 新增 4~6 条赛鸽事件
+要求：
+- 触发条件与天气/NPC关系有关
+- 文案保持古风叙事
+- 不引入破坏平衡的超高收益
+完成后执行 npm run build，并说明平衡性设计。
+```
+
+### Step 3：让 AI 自检（每轮都要）
+每轮开发后追加这句：
+
+```text
+请做一次自检清单：
+1) 类型是否完整且无 TS 报错
+2) 存档字段是否兼容旧档
+3) 每日计数是否在 nextDay 正确重置
+4) 是否有可能出现负金钱/负体力
+5) 给出你最担心的 3 个 bug 点
+```
+
+### Step 4：你的人类验收清单（5 分钟版）
+- [ ] 能买鸽子，钱会减少
+- [ ] 能训练，体力会减少，属性会变化
+- [ ] 每天只能比赛一次
+- [ ] 点“结束这一天”后疲劳恢复
+- [ ] 读档后鸽子数据不消失
+
+### Step 5：如果 AI 跑偏，直接用这句拉回
+```text
+你偏离了 docs/pigeon-racing-dev-plan.md。
+请停止新增设计，只按“二、按文件拆分（函数级）”中尚未完成的勾选项继续，
+并按“最小可合并改动”提交。
+```
+
+### 推荐协作节奏
+- 每天 1~2 个小 PR
+- 每个 PR 只解决一个问题层（类型层 / 逻辑层 / UI层 / 内容层）
+- 合并后再开下一轮，避免一次改太大导致回滚困难
+
