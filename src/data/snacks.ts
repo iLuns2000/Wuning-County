@@ -161,5 +161,19 @@ export const snacks: Item[] = [
     description: '清凉解暑，名字虽然拗口但味道极好。', 
     type: 'consumable', 
     effect: { health: 3 } 
+  },
+  { 
+    id: 'nodel_sisi', 
+    name: '司司蟹黄面', 
+    description: '小司慕司放一个碗里，横行霸道蟹的蟹黄制作，口感鲜美，营养丰富。', 
+    type: 'consumable', 
+    effect: { health: 5 } 
+  },
+  { 
+    id: 'nodel_musiyunxian', 
+    name: '慕司云线面', 
+    description: '用慕司制作的线面。寓意着慕司和线面一样，不及时吃完就会无限繁殖', 
+    type: 'consumable', 
+    effect: { health: 3 } 
   }
 ];
