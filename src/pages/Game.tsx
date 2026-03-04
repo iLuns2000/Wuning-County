@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -367,6 +367,16 @@ export const Game: React.FC = () => {
           <header className="flex justify-between items-center py-10 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  navigate('/manual');
+                }}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                title="游戏说明"
+              >
+                <BookOpen size={20} />
+              </button>
               <button 
                 onClick={() => {
                   vibrate(VIBRATION_PATTERNS.LIGHT);
