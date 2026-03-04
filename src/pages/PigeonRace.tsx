@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bird, Dumbbell, Flag, Trophy, AlertTriangle, Clock, Pencil, Check } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { LogPanel } from '@/components/LogPanel';
-import { Pigeon, PigeonCondition, PigeonRaceType } from '@/types/game';
+import { PigeonCondition, PigeonRaceType } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 const CONDITION_LABELS: Record<PigeonCondition, { text: string; className: string }> = {
