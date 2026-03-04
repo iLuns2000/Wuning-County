@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -214,6 +214,70 @@ const buildRedemptionEvent = (npcId: string, stage: 1 | 2): GameEvent => {
   };
 };
 
+// ── 赛鸽纯函数 ────────────────────────────────────────────
+const clampStat = (v: number) => Math.max(1, Math.min(100, v));
+
+const getWeatherRaceRiskModifier = (weather: WeatherType) => {
+  switch (weather) {
+    case 'rain_heavy':
+    case 'snow_heavy':
+      return { lostBonus: 0.10, injuryBonus: 0.05, speedPenalty: 0.15 };
+    case 'rain_light':
+    case 'snow_light':
+      return { lostBonus: 0.05, injuryBonus: 0.02, speedPenalty: 0.08 };
+    default: // sunny / cloudy
+      return { lostBonus: 0.02, injuryBonus: 0.01, speedPenalty: 0 };
+  }
+};
+
+const calcPigeonRaceScore = (
+  pigeon: Pigeon,
+  raceType: PigeonRaceType,
+  weather: WeatherType,
+  rng = Math.random
+): number => {
+  const { speed, endurance, homing, courage } = pigeon.stats;
+  const modifier = getWeatherRaceRiskModifier(weather);
+  const fatiguePenalty = pigeon.fatigue / 200; // max -0.5 at fatigue=100
+  let base: number;
+  if (raceType === 'sprint') {
+    base = speed * 0.5 + endurance * 0.2 + homing * 0.2 + courage * 0.1;
+  } else {
+    base = endurance * 0.5 + homing * 0.3 + speed * 0.1 + courage * 0.1;
+  }
+  const noise = (rng() - 0.5) * 20; // ±10 random variance
+  return Math.max(0, base * (1 - modifier.speedPenalty) * (1 - fatiguePenalty) + noise);
+};
+
+const rollRaceRank = (score: number, rng = Math.random): number => {
+  // Score thresholds (against ~8 NPC opponents with avg score ~55)
+  // Rank 1: score >= 70; Rank 2: score >= 55; Rank 3: score >= 42
+  if (score >= 70) return rng() < 0.7 ? 1 : 2;
+  if (score >= 55) return rng() < 0.5 ? 2 : (rng() < 0.5 ? 1 : 3);
+  if (score >= 42) return 3;
+  return Math.min(8, Math.floor(4 + rng() * 5)); // 4-8
+};
+
+const calcRaceReward = (
+  raceType: PigeonRaceType,
+  rank: number
+): { money: number; reputation: number } => {
+  const table: Record<PigeonRaceType, Record<number, { money: number; reputation: number }>> = {
+    sprint: {
+      1: { money: 80, reputation: 12 },
+      2: { money: 45, reputation: 6 },
+      3: { money: 20, reputation: 2 },
+    },
+    endurance: {
+      1: { money: 130, reputation: 18 },
+      2: { money: 70, reputation: 9 },
+      3: { money: 30, reputation: 3 },
+    },
+  };
+  return table[raceType][rank] ?? { money: 0, reputation: 0 };
+};
+// ─────────────────────────────────────────────────────────
+
 const generateWeather = (seasonIndex: number): WeatherType => {
   const rand = Math.random();
 
@@ -369,6 +433,13 @@ interface GameStore extends GameState {
   checkUpgradeStatus: () => void;
   cancelUpgradeOffice: () => void;
   processResourceTick: () => void;
+
+  // 赛鸽系统
+  buyPigeon: (name?: string) => void;
+  renamePigeon: (id: string, name: string) => void;
+  trainPigeon: (id: string, mode: 'speed' | 'endurance' | 'homing') => void;
+  enterPigeonRace: (id: string, raceType: PigeonRaceType) => void;
+  selectPigeon: (id?: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -393,7 +464,7 @@ export const useGameStore = create<GameStore>()(
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
       collectedScrolls: [],
@@ -430,6 +501,10 @@ export const useGameStore = create<GameStore>()(
       leekFacilities: {},
       leekOrders: [],
       disasterState: { type: 'none', active: false, duration: 0, lastTriggerDay: 0 },
+      // 赛鸽系统初始状态
+      pigeons: [],
+      pigeonRaceHistory: [],
+      selectedPigeonId: undefined,
 
       markInteraction: () => {
         const state = get();
@@ -1144,7 +1219,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
           collectedScrolls: [],
@@ -1166,6 +1241,10 @@ export const useGameStore = create<GameStore>()(
           marketPrices: goods.reduce((acc, good) => ({ ...acc, [good.id]: good.basePrice }), {}),
           ownedGoods: {},
           ownedFacilities: {},
+          // 赛鸽系统
+          pigeons: [],
+          pigeonRaceHistory: [],
+          selectedPigeonId: undefined,
         });
 
         if (firstTask) {
@@ -1839,7 +1918,40 @@ export const useGameStore = create<GameStore>()(
             }
           });
 
+          // ── 赛鸽日结算 ────────────────────────────────────────
+          const pigeonMessages: string[] = [];
+          const newPigeons = (state.pigeons || []).map(pigeon => {
+            let updated = { ...pigeon };
+            // 受伤恢复倒计时
+            if (updated.condition === 'injured') {
+              const daysLeft = Math.max(0, (updated.injuredDaysLeft ?? 1) - 1);
+              if (daysLeft <= 0) {
+                updated = { ...updated, condition: 'healthy' as const, injuredDaysLeft: undefined };
+                pigeonMessages.push(`【赛鸽】${pigeon.name} 伤势已愈，恢复健康。`);
+              } else {
+                updated = { ...updated, injuredDaysLeft: daysLeft };
+              }
+            }
+            // 丢失归巢判定（按归巢值概率）
+            if (updated.condition === 'lost') {
+              const homingRate = updated.stats.homing / 100;
+              const weatherMod = getWeatherRaceRiskModifier(nextWeather);
+              const returnChance = Math.max(0.1, homingRate - weatherMod.lostBonus);
+              if (Math.random() < returnChance) {
+                updated = { ...updated, condition: 'healthy' as const };
+                pigeonMessages.push(`【赛鸽】${pigeon.name} 历尽艰辛，终于归巢！`);
+              } else {
+                pigeonMessages.push(`【赛鸽】${pigeon.name} 仍未返巢，继续等待…`);
+              }
+            }
+            // 疲劳自然恢复 -20
+            updated = { ...updated, fatigue: Math.max(0, updated.fatigue - 20) };
+            return updated;
+          });
+          // ─────────────────────────────────────────────────────
+
           const logs = [recoveryMessage, ...state.logs];
+          pigeonMessages.forEach(m => logs.unshift(m));
           if (policyMessage) logs.unshift(policyMessage);
           if (voiceMessage) logs.unshift(voiceMessage);
           if (facilityMessage) logs.unshift(facilityMessage);
@@ -1862,7 +1974,7 @@ export const useGameStore = create<GameStore>()(
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
             ownedFacilities: newOwnedFacilities,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
@@ -1876,6 +1988,7 @@ export const useGameStore = create<GameStore>()(
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
             ownedGoods: newOwnedGoods, // Apply spoilage & harvest
+            pigeons: newPigeons, // 赛鸽日结算
             leekPlots: (state.leekPlots || []).map(p => {
               // 0. Handle Mower Reset
               if (mowerHarvestedPlots.has(p.id)) {
@@ -2004,6 +2117,191 @@ export const useGameStore = create<GameStore>()(
           set({ inventory: newInventory });
         }
       },
+
+      // ── 赛鸽系统动作 ──────────────────────────────────────────
+      buyPigeon: (name) => {
+        const state = get();
+        const PRICE = 150;
+        if (state.playerStats.money < PRICE) {
+          get().addLog(`【赛鸽】购鸽失败：钱财不足（需 ${PRICE} 文）。`);
+          return;
+        }
+        const pigeonName = name || `信鸽·${String(state.pigeons.length + 1).padStart(2, '0')}`;
+        const newPigeon: Pigeon = {
+          id: `pigeon_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          name: pigeonName,
+          level: 1,
+          stats: {
+            speed:     Math.floor(20 + Math.random() * 25), // 20-44
+            endurance: Math.floor(20 + Math.random() * 25),
+            homing:    Math.floor(20 + Math.random() * 25),
+            courage:   Math.floor(20 + Math.random() * 25),
+          },
+          fatigue: 0,
+          condition: 'healthy',
+          winCount: 0,
+          raceCount: 0,
+        };
+        set(s => ({
+          playerStats: { ...s.playerStats, money: s.playerStats.money - PRICE },
+          pigeons: [...s.pigeons, newPigeon],
+        }));
+        get().addLog(`【赛鸽】以 ${PRICE} 文购得信鸽"${pigeonName}"（速度${newPigeon.stats.speed}/耐力${newPigeon.stats.endurance}/归巢${newPigeon.stats.homing}/胆气${newPigeon.stats.courage}）。`);
+        setTimeout(() => get().checkAchievements(), 0);
+      },
+
+      renamePigeon: (id, name) => {
+        set(s => ({
+          pigeons: s.pigeons.map(p => p.id === id ? { ...p, name } : p),
+        }));
+        get().addLog(`【赛鸽】信鸽更名为"${name}"。`);
+      },
+
+      trainPigeon: (id, mode) => {
+        const state = get();
+        const pigeon = (state.pigeons || []).find(p => p.id === id);
+        if (!pigeon) { get().addLog('【赛鸽】训练失败：未找到指定信鸽。'); return; }
+        if (pigeon.condition === 'injured') { get().addLog(`【赛鸽】${pigeon.name} 正在养伤，无法训练。`); return; }
+        if (pigeon.condition === 'lost')    { get().addLog(`【赛鸽】${pigeon.name} 尚未归巢，无法训练。`); return; }
+
+        // 消耗：体力 / 金钱
+        const costTable = { speed: { health: 4, money: 8 }, endurance: { health: 5, money: 10 }, homing: { health: 3, money: 6 } };
+        const cost = costTable[mode];
+        if (state.playerStats.health < cost.health) { get().addLog('【赛鸽】体力不足，无法训练。'); return; }
+        if (state.playerStats.money < cost.money)   { get().addLog('【赛鸽】钱财不足，无法支付训练费用。'); return; }
+
+        // 属性提升
+        const gain = 1 + Math.floor(Math.random() * 2); // 1-2
+        const fatigueAdd = mode === 'speed' ? 12 : mode === 'endurance' ? 10 : 8;
+        const newFatigue = Math.min(100, pigeon.fatigue + fatigueAdd);
+
+        // 副作用：疲劳 > 70 时有小概率受伤
+        let newCondition: import('@/types/game').PigeonCondition = pigeon.condition;
+        let injuredDaysLeft: number | undefined = pigeon.injuredDaysLeft;
+        let injuryMsg = '';
+        if (newFatigue > 70 && Math.random() < 0.12) {
+          newCondition = 'injured';
+          injuredDaysLeft = 1 + Math.floor(Math.random() * 2); // 1-2 天
+          injuryMsg = `过度训练导致 ${pigeon.name} 受伤，需要 ${injuredDaysLeft} 天恢复！`;
+        }
+
+        const statKey = mode === 'speed' ? 'speed' : mode === 'endurance' ? 'endurance' : 'homing';
+        const newStats = { ...pigeon.stats, [statKey]: clampStat(pigeon.stats[statKey] + gain) };
+
+        set(s => ({
+          playerStats: {
+            ...s.playerStats,
+            health: s.playerStats.health - cost.health,
+            money:  s.playerStats.money  - cost.money,
+          },
+          pigeons: s.pigeons.map(p => p.id === id
+            ? { ...p, stats: newStats, fatigue: newFatigue, condition: newCondition, injuredDaysLeft }
+            : p
+          ),
+        }));
+
+        const modeNames = { speed: '速度', endurance: '耐力', homing: '归巢' };
+        get().addLog(`【赛鸽】${pigeon.name} 完成${modeNames[mode]}训练，${modeNames[mode]}+${gain}（当前 ${newStats[statKey]}），疲劳度 ${newFatigue}。${injuryMsg}`);
+        setTimeout(() => get().checkAchievements(), 0);
+      },
+
+      enterPigeonRace: (id, raceType) => {
+        const state = get();
+        if ((state.dailyCounts.pigeonRace || 0) >= 1) {
+          get().addLog('【赛鸽】今日已参赛一次，明日再战。');
+          return;
+        }
+        const pigeon = (state.pigeons || []).find(p => p.id === id);
+        if (!pigeon) { get().addLog('【赛鸽】未找到指定信鸽。'); return; }
+        if (pigeon.condition === 'injured') { get().addLog(`【赛鸽】${pigeon.name} 正在养伤，无法参赛。`); return; }
+        if (pigeon.condition === 'lost')    { get().addLog(`【赛鸽】${pigeon.name} 尚未归巢，无法参赛。`); return; }
+
+        const entryFee = raceType === 'sprint' ? 20 : 35;
+        if (state.playerStats.money < entryFee) {
+          get().addLog(`【赛鸽】报名费不足（需 ${entryFee} 文）。`);
+          return;
+        }
+        if (state.playerStats.health < 5) {
+          get().addLog('【赛鸽】体力过低，无法亲自护送参赛。');
+          return;
+        }
+
+        // 计算分数与名次
+        const score = calcPigeonRaceScore(pigeon, raceType, state.weather);
+        const rank  = rollRaceRank(score);
+        const reward = rank <= 3 ? calcRaceReward(raceType, rank) : { money: 0, reputation: 0 };
+
+        // 风险判定
+        const riskMod = getWeatherRaceRiskModifier(state.weather);
+        let newCondition: import('@/types/game').PigeonCondition = pigeon.condition;
+        let injuredDaysLeft: number | undefined;
+        let riskMsg = '';
+        const lostRoll = Math.random();
+        const injRoll  = Math.random();
+        if (lostRoll < riskMod.lostBonus) {
+          newCondition = 'lost';
+          riskMsg = `${pigeon.name} 在归途迷失，下落不明！`;
+        } else if (injRoll < riskMod.injuryBonus) {
+          newCondition = 'injured';
+          injuredDaysLeft = 1 + Math.floor(Math.random() * 2);
+          riskMsg = `${pigeon.name} 比赛中受伤，需要 ${injuredDaysLeft} 天恢复。`;
+        }
+
+        const weatherNames: Record<string, string> = {
+          sunny: '晴', cloudy: '阴', rain_light: '小雨',
+          rain_heavy: '大雨', snow_light: '小雪', snow_heavy: '大雪'
+        };
+        const raceNames = { sprint: '短程飞行赛', endurance: '长程耐力赛' };
+        const rankText = rank <= 3 ? `第 ${rank} 名` : `第 ${rank} 名（未获奖）`;
+
+        const record: PigeonRaceRecord = {
+          day: state.day,
+          pigeonId: id,
+          raceType,
+          rank,
+          score: Math.round(score),
+          rewardMoney: reward.money,
+          rewardReputation: reward.reputation,
+          weather: state.weather,
+          note: riskMsg || undefined,
+        };
+
+        set(s => ({
+          playerStats: {
+            ...s.playerStats,
+            money:      s.playerStats.money - entryFee + reward.money,
+            reputation: Math.max(0, s.playerStats.reputation + reward.reputation),
+            health:     s.playerStats.health - 5,
+          },
+          pigeons: s.pigeons.map(p => p.id === id
+            ? {
+                ...p,
+                condition: newCondition,
+                injuredDaysLeft,
+                fatigue: Math.min(100, p.fatigue + 20),
+                winCount:  rank === 1 ? p.winCount + 1 : p.winCount,
+                raceCount: p.raceCount + 1,
+              }
+            : p
+          ),
+          pigeonRaceHistory: [record, ...(s.pigeonRaceHistory || [])].slice(0, 50),
+          dailyCounts: { ...s.dailyCounts, pigeonRace: (s.dailyCounts.pigeonRace || 0) + 1 },
+        }));
+
+        const rewardText = reward.money > 0
+          ? `获得 ${reward.money} 文、${reward.reputation} 声望`
+          : '无奖励';
+        get().addLog(
+          `【赛鸽·${raceNames[raceType]}】${pigeon.name} 在${weatherNames[state.weather]}天气中出赛，` +
+          `得分 ${Math.round(score)}，${rankText}。${rewardText}。${riskMsg}`
+        );
+        setTimeout(() => get().checkAchievements(), 0);
+      },
+
+      selectPigeon: (id) => {
+        set({ selectedPigeonId: id });
+      },
+      // ─────────────────────────────────────────────────────────
 
       handleEventOption: (effect, message) => {
         const state = get();
@@ -2315,11 +2613,14 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],
           officeState: { level: 1, isUpgrading: false },
+          pigeons: [],
+          pigeonRaceHistory: [],
+          selectedPigeonId: undefined,
         });
       },
 
@@ -2850,6 +3151,9 @@ export const useGameStore = create<GameStore>()(
         isExploring: state.isExploring,
         exploreResult: state.exploreResult,
         officeState: state.officeState,
+        pigeons: state.pigeons,
+        pigeonRaceHistory: state.pigeonRaceHistory,
+        selectedPigeonId: state.selectedPigeonId,
       }), // Save everything except actions
     }
   )

@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -651,6 +651,20 @@ export const Game: React.FC = () => {
               <span className="text-sm font-medium">游乐坊</span>
             </button>
 
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/pigeon-race');
+              }}
+              disabled={!!currentEvent}
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+            >
+              <div className="p-2 text-sky-600 bg-sky-100 rounded-lg transition-transform dark:bg-sky-950/30 dark:text-sky-400 group-hover:scale-110">
+                <Bird size={18} />
+              </div>
+              <span className="text-sm font-medium">赛鸽场</span>
+            </button>
+
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
@@ -799,7 +813,7 @@ export const Game: React.FC = () => {
       {showPlayStreet && <PlayStreetModal onClose={() => setShowPlayStreet(false)} />}
       {showTreasure && <TreasureModal onClose={() => setShowTreasure(false)} />}
       {showCharity && <CharityModal onClose={() => setShowCharity(false)} />}
-      
+
       {showTeaPopup && (
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">
           <div className="p-6 max-w-sm text-center rounded-lg shadow-xl duration-300 bg-card border-primary/20 animate-in fade-in zoom-in">

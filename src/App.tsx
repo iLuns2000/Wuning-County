@@ -20,6 +20,7 @@ import { Collection } from '@/pages/Collection';
 import { Credits } from '@/pages/Credits';
 import { Developer } from '@/pages/Developer';
 import { SaveViewer } from '@/pages/SaveViewer';
+import { PigeonRace } from '@/pages/PigeonRace';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
 
@@ -48,6 +49,7 @@ function App() {
         <Route path="/credits" element={<Credits />} />
         <Route path="/developer" element={<Developer />} />
         <Route path="/save-view" element={<SaveViewer />} />
+        <Route path="/pigeon-race" element={<PigeonRace />} />
       </Routes>
       <NewYearCountdownBanner />
       <FireworksSplash />

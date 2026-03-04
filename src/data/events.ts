@@ -700,7 +700,129 @@ export const randomEvents: GameEvent[] = [
         }
       }
     ]
+  },
+  // ── 赛鸽系统随机事件 ──────────────────────────────────────
+  {
+    id: 'pigeon_rain_before_race',
+    title: '赛前突雨',
+    description: '比赛前夕骤降急雨，信鸽们躁动不安，今日短程赛风险大增。',
+    type: 'random',
+    triggerCondition: {
+      probability: 0.08,
+      custom: (state) =>
+        (state.pigeons || []).length > 0 &&
+        (state.weather === 'rain_heavy' || state.weather === 'rain_light')
+    },
+    options: [
+      {
+        label: '冒雨参赛',
+        message: '雨中赛道泥泞，鸽影难辨，不过也是历练。',
+        effect: { flagsSet: { pigeon_rain_penalty: true } }
+      },
+      {
+        label: '谨慎等待',
+        message: '你决定让信鸽休养，此次放弃今日比赛。',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'pigeon_road_repair',
+    title: '驿路修缮',
+    description: '官府重修了北路驿道，路标明确，利于信鸽归巢。今日归巢训练格外顺畅。',
+    type: 'opportunity',
+    triggerCondition: {
+      probability: 0.06,
+      custom: (state) => (state.pigeons || []).length > 0
+    },
+    options: [
+      {
+        label: '把握时机，加强归巢训练',
+        message: '驿路畅通，信鸽归巢训练效果倍增，归巢值额外+2。',
+        effect: { flagsSet: { pigeon_road_bonus: true } }
+      },
+      {
+        label: '平常心对待',
+        message: '你未曾在意此事，日子照常。',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'pigeon_mystery_whistle',
+    title: '神秘鸽哨',
+    description: '集市上一位老者兜售一只精雕鸽哨，据说能稳定信鸽情绪，训练效果更佳。',
+    type: 'opportunity',
+    triggerCondition: {
+      probability: 0.05,
+      custom: (state) => (state.pigeons || []).length > 0 && state.playerStats.money >= 30
+    },
+    options: [
+      {
+        label: '购买（30文）',
+        message: '鸽哨音色悠扬，信鸽听闻后情绪平稳，今日训练额外+1属性。',
+        effect: { money: -30, flagsSet: { pigeon_whistle_bonus: true } }
+      },
+      {
+        label: '婉拒',
+        message: '你觉得不过是商贩噱头，转身离开。',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'pigeon_black_market_tip',
+    title: '黑市情报',
+    description: '一名神秘人悄悄靠近，低声说能给你提供赛鸽内幕——要么降低报名费，要么提高彩头。',
+    type: 'opportunity',
+    triggerCondition: {
+      probability: 0.04,
+      custom: (state) =>
+        (state.pigeons || []).length > 0 && state.playerStats.reputation >= 20
+    },
+    options: [
+      {
+        label: '打探降低报名费之道',
+        message: '神秘人告知今日可凭此消息节省报名费 15 文。',
+        effect: { money: 15, reputation: -2 }
+      },
+      {
+        label: '打探提高奖励之道',
+        message: '神秘人透露若今日夺冠，额外获赏 30 文。',
+        effect: { flagsSet: { pigeon_bonus_reward: 30 }, reputation: -2 }
+      },
+      {
+        label: '拒绝，不与此人为伍',
+        message: '你不屑与此等人为伍，拂袖而去。',
+        effect: { reputation: 3 }
+      }
+    ]
+  },
+  {
+    id: 'pigeon_veteran_advice',
+    title: '老鸽师指点',
+    description: '茶馆里一位头发斑白的老鸽师闲聊间透露了几句驯鸽心得，令你颇受启发。',
+    type: 'opportunity',
+    triggerCondition: {
+      probability: 0.05,
+      custom: (state) =>
+        (state.pigeons || []).length > 0 &&
+        (state.npcRelations['lao_li'] || 0) >= 10
+    },
+    options: [
+      {
+        label: '虚心请教（体力-5）',
+        message: '老鸽师侃侃而谈，你记下了要点，信鸽训练效率将有所提升。',
+        effect: { health: -5, ability: 5, reputation: 3 }
+      },
+      {
+        label: '礼貌道别',
+        message: '你点头称谢，各自散去。',
+        effect: {}
+      }
+    ]
   }
+  // ─────────────────────────────────────────────────────────
 ];
 
 export const npcEvents: GameEvent[] = [

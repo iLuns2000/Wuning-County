@@ -82,6 +82,43 @@ export interface CountyStats {
   livelihood: number;
 }
 
+// ── 赛鸽系统 ──────────────────────────────────────────────
+export type PigeonCondition = 'healthy' | 'tired' | 'injured' | 'lost';
+
+export type PigeonRaceType = 'sprint' | 'endurance';
+
+export interface PigeonStats {
+  speed: number;      // 1-100
+  endurance: number;  // 1-100
+  homing: number;     // 1-100
+  courage: number;    // 1-100
+}
+
+export interface Pigeon {
+  id: string;
+  name: string;
+  level: number;
+  stats: PigeonStats;
+  fatigue: number;           // 0-100
+  condition: PigeonCondition;
+  injuredDaysLeft?: number;  // days until recovery from 'injured'
+  winCount: number;
+  raceCount: number;
+}
+
+export interface PigeonRaceRecord {
+  day: number;
+  pigeonId: string;
+  raceType: PigeonRaceType;
+  rank: number;
+  score: number;
+  rewardMoney: number;
+  rewardReputation: number;
+  weather: WeatherType;
+  note?: string;
+}
+// ─────────────────────────────────────────────────────────
+
 export interface DailyActionCounts {
   work: number;
   rest: number;
@@ -89,6 +126,7 @@ export interface DailyActionCounts {
   fortune: number; // Daily fortune telling count
   explore: number; // Daily exploration count
   caveFilled: boolean; // Whether the cave has been filled today
+  pigeonRace: number; // 赛鸽比赛次数（每日上限 1）
 }
 
 export interface NPCInteractionState {
@@ -173,6 +211,11 @@ export interface GameState {
 
   // Office State
   officeState: OfficeState;
+
+  // 赛鸽系统
+  pigeons: Pigeon[];
+  pigeonRaceHistory: PigeonRaceRecord[];
+  selectedPigeonId?: string;
 }
 
 export interface DisasterState {

@@ -548,5 +548,38 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '在泠音乐坊听曲儿达 20 次',
     rewardExp: 100,
     condition: (state) => (state.flags['lingyin_listen_count'] || 0) >= 20
+  },
+  // ── 赛鸽系统成就 ──────────────────────────────────────────
+  {
+    id: 'pigeon_first_win',
+    name: '一鸣惊人',
+    description: '首次在赛鸽比赛中夺得第一名',
+    rewardExp: 80,
+    condition: (state) => (state.pigeons || []).some(p => p.winCount >= 1)
+  },
+  {
+    id: 'pigeon_three_win_streak',
+    name: '连战连捷',
+    description: '同一只信鸽累计赢得 3 场比赛',
+    rewardExp: 150,
+    condition: (state) => (state.pigeons || []).some(p => p.winCount >= 3)
+  },
+  {
+    id: 'pigeon_master_trainer',
+    name: '鸽坛圣手',
+    description: '任意信鸽的单项属性（速度/耐力/归巢）达到 90',
+    rewardExp: 200,
+    condition: (state) =>
+      (state.pigeons || []).some(p =>
+        p.stats.speed >= 90 || p.stats.endurance >= 90 || p.stats.homing >= 90
+      )
+  },
+  {
+    id: 'pigeon_legend',
+    name: '鸽中传奇',
+    description: '累计参加 20 场赛鸽比赛',
+    rewardExp: 300,
+    condition: (state) =>
+      (state.pigeons || []).reduce((sum, p) => sum + p.raceCount, 0) >= 20
   }
 ];
