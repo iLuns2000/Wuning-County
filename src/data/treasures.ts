@@ -1,3 +1,13 @@
+/*
+ * @Author: xyZhan
+ * @Date: 2026-02-19 15:49:53
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-03-01 19:17:04
+ * @FilePath: \textgame\src\data\treasures.ts
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+ */
 import { Item } from '@/types/game';
 
 export const treasures: Item[] = [

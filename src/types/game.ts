@@ -88,6 +88,7 @@ export interface DailyActionCounts {
   chatTotal: number; // Total chats today across all NPCs
   fortune: number; // Daily fortune telling count
   explore: number; // Daily exploration count
+  caveFilled: boolean; // Whether the cave has been filled today
 }
 
 export interface NPCInteractionState {

@@ -2,13 +2,13 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-31 18:35:54
+ * @LastEditTime: 2026-03-01 18:58:37
  * @FilePath: \textgame\src\pages\NPCList.tsx
  * @Description: 
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
-import React, { useState, useMemo, useDeferredValue } from 'react';
+import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Gift, MessageCircle, Sparkles, Search } from 'lucide-react';
 import { npcs } from '@/data/npcs';
@@ -38,8 +38,22 @@ export const NPCList: React.FC = () => {
     dismissEvent
   } = useGameStore();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortType, setSortType] = useState<SortType>('default');
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return sessionStorage.getItem('npcSearchTerm') || '';
+  });
+  const [sortType, setSortType] = useState<SortType>(() => {
+    return (sessionStorage.getItem('npcSortType') as SortType) || 'default';
+  });
+
+  // 当搜索词变化时，保存到sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('npcSearchTerm', searchTerm);
+  }, [searchTerm]);
+
+  // 当排序类型变化时，保存到sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('npcSortType', sortType);
+  }, [sortType]);
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
@@ -165,8 +179,17 @@ export const NPCList: React.FC = () => {
                 placeholder="搜索 NPC 姓名、称号、描述..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.currentTarget.value)}
-                className="py-2 pr-4 pl-9 w-full text-sm rounded-md border-none outline-none bg-secondary/50 focus:ring-1 focus:ring-primary"
+                className="py-2 pr-10 pl-9 w-full text-sm rounded-md border-none outline-none bg-secondary/50 focus:ring-1 focus:ring-primary"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transition-colors -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  title="清空搜索"
+                >
+                  ×
+                </button>
+              )}
             </div>
             
             <div className="flex gap-2">

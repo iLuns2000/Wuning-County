@@ -23,7 +23,7 @@ import { SnackStreetModal } from '@/components/SnackStreetModal';
 import { TreasureModal } from '@/components/TreasureModal';
 import { CharityModal } from '@/components/CharityModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
-import { Settings, Backpack, Compass, Leaf, Utensils, Trees } from 'lucide-react';
+import { Settings, Backpack, Compass, Leaf, Utensils, Trees, Shovel } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
@@ -80,7 +80,8 @@ export const Game: React.FC = () => {
     equippedApparel,
     equippedAccessories,
     processResourceTick,
-    dismissEvent
+    dismissEvent,
+    fillCave
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -682,6 +683,20 @@ export const Game: React.FC = () => {
                   无法探险
                 </div>
               )}
+            </button>
+
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                fillCave();
+              }}
+              disabled={!!currentEvent || dailyCounts.caveFilled}
+              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+            >
+              <div className="p-2 text-amber-600 bg-amber-100 rounded-lg transition-transform dark:bg-amber-950/30 dark:text-amber-400 group-hover:scale-110">
+                <Shovel size={18} />
+              </div>
+              <span className="text-sm font-medium">填洞 (100文)</span>
             </button>
 
             <button 

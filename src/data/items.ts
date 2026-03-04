@@ -865,6 +865,12 @@ export const items: Item[] = [
     name: '金话筒',
     description: '坊主为了回馈喜欢听他唱歌的人的礼物。真的是金的吗？',
     type: 'treasure'
+  },
+  {
+    id: 'xianhe_grass',
+    name: '仙鹤草',
+    description: '一种珍贵的草药，积累到一定数量后可获得特殊称号。',
+    type: 'material'
   }
 ];
 

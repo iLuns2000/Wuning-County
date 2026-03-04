@@ -829,7 +829,8 @@ export const npcs: NPC[] = [
         "请问哪里有好吃的小吃摊？我有些饿了。",
         "义诊虽累，但能帮到人，心里还是挺开心的。"
       ]
-    }
+    },
+    interactionEventIds: ["ji_yi_ou_interact"]
   },
   {
     id: "guan_yu_zai_hua_gang",
