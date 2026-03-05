@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Building2, ArrowUpCircle, Hammer, Timer, Zap } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { officeUpgrades } from '@/data/officeUpgrades';
+import { countyDevelopmentPaths } from '@/data/countyDevelopmentPaths';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface OfficeModalProps {
@@ -17,7 +18,9 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
     speedUpUpgrade,
     completeUpgrade,
     checkUpgradeStatus,
-    cancelUpgradeOffice
+    cancelUpgradeOffice,
+    countyDevelopment,
+    setCountyDevelopmentPath
   } = useGameStore();
   
   // Safety check for legacy saves
@@ -38,6 +41,13 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
   const isUpgrading = currentOfficeState.isUpgrading;
   const nextConfig = officeUpgrades.find(u => u.level === currentLevel + 1);
   
+
+  const availablePaths = countyDevelopmentPaths.filter(path => path.unlockLevel <= currentLevel);
+
+  const renderPathDescription = (pathId: typeof countyDevelopment.currentPath) => {
+    if (pathId === 'none') return '未选择';
+    return countyDevelopmentPaths.find(path => path.id === pathId)?.name || '未选择';
+  };
   // Calculate resources
   const woodCount = inventory.filter(id => id === 'wood').length;
   const stoneCount = inventory.filter(id => id === 'stone').length;
@@ -89,6 +99,41 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
                      <div className="text-xs text-muted-foreground mt-2">
                         下一级解锁: {nextConfig?.benefits.unlocks?.join('、') || '更高资源产量与仓库容量'}
                      </div>
+                )}
+            </div>
+
+            <div className="bg-card p-4 rounded-lg border border-border shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-base">县城发展路线</h3>
+                    <span className="text-xs text-muted-foreground">当前：{renderPathDescription(countyDevelopment.currentPath)}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {countyDevelopmentPaths.map(path => {
+                        const unlocked = currentLevel >= path.unlockLevel;
+                        const active = countyDevelopment.currentPath === path.id;
+                        return (
+                            <button
+                                key={path.id}
+                                disabled={!unlocked || active}
+                                onClick={() => {
+                                    vibrate(VIBRATION_PATTERNS.LIGHT);
+                                    setCountyDevelopmentPath(path.id);
+                                }}
+                                className={`text-left p-3 rounded-lg border transition-colors ${active ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' : 'border-border hover:border-indigo-300'} ${!unlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                <div className="text-sm font-semibold">{path.name}</div>
+                                <div className="text-xs text-muted-foreground mt-1">{path.description}</div>
+                                <div className="text-[11px] text-muted-foreground mt-2">
+                                    {unlocked ? '可启用' : `官邸LV.${path.unlockLevel}解锁`}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+                {availablePaths.length > 0 && countyDevelopment.currentPath !== 'none' && (
+                    <div className="text-xs text-muted-foreground">
+                        切换路线将花费 500 文（首次选择免费）。
+                    </div>
                 )}
             </div>
 

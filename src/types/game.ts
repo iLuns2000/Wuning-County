@@ -82,6 +82,13 @@ export interface CountyStats {
   livelihood: number;
 }
 
+export type CountyDevelopmentPathId = 'none' | 'trade' | 'stability' | 'culture' | 'balanced';
+
+export interface CountyDevelopmentState {
+  currentPath: CountyDevelopmentPathId;
+  lastSwitchedDay: number;
+}
+
 // ── 赛鸽系统 ──────────────────────────────────────────────
 export type PigeonCondition = 'healthy' | 'tired' | 'injured' | 'lost';
 
@@ -211,6 +218,7 @@ export interface GameState {
 
   // Office State
   officeState: OfficeState;
+  countyDevelopment: CountyDevelopmentState;
 
   // 赛鸽系统
   pigeons: Pigeon[];
