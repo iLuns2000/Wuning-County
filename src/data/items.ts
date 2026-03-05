@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @Author: xyZhan
  * @Date: 2026-01-20 20:03:30
  * @LastEditors: xyZhan
@@ -867,6 +867,41 @@ export const items: Item[] = [
     type: 'treasure'
   },
   {
+    id: 'ji_yi_ou_healthy_diet_chat',
+    name: '怎样的饮食才算健康的唠嗑',
+    description: '季一藕与你探讨均衡饮食记录，日常三餐的黄金准则。',
+    type: 'misc'
+  },
+  {
+    id: 'ji_yi_ou_pingan_pulse',
+    name: '平安脉',
+    description: '季一藕亲自把脉后的平安签记，象征气血调和。',
+    type: 'misc'
+  },
+  {
+    id: 'ji_yi_ou_seasonal_health_tips',
+    name: '当下节气养生的相关事宜',
+    description: '记有顺应节气调养作息与饮食的随手札记。',
+    type: 'misc'
+  },
+  {
+    id: 'ji_yi_ou_earnest_advice',
+    name: '语重心长的教诲',
+    description: '季一藕反复叮嘱的养生心得，字里行间满是关切。',
+    type: 'misc'
+  },
+  {
+    id: 'ji_yi_ou_moxibustion_experience',
+    name: '艾灸体验',
+    description: '一次温和的艾灸体验记录，帮助你更懂经络调理。',
+    type: 'misc'
+  },
+  {
+    id: 'ji_yi_ou_acupuncture_experience',
+    name: '针灸体验',
+    description: '季一藕指导下完成的针灸体验，体会经气运行之妙。',
+    type: 'misc'
+  },  {
     id: 'xianhe_grass',
     name: '仙鹤草',
     description: '一种珍贵的草药，积累到一定数量后可获得特殊称号。',
@@ -877,3 +912,4 @@ export const items: Item[] = [
 export const getItemById = (id: string): Item | undefined => {
     return items.find(i => i.id === id);
 };
+
