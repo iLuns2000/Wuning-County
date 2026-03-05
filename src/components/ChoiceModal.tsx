@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Briefcase, BookOpen, User } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface ChoiceModalProps {
