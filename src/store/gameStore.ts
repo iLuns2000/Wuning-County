@@ -441,6 +441,7 @@ interface GameStore extends GameState {
   checkUpgradeStatus: () => void;
   cancelUpgradeOffice: () => void;
   setCountyDevelopmentPath: (pathId: CountyDevelopmentPathId) => void;
+  maintainCountyDefense: () => void;
   processResourceTick: () => void;
 
   // 赛鸽系统
@@ -464,6 +465,7 @@ export const useGameStore = create<GameStore>()(
       vibrationEnabled: true,
       officeState: { level: 1, isUpgrading: false },
       countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+      externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -1256,6 +1258,7 @@ export const useGameStore = create<GameStore>()(
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
           countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
         });
 
         if (firstTask) {
@@ -1923,6 +1926,54 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
+          // External Threat (Bandits / War)
+          let threatMessage = '';
+          let warMessage = '';
+          let isGameOver = state.isGameOver;
+          const avgCounty = (newCountyStats.economy + newCountyStats.order + newCountyStats.culture + newCountyStats.livelihood) / 4;
+          const noMaintenancePenalty = state.flags['defense_maintained_daily'] ? 0 : 4;
+          const declinePenalty = avgCounty < 50 ? Math.ceil((50 - avgCounty) / 6) : -2;
+          const orderPenalty = newCountyStats.order < 35 ? 3 : 0;
+          const disasterPenalty = nextDisasterState.active ? 3 : 0;
+          const officeDefenseBonus = Math.floor((state.officeState?.level || 1) / 2);
+
+          const nextDefense = Math.max(0, Math.min(100, (state.externalThreat?.defense || 40) - 2 + officeDefenseBonus));
+          const nextBanditThreat = Math.max(0, Math.min(100, (state.externalThreat?.banditThreat || 15) + noMaintenancePenalty + declinePenalty + orderPenalty + disasterPenalty));
+          const riskBase = nextBanditThreat - Math.floor(nextDefense * 0.6) + (newCountyStats.order < 25 ? 8 : 0);
+          const nextWarRisk = Math.max(0, Math.min(100, riskBase));
+
+          let nextExternalThreat = {
+            banditThreat: nextBanditThreat,
+            defense: nextDefense,
+            warRisk: nextWarRisk,
+            lastRaidDay: state.externalThreat?.lastRaidDay || 0,
+          };
+
+          if (!state.flags['defense_maintained_daily']) {
+            threatMessage = '【边防】今日未进行巡防维护，山贼活动加剧。';
+          }
+
+          if (nextWarRisk >= 70 && (nextDayVal - nextExternalThreat.lastRaidDay) >= 3 && Math.random() < (nextWarRisk - 60) / 100) {
+            const moneyLoss = Math.min(newPlayerStats.money, Math.floor(80 + nextWarRisk * 2));
+            const orderLoss = Math.min(newCountyStats.order, 8);
+            const livelihoodLoss = Math.min(newCountyStats.livelihood, 6);
+            newPlayerStats.money -= moneyLoss;
+            newCountyStats.order = Math.max(0, newCountyStats.order - orderLoss);
+            newCountyStats.livelihood = Math.max(0, newCountyStats.livelihood - livelihoodLoss);
+            nextExternalThreat = {
+              ...nextExternalThreat,
+              banditThreat: Math.min(100, nextExternalThreat.banditThreat + 6),
+              warRisk: Math.min(100, nextExternalThreat.warRisk + 8),
+              lastRaidDay: nextDayVal,
+            };
+            warMessage = `【战火】山贼夜袭县境，损失银两 ${moneyLoss} 文，治安-${orderLoss}、民生-${livelihoodLoss}。`;
+          }
+
+          if (nextExternalThreat.warRisk >= 95 && newCountyStats.order <= 10 && newCountyStats.economy <= 10) {
+            isGameOver = true;
+            warMessage = '【战火覆城】县城长期失修、民心离散，最终毁于战火。';
+          }
+
           // Reset daily flags
           const newFlags = { ...state.flags };
           Object.keys(newFlags).forEach(key => {
@@ -1975,6 +2026,8 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
+          if (threatMessage) logs.unshift(threatMessage);
+          if (warMessage) logs.unshift(warMessage);
           // 
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1983,6 +2036,8 @@ export const useGameStore = create<GameStore>()(
             day: state.day + 1,
             weather: nextWeather,
             disasterState: nextDisasterState,
+            externalThreat: nextExternalThreat,
+            isGameOver,
             marketState: newMarketState,
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
@@ -2104,6 +2159,7 @@ export const useGameStore = create<GameStore>()(
           };
         });
         get().addLog(`第 ${get().day} 天`);
+        if (get().isGameOver) return;
         get().checkAchievements();
         get().checkTaskCompletion();
         get().triggerEvent();
@@ -2658,6 +2714,7 @@ export const useGameStore = create<GameStore>()(
           equippedAccessories: [],
           officeState: { level: 1, isUpgrading: false },
           countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
@@ -2787,6 +2844,7 @@ export const useGameStore = create<GameStore>()(
           vibrationEnabled: state.vibrationEnabled,
           officeState: state.officeState,
           countyDevelopment: state.countyDevelopment,
+          externalThreat: state.externalThreat,
           disasterState: state.disasterState,
           isExploring: state.isExploring,
           exploreResult: state.exploreResult,
@@ -2851,6 +2909,7 @@ export const useGameStore = create<GameStore>()(
             'vibrationEnabled',
             'officeState',
             'countyDevelopment',
+            'externalThreat',
             'disasterState',
             'isExploring',
             'exploreResult',
@@ -2882,6 +2941,7 @@ export const useGameStore = create<GameStore>()(
               state.officeState ||
               ({ level: 1, isUpgrading: false } as any),
             countyDevelopment: (nextState as any).countyDevelopment || state.countyDevelopment || { currentPath: 'none', lastSwitchedDay: 1 },
+            externalThreat: (nextState as any).externalThreat || state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
             disasterState: (nextState as any).disasterState || state.disasterState,
             timeSettings: (nextState as any).timeSettings || state.timeSettings,
           }));
@@ -3182,6 +3242,43 @@ export const useGameStore = create<GameStore>()(
         get().addLog(`【治县路线】已调整为「${targetPath.name}」。${switchCost > 0 ? ` 消耗${switchCost}文。` : ''}`);
       },
 
+      maintainCountyDefense: () => {
+        const state = get();
+        if (state.flags['defense_maintained_daily']) {
+          get().addLog('【边防】今日已完成巡防维护。');
+          return;
+        }
+
+        const cost = 30;
+        if (state.playerStats.money < cost) {
+          get().addLog(`【边防】巡防维护需要 ${cost} 文。`);
+          return;
+        }
+
+        const current = state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 };
+        const defenseGain = 8;
+        const threatReduction = 6;
+
+        set(prev => ({
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - cost,
+          },
+          externalThreat: {
+            ...current,
+            defense: Math.min(100, current.defense + defenseGain),
+            banditThreat: Math.max(0, current.banditThreat - threatReduction),
+            warRisk: Math.max(0, current.warRisk - threatReduction),
+          },
+          flags: {
+            ...prev.flags,
+            defense_maintained_daily: true,
+          }
+        }));
+
+        get().addLog('【边防】你组织了巡防队与乡勇，边防戒备得到加强。');
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
@@ -3234,6 +3331,7 @@ export const useGameStore = create<GameStore>()(
         exploreResult: state.exploreResult,
         officeState: state.officeState,
         countyDevelopment: state.countyDevelopment,
+        externalThreat: state.externalThreat,
         pigeons: state.pigeons,
         pigeonRaceHistory: state.pigeonRaceHistory,
         selectedPigeonId: state.selectedPigeonId,

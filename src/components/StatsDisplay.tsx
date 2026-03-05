@@ -1,6 +1,6 @@
 import React from 'react';
-import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot } from '@/types/game';
-import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun, Building2 } from 'lucide-react';
+import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot, ExternalThreatState } from '@/types/game';
+import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun, Building2, Flame } from 'lucide-react';
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
 
@@ -16,6 +16,7 @@ interface StatsDisplayProps {
   onOpenOffice?: () => void;
   equippedApparel: Partial<Record<ApparelSlot, string>>;
   equippedAccessories: string[];
+  externalThreat?: ExternalThreatState;
 }
 
 const StatItem = ({ icon: Icon, value, label, color }: any) => (
@@ -49,7 +50,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   onOpenAchievements,
   equippedApparel,
   equippedAccessories,
-  onOpenOffice
+  onOpenOffice,
+  externalThreat
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
   const itemMap = new Map(items.map(item => [item.id, item]));
@@ -186,6 +188,13 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           <StatItem icon={BookOpen} value={countyStats.culture} label="文化" color="text-pink-500" />
           <StatItem icon={Users} value={countyStats.livelihood} label="民生" color="text-orange-500" />
         </div>
+        {externalThreat && (
+          <div className="grid grid-cols-3 gap-2">
+            <StatItem icon={Flame} value={externalThreat.banditThreat} label="匪患" color="text-red-500" />
+            <StatItem icon={Shield} value={externalThreat.defense} label="边防" color="text-cyan-600" />
+            <StatItem icon={Flame} value={externalThreat.warRisk} label="战火风险" color="text-rose-600" />
+          </div>
+        )}
         
         <button 
           onClick={onOpenOffice}

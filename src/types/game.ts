@@ -89,6 +89,14 @@ export interface CountyDevelopmentState {
   lastSwitchedDay: number;
 }
 
+
+export interface ExternalThreatState {
+  banditThreat: number; // 0-100
+  defense: number; // 0-100
+  warRisk: number; // 0-100
+  lastRaidDay: number;
+}
+
 // ── 赛鸽系统 ──────────────────────────────────────────────
 export type PigeonCondition = 'healthy' | 'tired' | 'injured' | 'lost';
 
@@ -219,6 +227,7 @@ export interface GameState {
   // Office State
   officeState: OfficeState;
   countyDevelopment: CountyDevelopmentState;
+  externalThreat: ExternalThreatState;
 
   // 赛鸽系统
   pigeons: Pigeon[];
