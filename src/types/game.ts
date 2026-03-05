@@ -235,6 +235,13 @@ export interface GameState {
   pigeons: Pigeon[];
   pigeonRaceHistory: PigeonRaceRecord[];
   selectedPigeonId?: string;
+
+  // 战火警报
+  raidAlert?: boolean; // 当日发生山贼夜袭时为 true，展示警报动画后清除
+
+  // Debuff 系统
+  activeDebuffs: ActiveDebuff[];
+  lastDebuffCheckDay: number;
 }
 
 export interface DisasterState {
@@ -286,6 +293,8 @@ export interface EventOption {
   label: string;
   effect?: Effect;
   message: string;
+  /** 选择此选项后附加的 Debuff id 列表 */
+  addDebuffIds?: string[];
 }
 
 export interface GameEvent {
@@ -381,4 +390,108 @@ export interface LeekPlot {
   quality?: number;
   ready?: boolean;
   fertility?: number; // 0-100
+}
+
+// ── Debuff 系统 ──────────────────────────────────────────
+
+/** Debuff 触发方式 */
+export type DebuffTriggerType =
+  | 'threshold'      // 阈值触发（某属性低于/高于某值）
+  | 'event'          // 事件选项触发
+  | 'raid'           // 战火/夜袭触发
+  | 'consecutive'    // 连续天数行为触发
+  | 'probability';   // 概率触发
+
+/** 单条 Debuff 的触发条件描述 */
+export interface DebuffTrigger {
+  type: DebuffTriggerType;
+  /** 阈值触发：检查的字段（支持 countyStats.* / externalThreat.warRisk 等点路径） */
+  field?: string;
+  /** 阈值方向：'below' 表示低于，'above' 表示高于 */
+  direction?: 'below' | 'above';
+  value?: number;
+  /** 连续天数触发：需要满足条件的最少天数 */
+  consecutiveDays?: number;
+  /** 概率触发：0~1 */
+  probability?: number;
+  /** 自定义触发检查（运行时注入） */
+  custom?: (state: GameState) => boolean;
+}
+
+/** Debuff 对属性的每日效果 */
+export interface DebuffEffect {
+  /** 县城属性每日增量（负数为扣减） */
+  economy?: number;
+  order?: number;
+  culture?: number;
+  livelihood?: number;
+  /** 玩家资源每日增量 */
+  money?: number;
+  reputation?: number;
+  /** 即时一次性效果（触发时立即生效） */
+  immediateEconomy?: number;
+  immediateOrder?: number;
+  immediateCulture?: number;
+  immediateLivelihood?: number;
+  immediateMoney?: number;
+  immediateReputation?: number;
+  /** 百分比修正（乘区，-0.2 表示减少 20%） */
+  facilityIncomeMultiplier?: number;    // 对产业收益的乘区（-0.15 = -15%）
+  cultureGainMultiplier?: number;       // 对文化正收益的乘区
+}
+
+/** 叠层规则 */
+export type DebuffStackRule = 'none' | 'refresh' | 'stack';
+// none: 已有则忽略新触发
+// refresh: 刷新持续时间
+// stack: 叠加（最多 maxStacks 层）
+
+/** Debuff 解除方式 */
+export interface DebuffClearMethod {
+  /** 解除方式标识 */
+  id: string;
+  /** 展示描述 */
+  label: string;
+  /** 花钱数量（正数） */
+  moneyCost?: number;
+  /** 花声望数量（正数） */
+  reputationCost?: number;
+  /** 是否需要健康/体力消耗 */
+  healthCost?: number;
+  /** 是否通过满足某属性阈值自动解除 */
+  autoCondition?: (state: GameState) => boolean;
+  /** 通过特定行为/flag 解除 */
+  requiredFlag?: string;
+}
+
+/** Debuff 配置项（静态配置表） */
+export interface DebuffConfig {
+  id: string;
+  name: string;
+  description: string;
+  /** 严重程度：minor / moderate / severe */
+  severity: 'minor' | 'moderate' | 'severe';
+  trigger: DebuffTrigger;
+  /** 持续天数（-1 = 直到满足解除条件） */
+  duration: number;
+  effects: DebuffEffect;
+  clearMethods: DebuffClearMethod[];
+  stackRule: DebuffStackRule;
+  maxStacks?: number;
+}
+
+/** 运行中的 Debuff 实例（存入 GameState） */
+export interface ActiveDebuff {
+  /** 对应 DebuffConfig.id */
+  configId: string;
+  /** 触发于第几天 */
+  triggeredDay: number;
+  /** 剩余天数（-1 = 无限直到手动解除） */
+  remainingDays: number;
+  /** 当前叠层数（从 1 开始） */
+  stacks: number;
+  /** 是否已应用即时效果 */
+  immediateApplied: boolean;
+  /** 触发来源描述（用于日志） */
+  source?: string;
 }

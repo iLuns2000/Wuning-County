@@ -29,6 +29,8 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
 import { PlayStreetModal } from '@/components/PlayStreetModal';
 import { WillowGardenModal } from '@/components/WillowGardenModal';
+import { RaidAlertOverlay } from '@/components/RaidAlertOverlay';
+import { DebuffPanel } from '@/components/DebuffPanel';
 import { items } from '@/data/items';
 import { Effect, StyleTag } from '@/types/game';
 
@@ -87,7 +89,9 @@ export const Game: React.FC = () => {
     isGameOver,
     resetGame,
     isMoGuRenaming,
-    setIsMoGuRenaming
+    setIsMoGuRenaming,
+    raidAlert,
+    dismissRaidAlert,
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -270,7 +274,7 @@ export const Game: React.FC = () => {
     const boostedEffect = applyStyleBonus(option.effect, match.bonusPercent);
     const baseMessage = option.message || '';
     const message = match.bonusPercent > 0 ? `${baseMessage}${baseMessage ? ' ' : ''}穿搭加成${match.bonusPercent}%` : baseMessage;
-    handleEventOption(boostedEffect, message);
+    handleEventOption(boostedEffect, message, option.addDebuffIds);
   };
 
   const handleWork = () => {
@@ -417,6 +421,20 @@ export const Game: React.FC = () => {
   
   const isHeavySnow = weather === 'snow_heavy';
 
+  // 解析最近一条夜袭日志中的损失数值，用于警报显示
+  const raidLossInfo = React.useMemo(() => {
+    const raidLog = logs.find(l => l.includes('山贼夜袭县境'));
+    if (!raidLog) return {};
+    const money = raidLog.match(/损失银两 (\d+) 文/)?.[1];
+    const order = raidLog.match(/治安-(\d+)/)?.[1];
+    const livelihood = raidLog.match(/民生-(\d+)/)?.[1];
+    return {
+      moneyLoss: money ? Number(money) : undefined,
+      orderLoss: order ? Number(order) : undefined,
+      livelihoodLoss: livelihood ? Number(livelihood) : undefined,
+    };
+  }, [raidAlert, logs]);
+
   return (
     <div 
       className="flex justify-center p-4 min-h-screen transition-colors duration-1000 bg-background"
@@ -470,6 +488,7 @@ export const Game: React.FC = () => {
             equippedAccessories={equippedAccessories}
             externalThreat={externalThreat}
           />
+          <DebuffPanel />
         </div>
 
         {/* Middle Column: Actions */}
@@ -933,6 +952,15 @@ export const Game: React.FC = () => {
         <AchievementPopup 
           achievement={latestAchievement} 
           onClose={dismissAchievementPopup} 
+        />
+      )}
+
+      {raidAlert && (
+        <RaidAlertOverlay
+          moneyLoss={raidLossInfo.moneyLoss}
+          orderLoss={raidLossInfo.orderLoss}
+          livelihoodLoss={raidLossInfo.livelihoodLoss}
+          onDismiss={dismissRaidAlert}
         />
       )}
     </div>
