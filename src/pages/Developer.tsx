@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Terminal, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Terminal, Plus, Zap, X } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
+import { debuffConfigs } from '@/data/debuffs';
 
 export const Developer: React.FC = () => {
   const navigate = useNavigate();
-  const { playerStats, countyStats, updateStats, day, role, fortuneLevel, inventory, handleEventOption, externalThreat } = useGameStore();
-  console.log(useGameStore(), 999)
+  const { playerStats, countyStats, updateStats, day, role, fortuneLevel, inventory, handleEventOption, externalThreat, addDebuff, removeDebuff, activeDebuffs } = useGameStore();
   const [formData, setFormData] = useState({
     money: playerStats.money,
     reputation: playerStats.reputation,
