@@ -17,6 +17,7 @@ import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
+import { getJiYiOuGiftCategory, getJiYiOuGiftReward, rollJiYiOuLoreDrop } from '@/data/npcGiftRules';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -375,6 +376,7 @@ interface GameStore extends GameState {
 
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'work') => { success: boolean; message: string };
+  giftFoodToJiYiOu: (itemId: string) => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
 
   // Profile Methods
@@ -1506,6 +1508,46 @@ export const useGameStore = create<GameStore>()(
         }
 
         return { success: false, message: '未知操作' };
+      },
+      giftFoodToJiYiOu: (itemId) => {
+        const state = get();
+        const item = items.find(entry => entry.id === itemId);
+
+        if (!item) {
+          return { success: false, message: '礼物不存在。' };
+        }
+
+        if (!state.inventory.includes(itemId)) {
+          return { success: false, message: '行囊中没有这份礼物。' };
+        }
+
+        const giftCategory = getJiYiOuGiftCategory(item);
+        if (!giftCategory) {
+          return { success: false, message: '这份礼物暂时不适合赠予季一藕。' };
+        }
+
+        const interactionResult = get().interactWithNPC('ji_yi_ou', 'gift');
+        if (!interactionResult.success) {
+          return interactionResult;
+        }
+
+        const reward = getJiYiOuGiftReward(giftCategory);
+        const loreDrop = rollJiYiOuLoreDrop();
+
+        const rewardItems = reward.effect.itemsAdd ? [...reward.effect.itemsAdd] : undefined;
+        const effect: Effect = {
+          ...reward.effect,
+          itemsAdd: rewardItems,
+          itemsRemove: [itemId]
+        };
+
+        const loreText = loreDrop ? ` ${loreDrop}` : '';
+        get().handleEventOption(
+          effect,
+          `你把${item.name}递给季一藕，她眼睛一亮，连声道谢。${reward.rewardText}${loreText}`
+        );
+
+        return { success: true, message: '' };
       },
 
       incrementGiftFailure: (npcId) => {

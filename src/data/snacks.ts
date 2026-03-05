@@ -1,4 +1,4 @@
-﻿import { Item } from '@/types/game';
+import { Item } from '@/types/game';
 
 export const snacks: Item[] = [
   { 
@@ -56,7 +56,8 @@ export const snacks: Item[] = [
     description: '薄皮包着鲜汤，一口咬下鲜香四溢。', 
     type: 'consumable', 
     effect: { health: 5 } 
-  },  { 
+  },
+  { 
     id: 'snack_qijiujiu', 
     name: '柒玖酒', 
     description: '酒香醇厚，喝多了容易让人想起往事。', 
@@ -190,4 +191,3 @@ export const snacks: Item[] = [
     effect: { health: 3 } 
   }
 ];
-

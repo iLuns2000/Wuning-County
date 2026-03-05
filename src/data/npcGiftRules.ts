@@ -1,4 +1,4 @@
-﻿import { Effect, Item } from '@/types/game';
+import { Effect, Item } from '@/types/game';
 
 export type JiYiOuGiftCategory = 'tanghulu' | 'xiaolongbao' | 'pastry' | 'dried_snack';
 
