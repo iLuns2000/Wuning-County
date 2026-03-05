@@ -169,6 +169,7 @@ export interface Policy {
 export interface PlayerProfile {
   name: string;
   avatar: string; // Base64 string
+  nameChangeUsed?: boolean;
 }
 
 export interface TimeSettings {
@@ -190,6 +191,7 @@ export interface GameState {
   dailyCounts: DailyActionCounts;
   npcInteractionStates: Record<string, NPCInteractionState>; // Track daily interactions per NPC
   isVoiceLost: boolean; // Cannot chat if true
+  isMoGuRenaming: boolean; // Whether the user is currently renaming at Mo Gu
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
   inventory: string[];

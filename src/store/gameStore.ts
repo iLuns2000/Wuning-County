@@ -381,6 +381,7 @@ interface GameStore extends GameState {
 
   // Profile Methods
   setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
+  setIsMoGuRenaming: (value: boolean) => void;
 
   // Time Methods
   updateTimeSettings: (settings: Partial<import('@/types/game').TimeSettings>) => void;
@@ -481,6 +482,7 @@ export const useGameStore = create<GameStore>()(
       dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
+      isMoGuRenaming: false,
       collectedScrolls: [],
       inventory: [],
       equippedApparel: {},
@@ -1220,6 +1222,10 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      setIsMoGuRenaming: (value) => {
+        set({ isMoGuRenaming: value });
+      },
+
       startGame: (roleId) => {
         const roleConfig = roles.find(r => r.id === roleId);
         if (!roleConfig) return;
@@ -1236,6 +1242,7 @@ export const useGameStore = create<GameStore>()(
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
+          isMoGuRenaming: false,
           collectedScrolls: [],
           activePolicyId: undefined,
           inventory: [],
@@ -2619,6 +2626,13 @@ export const useGameStore = create<GameStore>()(
 
             const newFlags = { ...state.flags, ...effect.flagsSet };
 
+            // Handle special flags
+            let isMoGuRenaming = state.isMoGuRenaming;
+            if (newFlags['mo_gu_rename_triggered']) {
+              isMoGuRenaming = true;
+              delete newFlags['mo_gu_rename_triggered'];
+            }
+
             if (effect.flagsIncrement) {
               effect.flagsIncrement.forEach(key => {
                 newFlags[key] = (newFlags[key] || 0) + 1;
@@ -2642,6 +2656,7 @@ export const useGameStore = create<GameStore>()(
               flags: newFlags,
               eventQueue: nextEventQueue,
               currentEvent: null,
+              isMoGuRenaming: isMoGuRenaming
             };
           });
           // Check task completion after state update

@@ -85,7 +85,9 @@ export const Game: React.FC = () => {
     externalThreat,
     maintainCountyDefense,
     isGameOver,
-    resetGame
+    resetGame,
+    isMoGuRenaming,
+    setIsMoGuRenaming
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -130,13 +132,19 @@ export const Game: React.FC = () => {
     }
   }, [isNightWarning]);
 
+  useEffect(() => {
+    if (isMoGuRenaming) {
+      setShowProfileModal(true);
+    }
+  }, [isMoGuRenaming]);
+
   if (!role) return null;
 
 
   if (isGameOver) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-        <div className="max-w-xl w-full rounded-xl border bg-card p-6 space-y-4 text-center">
+      <div className="flex justify-center items-center p-6 min-h-screen bg-background">
+        <div className="p-6 space-y-4 w-full max-w-xl text-center rounded-xl border bg-card">
           <h2 className="text-2xl font-bold text-rose-600">县城已毁于战火</h2>
           <p className="text-muted-foreground">山贼与战乱彻底摧毁了无宁县。你可以重新开局，尝试更稳健地维护治安与边防。</p>
           <div className="flex gap-3 justify-center">
@@ -317,8 +325,36 @@ export const Game: React.FC = () => {
   };
 
   const handleSaveProfile = (name: string, avatar: string) => {
-    setPlayerProfile({ name, avatar });
-    addLog(`你更新了个人资料，改名为“${name}”。`);
+    const trimmedName = name.trim();
+    const currentName = (playerProfile?.name || '').trim();
+    const defaultName = (currentRoleConfig?.name || '').trim();
+    const hasUsedFreeNameChange = Boolean(playerProfile?.nameChangeUsed) || (!!defaultName && currentName !== defaultName);
+
+    if (!trimmedName) {
+      return;
+    }
+
+    if (trimmedName !== currentName && hasUsedFreeNameChange && !isMoGuRenaming) {
+      setPlayerProfile({ avatar });
+      addLog('【个人资料】名称修改请找墨骨进行修改。');
+      alert('名称修改请找墨骨进行修改');
+      return;
+    }
+
+    const nextProfile =
+      trimmedName !== currentName
+        ? { name: trimmedName, avatar, nameChangeUsed: true }
+        : { avatar };
+
+    setPlayerProfile(nextProfile);
+    if (isMoGuRenaming) {
+      setIsMoGuRenaming(false);
+    }
+    if (trimmedName !== currentName) {
+      addLog(`你更新了个人资料，改名为“${trimmedName}”。`);
+    } else {
+      addLog('你更新了个人资料。');
+    }
   };
 
   const handleSpecialAbility = () => {
@@ -377,6 +413,7 @@ export const Game: React.FC = () => {
   };
 
   const currentRoleConfig = roles.find(r => r.id === role);
+  const canEditProfileName = isMoGuRenaming || (!Boolean(playerProfile?.nameChangeUsed) && (playerProfile?.name || '').trim() === (currentRoleConfig?.name || '').trim());
   
   const isHeavySnow = weather === 'snow_heavy';
 
@@ -499,7 +536,7 @@ export const Game: React.FC = () => {
                 maintainCountyDefense();
               }}
               disabled={!!currentEvent || !!flags['defense_maintained_daily']}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 disabled:opacity-50"
+              className="flex gap-2 justify-center items-center p-4 text-rose-700 bg-rose-50 rounded-lg transition-colors hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 disabled:opacity-50"
             >
               <Shield size={20} />
               <span>巡防维护（每日一次）</span>
@@ -844,9 +881,13 @@ export const Game: React.FC = () => {
 
       <ProfileModal 
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
+        onClose={() => {
+          setShowProfileModal(false);
+          if (isMoGuRenaming) setIsMoGuRenaming(false);
+        }}
         initialName={playerProfile?.name || ''}
         initialAvatar={playerProfile?.avatar || ''}
+        canEditName={canEditProfileName}
         onSave={handleSaveProfile}
       />
 

@@ -6,6 +6,7 @@ interface ProfileModalProps {
   onClose: () => void;
   initialName: string;
   initialAvatar: string;
+  canEditName?: boolean;
   onSave: (name: string, avatar: string) => void;
 }
 
@@ -14,6 +15,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onClose,
   initialName,
   initialAvatar,
+  canEditName = true,
   onSave,
 }) => {
   const [name, setName] = useState(initialName);
@@ -99,10 +101,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={!canEditName}
               className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="请输入名称"
               maxLength={10}
             />
+            {!canEditName && (
+              <p className="text-xs text-muted-foreground">名称修改请找墨骨进行修改</p>
+            )}
           </div>
         </div>
 

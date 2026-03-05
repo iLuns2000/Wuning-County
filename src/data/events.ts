@@ -2571,6 +2571,24 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'mo_gu_rename',
+    title: '户籍更名',
+    description: '墨骨翻开厚厚的户籍档案：“你是来申请更改名号的吗？更改名号需由本主簿亲自录入档案，且需缴纳50文工本费。”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '申请更名 (50文)',
+        message: '墨骨点了点头：“既然你已决定，那便在卷宗上写下你的新名号吧。”',
+        effect: { money: -50, flagsSet: { mo_gu_rename_triggered: true } }
+      },
+      {
+        label: '我再想想',
+        message: '“也好，名号乃终身大事，理应慎重。”',
+      }
+    ]
+  },
+  {
     id: 'chadu_flower_quiz',
     title: '柳园对花',
     description: '茶嘟在柳园设下花局，邀你识花名、吟诗作对。',

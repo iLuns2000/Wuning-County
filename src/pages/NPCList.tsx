@@ -17,7 +17,9 @@ import { useGameStore } from '@/store/gameStore';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { NPCGiftModal } from '@/components/NPCGiftModal';
+import { ProfileModal } from '@/components/ProfileModal';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { roles } from '@/data/roles';
 
 type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
@@ -37,7 +39,12 @@ export const NPCList: React.FC = () => {
     giftFoodToJiYiOu,
     currentEvent,
     triggerSpecificEvent,
-    dismissEvent
+    dismissEvent,
+    isMoGuRenaming,
+    setIsMoGuRenaming,
+    playerProfile,
+    setPlayerProfile,
+    role
   } = useGameStore();
 
   const [searchTerm, setSearchTerm] = useState(() => {
@@ -47,6 +54,7 @@ export const NPCList: React.FC = () => {
     return (sessionStorage.getItem('npcSortType') as SortType) || 'default';
   });
   const [giftNpcName, setGiftNpcName] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // 当搜索词变化时，保存到sessionStorage
   useEffect(() => {
@@ -58,7 +66,50 @@ export const NPCList: React.FC = () => {
     sessionStorage.setItem('npcSortType', sortType);
   }, [sortType]);
 
+  useEffect(() => {
+    if (isMoGuRenaming) {
+      setShowProfileModal(true);
+    }
+  }, [isMoGuRenaming]);
+
+  const handleSaveProfile = (name: string, avatar: string) => {
+    const trimmedName = name.trim();
+    const currentName = (playerProfile?.name || '').trim();
+    const currentRoleConfig = roles.find(r => r.id === role);
+    const defaultName = (currentRoleConfig?.name || '').trim();
+    const hasUsedFreeNameChange = Boolean(playerProfile?.nameChangeUsed) || (!!defaultName && currentName !== defaultName);
+
+    if (!trimmedName) {
+      return;
+    }
+
+    if (trimmedName !== currentName && hasUsedFreeNameChange && !isMoGuRenaming) {
+      setPlayerProfile({ avatar });
+      addLog('【个人资料】名称修改请找墨骨进行修改。');
+      alert('名称修改请找墨骨进行修改');
+      return;
+    }
+
+    const nextProfile =
+      trimmedName !== currentName
+        ? { name: trimmedName, avatar, nameChangeUsed: true }
+        : { avatar };
+
+    setPlayerProfile(nextProfile);
+    if (isMoGuRenaming) {
+      setIsMoGuRenaming(false);
+    }
+    if (trimmedName !== currentName) {
+      addLog(`你更新了个人资料，改名为“${trimmedName}”。`);
+    } else {
+      addLog('你更新了个人资料。');
+    }
+  };
+
   const deferredSearchTerm = useDeferredValue(searchTerm);
+
+  const currentRoleConfig = roles.find(r => r.id === role);
+  const canEditProfileName = isMoGuRenaming || (!Boolean(playerProfile?.nameChangeUsed) && (playerProfile?.name || '').trim() === (currentRoleConfig?.name || '').trim());
 
   const filteredAndSortedNPCs = useMemo(() => {
     const trimmedTerm = deferredSearchTerm.trim();
@@ -103,6 +154,34 @@ export const NPCList: React.FC = () => {
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
+
+    // Check for insufficient resources (health/money)
+    if (option.effect) {
+      let healthCost = 0;
+      let moneyCost = 0;
+
+      // Check flat costs
+      if (option.effect.health && option.effect.health < 0) healthCost += -option.effect.health;
+      if (option.effect.money && option.effect.money < 0) moneyCost += -option.effect.money;
+
+      // Check nested playerStats costs
+      if (option.effect.playerStats) {
+        if (option.effect.playerStats.health && option.effect.playerStats.health < 0) healthCost += -option.effect.playerStats.health;
+        if (option.effect.playerStats.money && option.effect.playerStats.money < 0) moneyCost += -option.effect.playerStats.money;
+      }
+
+      if (healthCost > 0 && playerStats.health < healthCost) {
+        addLog('体力不足，无法进行此操作！');
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+      if (moneyCost > 0 && playerStats.money < moneyCost) {
+        addLog('银两不足，无法进行此操作！');
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+    }
+
     handleEventOption(option.effect, option.message);
   };
 
@@ -349,6 +428,18 @@ export const NPCList: React.FC = () => {
           onConfirm={handleJiYiOuGiftConfirm}
         />
       )}
+
+      <ProfileModal 
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false);
+          if (isMoGuRenaming) setIsMoGuRenaming(false);
+        }}
+        initialName={playerProfile?.name || ''}
+        initialAvatar={playerProfile?.avatar || ''}
+        canEditName={canEditProfileName}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 };
