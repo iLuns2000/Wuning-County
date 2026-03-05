@@ -3634,18 +3634,32 @@ export const useGameStore = create<GameStore>()(
         if ((state.lastDebuffCheckDay || 0) >= currentDay) return;
         set({ lastDebuffCheckDay: currentDay });
 
+        console.log(`[Debuff] 第 ${currentDay} 天触发检查 — order=${state.countyStats.order}, economy=${state.countyStats.economy}, culture=${state.countyStats.culture}, livelihood=${state.countyStats.livelihood}`);
+
         for (const config of debuffConfigs) {
           const existing = (state.activeDebuffs || []).find(d => d.configId === config.id);
 
           // 已有且不允许叠层/刷新的，跳过
-          if (existing && config.stackRule === 'none') continue;
+          if (existing && config.stackRule === 'none') {
+            console.log(`[Debuff] ${config.id} 已激活且 stackRule=none，跳过`);
+            continue;
+          }
           if (existing && config.stackRule === 'stack' && existing.stacks >= (config.maxStacks || 2)) continue;
 
           // 触发检查
           let shouldTrigger = false;
+          let debugReason = '';
 
-          if (config.trigger.custom) {
+          if (config.trigger.type === 'consecutive' || config.trigger.type === 'event') {
+            // consecutive / event 类型只靠 custom 判断
+            if (config.trigger.custom) {
+              shouldTrigger = config.trigger.custom(state);
+              debugReason = `consecutive/event custom=${shouldTrigger}`;
+            }
+          } else if (config.trigger.custom) {
+            // threshold / probability 类型也可附带 custom 作为最终判定
             shouldTrigger = config.trigger.custom(state);
+            debugReason = `custom=${shouldTrigger}`;
           } else if (config.trigger.type === 'threshold' && config.trigger.field && config.trigger.value !== undefined) {
             // 简单路径解析（支持 countyStats.order 等）
             const parts = config.trigger.field.split('.');
@@ -3659,9 +3673,13 @@ export const useGameStore = create<GameStore>()(
             } else {
               shouldTrigger = numVal > config.trigger.value;
             }
+            debugReason = `threshold ${config.trigger.field}=${numVal} ${config.trigger.direction} ${config.trigger.value} → ${shouldTrigger}`;
           } else if (config.trigger.type === 'probability' && config.trigger.probability !== undefined) {
             shouldTrigger = Math.random() < config.trigger.probability;
+            debugReason = `probability=${shouldTrigger}`;
           }
+
+          console.log(`[Debuff] ${config.id} 检查: ${debugReason || '无条件'} → shouldTrigger=${shouldTrigger}`);
 
           if (shouldTrigger) {
             get().addDebuff(config.id, '条件自动触发');

@@ -336,6 +336,79 @@ export const Developer: React.FC = () => {
             保存修改
           </button>
         </div>
+
+        {/* Debuff 调试面板 */}
+        <div className="p-6 space-y-4 rounded-lg border shadow-sm bg-card">
+          <h2 className="pb-2 text-lg font-bold border-b flex items-center gap-2">
+            <Zap size={18} className="text-yellow-500" />
+            Debuff 调试
+          </h2>
+
+          {/* 当前激活的 Debuff */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">当前激活 ({(activeDebuffs || []).length})</h3>
+            {(activeDebuffs || []).length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">暂无激活的 Debuff</p>
+            ) : (
+              <div className="space-y-1">
+                {(activeDebuffs || []).map(d => {
+                  const cfg = debuffConfigs.find(c => c.id === d.configId);
+                  return (
+                    <div key={d.configId} className="flex items-center justify-between px-3 py-2 rounded-md bg-destructive/10 border border-destructive/20 text-sm">
+                      <span>
+                        <span className="font-medium">{cfg?.name || d.configId}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          剩余 {d.remainingDays === -1 ? '∞' : d.remainingDays} 天
+                          {d.stacks > 1 && ` × ${d.stacks}`}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => removeDebuff(d.configId, '开发者移除')}
+                        className="ml-2 p-1 rounded hover:bg-destructive/20 text-destructive"
+                        title="移除此 Debuff"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 手动触发 Debuff */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">手动触发</h3>
+            <div className="grid grid-cols-1 gap-1.5">
+              {debuffConfigs.map(cfg => {
+                const isActive = (activeDebuffs || []).some(d => d.configId === cfg.id);
+                return (
+                  <button
+                    key={cfg.id}
+                    onClick={() => addDebuff(cfg.id, '开发者手动触发')}
+                    className={`flex items-center justify-between px-3 py-2 rounded-md border text-sm text-left transition-colors ${
+                      isActive
+                        ? 'border-yellow-400/60 bg-yellow-400/10 hover:bg-yellow-400/20'
+                        : 'border-border bg-secondary/30 hover:bg-secondary/60'
+                    }`}
+                  >
+                    <span>
+                      <span className="font-medium">{cfg.name}</span>
+                      <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
+                        cfg.severity === 'severe' ? 'bg-red-500/20 text-red-600' :
+                        cfg.severity === 'moderate' ? 'bg-orange-400/20 text-orange-600' :
+                        'bg-yellow-300/20 text-yellow-700'
+                      }`}>{cfg.severity}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2 shrink-0">
+                      {isActive ? '再次触发' : '触发'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
