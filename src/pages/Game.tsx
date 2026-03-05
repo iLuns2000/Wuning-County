@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -81,7 +81,11 @@ export const Game: React.FC = () => {
     equippedAccessories,
     processResourceTick,
     dismissEvent,
-    fillCave
+    fillCave,
+    externalThreat,
+    maintainCountyDefense,
+    isGameOver,
+    resetGame
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -127,6 +131,30 @@ export const Game: React.FC = () => {
   }, [isNightWarning]);
 
   if (!role) return null;
+
+
+  if (isGameOver) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+        <div className="max-w-xl w-full rounded-xl border bg-card p-6 space-y-4 text-center">
+          <h2 className="text-2xl font-bold text-rose-600">县城已毁于战火</h2>
+          <p className="text-muted-foreground">山贼与战乱彻底摧毁了无宁县。你可以重新开局，尝试更稳健地维护治安与边防。</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                resetGame();
+                navigate('/');
+              }}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              重新开始
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getItemScore = (price?: number) => {
     const base = 10 + Math.floor((price || 0) / 200);
@@ -403,6 +431,7 @@ export const Game: React.FC = () => {
             onOpenOffice={() => setShowOffice(true)}
             equippedApparel={equippedApparel}
             equippedAccessories={equippedAccessories}
+            externalThreat={externalThreat}
           />
         </div>
 
@@ -462,6 +491,18 @@ export const Game: React.FC = () => {
             >
               <Coffee size={20} />
               <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
+            </button>
+            
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                maintainCountyDefense();
+              }}
+              disabled={!!currentEvent || !!flags['defense_maintained_daily']}
+              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 disabled:opacity-50"
+            >
+              <Shield size={20} />
+              <span>巡防维护（每日一次）</span>
             </button>
             
             {role === 'magistrate' && (

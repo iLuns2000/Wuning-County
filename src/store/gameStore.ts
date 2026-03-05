@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, CountyDevelopmentPathId } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -16,6 +16,7 @@ import { items } from '@/data/items';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
+import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -33,6 +34,13 @@ export const getDateInfo = (day: number) => {
     seasonIndex, // 0: Spring, 1: Summer, 2: Autumn, 3: Winter
     dayOfSeason
   };
+};
+
+
+const applyDevelopmentMultiplier = (value: number, positiveMultiplier: number = 1, negativeMultiplier: number = 1) => {
+  if (value > 0) return Math.floor(value * positiveMultiplier);
+  if (value < 0) return Math.ceil(value * negativeMultiplier);
+  return value;
 };
 
 type RelationPenaltyEffect = {
@@ -432,6 +440,8 @@ interface GameStore extends GameState {
   completeUpgrade: () => void;
   checkUpgradeStatus: () => void;
   cancelUpgradeOffice: () => void;
+  setCountyDevelopmentPath: (pathId: CountyDevelopmentPathId) => void;
+  maintainCountyDefense: () => void;
   processResourceTick: () => void;
 
   // 赛鸽系统
@@ -454,6 +464,8 @@ export const useGameStore = create<GameStore>()(
       // Haptic Defaults
       vibrationEnabled: true,
       officeState: { level: 1, isUpgrading: false },
+      countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+      externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -1245,6 +1257,8 @@ export const useGameStore = create<GameStore>()(
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
         });
 
         if (firstTask) {
@@ -1773,7 +1787,9 @@ export const useGameStore = create<GameStore>()(
           if (facilityIncome > 0) {
             // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
             const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
-            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
+            const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+            const developmentBonus = developmentPath?.facilityIncomeMultiplier || 1;
+            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus) * developmentBonus);
             newPlayerStats.money += facilityIncome;
             facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
@@ -1910,6 +1926,54 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
+          // External Threat (Bandits / War)
+          let threatMessage = '';
+          let warMessage = '';
+          let isGameOver = state.isGameOver;
+          const avgCounty = (newCountyStats.economy + newCountyStats.order + newCountyStats.culture + newCountyStats.livelihood) / 4;
+          const noMaintenancePenalty = state.flags['defense_maintained_daily'] ? 0 : 4;
+          const declinePenalty = avgCounty < 50 ? Math.ceil((50 - avgCounty) / 6) : -2;
+          const orderPenalty = newCountyStats.order < 35 ? 3 : 0;
+          const disasterPenalty = nextDisasterState.active ? 3 : 0;
+          const officeDefenseBonus = Math.floor((state.officeState?.level || 1) / 2);
+
+          const nextDefense = Math.max(0, Math.min(100, (state.externalThreat?.defense || 40) - 2 + officeDefenseBonus));
+          const nextBanditThreat = Math.max(0, Math.min(100, (state.externalThreat?.banditThreat || 15) + noMaintenancePenalty + declinePenalty + orderPenalty + disasterPenalty));
+          const riskBase = nextBanditThreat - Math.floor(nextDefense * 0.6) + (newCountyStats.order < 25 ? 8 : 0);
+          const nextWarRisk = Math.max(0, Math.min(100, riskBase));
+
+          let nextExternalThreat = {
+            banditThreat: nextBanditThreat,
+            defense: nextDefense,
+            warRisk: nextWarRisk,
+            lastRaidDay: state.externalThreat?.lastRaidDay || 0,
+          };
+
+          if (!state.flags['defense_maintained_daily']) {
+            threatMessage = '【边防】今日未进行巡防维护，山贼活动加剧。';
+          }
+
+          if (nextWarRisk >= 70 && (nextDayVal - nextExternalThreat.lastRaidDay) >= 3 && Math.random() < (nextWarRisk - 60) / 100) {
+            const moneyLoss = Math.min(newPlayerStats.money, Math.floor(80 + nextWarRisk * 2));
+            const orderLoss = Math.min(newCountyStats.order, 8);
+            const livelihoodLoss = Math.min(newCountyStats.livelihood, 6);
+            newPlayerStats.money -= moneyLoss;
+            newCountyStats.order = Math.max(0, newCountyStats.order - orderLoss);
+            newCountyStats.livelihood = Math.max(0, newCountyStats.livelihood - livelihoodLoss);
+            nextExternalThreat = {
+              ...nextExternalThreat,
+              banditThreat: Math.min(100, nextExternalThreat.banditThreat + 6),
+              warRisk: Math.min(100, nextExternalThreat.warRisk + 8),
+              lastRaidDay: nextDayVal,
+            };
+            warMessage = `【战火】山贼夜袭县境，损失银两 ${moneyLoss} 文，治安-${orderLoss}、民生-${livelihoodLoss}。`;
+          }
+
+          if (nextExternalThreat.warRisk >= 95 && newCountyStats.order <= 10 && newCountyStats.economy <= 10) {
+            isGameOver = true;
+            warMessage = '【战火覆城】县城长期失修、民心离散，最终毁于战火。';
+          }
+
           // Reset daily flags
           const newFlags = { ...state.flags };
           Object.keys(newFlags).forEach(key => {
@@ -1962,6 +2026,8 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
+          if (threatMessage) logs.unshift(threatMessage);
+          if (warMessage) logs.unshift(warMessage);
           // 
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1970,6 +2036,8 @@ export const useGameStore = create<GameStore>()(
             day: state.day + 1,
             weather: nextWeather,
             disasterState: nextDisasterState,
+            externalThreat: nextExternalThreat,
+            isGameOver,
             marketState: newMarketState,
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
@@ -2091,6 +2159,7 @@ export const useGameStore = create<GameStore>()(
           };
         });
         get().addLog(`第 ${get().day} 天`);
+        if (get().isGameOver) return;
         get().checkAchievements();
         get().checkTaskCompletion();
         get().triggerEvent();
@@ -2350,6 +2419,32 @@ export const useGameStore = create<GameStore>()(
           if (effect.order) orderChange += effect.order;
           if (effect.culture) cultureChange += effect.culture;
           if (effect.livelihood) livelihoodChange += effect.livelihood;
+
+          const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+          if (developmentPath) {
+            moneyChange = applyDevelopmentMultiplier(moneyChange, developmentPath.moneyGainMultiplier, 1);
+            reputationChange = applyDevelopmentMultiplier(reputationChange, developmentPath.reputationGainMultiplier, 1);
+            economyChange = applyDevelopmentMultiplier(
+              economyChange,
+              developmentPath.countyGainMultiplier.economy || 1,
+              developmentPath.countyLossMultiplier.economy || 1
+            );
+            orderChange = applyDevelopmentMultiplier(
+              orderChange,
+              developmentPath.countyGainMultiplier.order || 1,
+              developmentPath.countyLossMultiplier.order || 1
+            );
+            cultureChange = applyDevelopmentMultiplier(
+              cultureChange,
+              developmentPath.countyGainMultiplier.culture || 1,
+              developmentPath.countyLossMultiplier.culture || 1
+            );
+            livelihoodChange = applyDevelopmentMultiplier(
+              livelihoodChange,
+              developmentPath.countyGainMultiplier.livelihood || 1,
+              developmentPath.countyLossMultiplier.livelihood || 1
+            );
+          }
 
           // 3. Apply Talent Modifiers to positive gains
           if (moneyChange > 0) {
@@ -2618,6 +2713,8 @@ export const useGameStore = create<GameStore>()(
           equippedApparel: {},
           equippedAccessories: [],
           officeState: { level: 1, isUpgrading: false },
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
@@ -2746,6 +2843,8 @@ export const useGameStore = create<GameStore>()(
           volume: state.volume,
           vibrationEnabled: state.vibrationEnabled,
           officeState: state.officeState,
+          countyDevelopment: state.countyDevelopment,
+          externalThreat: state.externalThreat,
           disasterState: state.disasterState,
           isExploring: state.isExploring,
           exploreResult: state.exploreResult,
@@ -2809,6 +2908,8 @@ export const useGameStore = create<GameStore>()(
             'volume',
             'vibrationEnabled',
             'officeState',
+            'countyDevelopment',
+            'externalThreat',
             'disasterState',
             'isExploring',
             'exploreResult',
@@ -2839,6 +2940,8 @@ export const useGameStore = create<GameStore>()(
               (nextState as any).officeState ||
               state.officeState ||
               ({ level: 1, isUpgrading: false } as any),
+            countyDevelopment: (nextState as any).countyDevelopment || state.countyDevelopment || { currentPath: 'none', lastSwitchedDay: 1 },
+            externalThreat: (nextState as any).externalThreat || state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
             disasterState: (nextState as any).disasterState || state.disasterState,
             timeSettings: (nextState as any).timeSettings || state.timeSettings,
           }));
@@ -3100,6 +3203,82 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
+      setCountyDevelopmentPath: (pathId) => {
+        const state = get();
+        if (pathId === state.countyDevelopment.currentPath) {
+          get().addLog('【治县路线】当前已处于该发展路线。');
+          return;
+        }
+
+        const targetPath = countyDevelopmentPaths.find(path => path.id === pathId);
+        if (!targetPath) {
+          get().addLog('【治县路线】无效的发展路线。');
+          return;
+        }
+
+        const officeLevel = state.officeState?.level || 1;
+        if (officeLevel < targetPath.unlockLevel) {
+          get().addLog(`【治县路线】官邸达到 LV.${targetPath.unlockLevel} 后可启用${targetPath.name}。`);
+          return;
+        }
+
+        const switchCost = state.countyDevelopment.currentPath === 'none' ? 0 : 500;
+        if (switchCost > 0 && state.playerStats.money < switchCost) {
+          get().addLog(`【治县路线】切换路线需要 ${switchCost} 文。`);
+          return;
+        }
+
+        set(prev => ({
+          countyDevelopment: {
+            currentPath: pathId,
+            lastSwitchedDay: prev.day,
+          },
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - switchCost,
+          }
+        }));
+
+        get().addLog(`【治县路线】已调整为「${targetPath.name}」。${switchCost > 0 ? ` 消耗${switchCost}文。` : ''}`);
+      },
+
+      maintainCountyDefense: () => {
+        const state = get();
+        if (state.flags['defense_maintained_daily']) {
+          get().addLog('【边防】今日已完成巡防维护。');
+          return;
+        }
+
+        const cost = 30;
+        if (state.playerStats.money < cost) {
+          get().addLog(`【边防】巡防维护需要 ${cost} 文。`);
+          return;
+        }
+
+        const current = state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 };
+        const defenseGain = 8;
+        const threatReduction = 6;
+
+        set(prev => ({
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - cost,
+          },
+          externalThreat: {
+            ...current,
+            defense: Math.min(100, current.defense + defenseGain),
+            banditThreat: Math.max(0, current.banditThreat - threatReduction),
+            warRisk: Math.max(0, current.warRisk - threatReduction),
+          },
+          flags: {
+            ...prev.flags,
+            defense_maintained_daily: true,
+          }
+        }));
+
+        get().addLog('【边防】你组织了巡防队与乡勇，边防戒备得到加强。');
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
@@ -3151,6 +3330,8 @@ export const useGameStore = create<GameStore>()(
         isExploring: state.isExploring,
         exploreResult: state.exploreResult,
         officeState: state.officeState,
+        countyDevelopment: state.countyDevelopment,
+        externalThreat: state.externalThreat,
         pigeons: state.pigeons,
         pigeonRaceHistory: state.pigeonRaceHistory,
         selectedPigeonId: state.selectedPigeonId,
