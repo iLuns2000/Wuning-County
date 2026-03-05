@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, CountyDevelopmentPathId } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -16,6 +16,7 @@ import { items } from '@/data/items';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
+import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -33,6 +34,13 @@ export const getDateInfo = (day: number) => {
     seasonIndex, // 0: Spring, 1: Summer, 2: Autumn, 3: Winter
     dayOfSeason
   };
+};
+
+
+const applyDevelopmentMultiplier = (value: number, positiveMultiplier: number = 1, negativeMultiplier: number = 1) => {
+  if (value > 0) return Math.floor(value * positiveMultiplier);
+  if (value < 0) return Math.ceil(value * negativeMultiplier);
+  return value;
 };
 
 type RelationPenaltyEffect = {
@@ -432,6 +440,7 @@ interface GameStore extends GameState {
   completeUpgrade: () => void;
   checkUpgradeStatus: () => void;
   cancelUpgradeOffice: () => void;
+  setCountyDevelopmentPath: (pathId: CountyDevelopmentPathId) => void;
   processResourceTick: () => void;
 
   // 赛鸽系统
@@ -454,6 +463,7 @@ export const useGameStore = create<GameStore>()(
       // Haptic Defaults
       vibrationEnabled: true,
       officeState: { level: 1, isUpgrading: false },
+      countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -1245,6 +1255,7 @@ export const useGameStore = create<GameStore>()(
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
         });
 
         if (firstTask) {
@@ -1773,7 +1784,9 @@ export const useGameStore = create<GameStore>()(
           if (facilityIncome > 0) {
             // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
             const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
-            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
+            const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+            const developmentBonus = developmentPath?.facilityIncomeMultiplier || 1;
+            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus) * developmentBonus);
             newPlayerStats.money += facilityIncome;
             facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
@@ -2351,6 +2364,32 @@ export const useGameStore = create<GameStore>()(
           if (effect.culture) cultureChange += effect.culture;
           if (effect.livelihood) livelihoodChange += effect.livelihood;
 
+          const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+          if (developmentPath) {
+            moneyChange = applyDevelopmentMultiplier(moneyChange, developmentPath.moneyGainMultiplier, 1);
+            reputationChange = applyDevelopmentMultiplier(reputationChange, developmentPath.reputationGainMultiplier, 1);
+            economyChange = applyDevelopmentMultiplier(
+              economyChange,
+              developmentPath.countyGainMultiplier.economy || 1,
+              developmentPath.countyLossMultiplier.economy || 1
+            );
+            orderChange = applyDevelopmentMultiplier(
+              orderChange,
+              developmentPath.countyGainMultiplier.order || 1,
+              developmentPath.countyLossMultiplier.order || 1
+            );
+            cultureChange = applyDevelopmentMultiplier(
+              cultureChange,
+              developmentPath.countyGainMultiplier.culture || 1,
+              developmentPath.countyLossMultiplier.culture || 1
+            );
+            livelihoodChange = applyDevelopmentMultiplier(
+              livelihoodChange,
+              developmentPath.countyGainMultiplier.livelihood || 1,
+              developmentPath.countyLossMultiplier.livelihood || 1
+            );
+          }
+
           // 3. Apply Talent Modifiers to positive gains
           if (moneyChange > 0) {
             const level = state.talents['mercantile'] || 0;
@@ -2618,6 +2657,7 @@ export const useGameStore = create<GameStore>()(
           equippedApparel: {},
           equippedAccessories: [],
           officeState: { level: 1, isUpgrading: false },
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
@@ -2746,6 +2786,7 @@ export const useGameStore = create<GameStore>()(
           volume: state.volume,
           vibrationEnabled: state.vibrationEnabled,
           officeState: state.officeState,
+          countyDevelopment: state.countyDevelopment,
           disasterState: state.disasterState,
           isExploring: state.isExploring,
           exploreResult: state.exploreResult,
@@ -2809,6 +2850,7 @@ export const useGameStore = create<GameStore>()(
             'volume',
             'vibrationEnabled',
             'officeState',
+            'countyDevelopment',
             'disasterState',
             'isExploring',
             'exploreResult',
@@ -2839,6 +2881,7 @@ export const useGameStore = create<GameStore>()(
               (nextState as any).officeState ||
               state.officeState ||
               ({ level: 1, isUpgrading: false } as any),
+            countyDevelopment: (nextState as any).countyDevelopment || state.countyDevelopment || { currentPath: 'none', lastSwitchedDay: 1 },
             disasterState: (nextState as any).disasterState || state.disasterState,
             timeSettings: (nextState as any).timeSettings || state.timeSettings,
           }));
@@ -3100,6 +3143,45 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
+      setCountyDevelopmentPath: (pathId) => {
+        const state = get();
+        if (pathId === state.countyDevelopment.currentPath) {
+          get().addLog('【治县路线】当前已处于该发展路线。');
+          return;
+        }
+
+        const targetPath = countyDevelopmentPaths.find(path => path.id === pathId);
+        if (!targetPath) {
+          get().addLog('【治县路线】无效的发展路线。');
+          return;
+        }
+
+        const officeLevel = state.officeState?.level || 1;
+        if (officeLevel < targetPath.unlockLevel) {
+          get().addLog(`【治县路线】官邸达到 LV.${targetPath.unlockLevel} 后可启用${targetPath.name}。`);
+          return;
+        }
+
+        const switchCost = state.countyDevelopment.currentPath === 'none' ? 0 : 500;
+        if (switchCost > 0 && state.playerStats.money < switchCost) {
+          get().addLog(`【治县路线】切换路线需要 ${switchCost} 文。`);
+          return;
+        }
+
+        set(prev => ({
+          countyDevelopment: {
+            currentPath: pathId,
+            lastSwitchedDay: prev.day,
+          },
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - switchCost,
+          }
+        }));
+
+        get().addLog(`【治县路线】已调整为「${targetPath.name}」。${switchCost > 0 ? ` 消耗${switchCost}文。` : ''}`);
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
@@ -3151,6 +3233,7 @@ export const useGameStore = create<GameStore>()(
         isExploring: state.isExploring,
         exploreResult: state.exploreResult,
         officeState: state.officeState,
+        countyDevelopment: state.countyDevelopment,
         pigeons: state.pigeons,
         pigeonRaceHistory: state.pigeonRaceHistory,
         selectedPigeonId: state.selectedPigeonId,
