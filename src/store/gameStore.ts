@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, CountyDevelopmentPathId, ActiveDebuff } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -16,6 +16,9 @@ import { items } from '@/data/items';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
+import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
+import { getJiYiOuGiftCategory, getJiYiOuGiftReward, rollJiYiOuLoreDrop } from '@/data/npcGiftRules';
+import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -33,6 +36,13 @@ export const getDateInfo = (day: number) => {
     seasonIndex, // 0: Spring, 1: Summer, 2: Autumn, 3: Winter
     dayOfSeason
   };
+};
+
+
+const applyDevelopmentMultiplier = (value: number, positiveMultiplier: number = 1, negativeMultiplier: number = 1) => {
+  if (value > 0) return Math.floor(value * positiveMultiplier);
+  if (value < 0) return Math.ceil(value * negativeMultiplier);
+  return value;
 };
 
 type RelationPenaltyEffect = {
@@ -316,7 +326,7 @@ interface GameStore extends GameState {
 
   startGame: (roleId: RoleType) => void;
   nextDay: () => void;
-  handleEventOption: (effect?: Effect, message?: string) => void;
+  handleEventOption: (effect?: Effect, message?: string, addDebuffIds?: string[]) => void;
   addLog: (message: string) => void;
   triggerEvent: () => void;
   triggerSpecificEvent: (eventId: string) => void;
@@ -367,10 +377,12 @@ interface GameStore extends GameState {
 
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'work') => { success: boolean; message: string };
+  giftFoodToJiYiOu: (itemId: string) => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
 
   // Profile Methods
   setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
+  setIsMoGuRenaming: (value: boolean) => void;
 
   // Time Methods
   updateTimeSettings: (settings: Partial<import('@/types/game').TimeSettings>) => void;
@@ -432,6 +444,8 @@ interface GameStore extends GameState {
   completeUpgrade: () => void;
   checkUpgradeStatus: () => void;
   cancelUpgradeOffice: () => void;
+  setCountyDevelopmentPath: (pathId: CountyDevelopmentPathId) => void;
+  maintainCountyDefense: () => void;
   processResourceTick: () => void;
 
   // 赛鸽系统
@@ -440,6 +454,14 @@ interface GameStore extends GameState {
   trainPigeon: (id: string, mode: 'speed' | 'endurance' | 'homing') => void;
   enterPigeonRace: (id: string, raceType: PigeonRaceType) => void;
   selectPigeon: (id?: string) => void;
+  dismissRaidAlert: () => void;
+
+  // Debuff 系统
+  addDebuff: (id: string, source?: string) => void;
+  removeDebuff: (id: string, reason?: string) => void;
+  tickDebuffsPerDay: () => { logs: string[]; economyDelta: number; orderDelta: number; cultureDelta: number; livelihoodDelta: number; moneyDelta: number; reputationDelta: number; facilityIncomeMultiplier: number; cultureGainMultiplier: number };
+  checkDebuffTriggers: () => void;
+  tryClearDebuff: (id: string, methodId: string) => { success: boolean; message: string };
 }
 
 export const useGameStore = create<GameStore>()(
@@ -454,6 +476,8 @@ export const useGameStore = create<GameStore>()(
       // Haptic Defaults
       vibrationEnabled: true,
       officeState: { level: 1, isUpgrading: false },
+      countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+      externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
       timeSettings: {
         dayDurationSeconds: 300, // 5 minutes default
         isTimeFlowEnabled: true,
@@ -467,6 +491,7 @@ export const useGameStore = create<GameStore>()(
       dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
+      isMoGuRenaming: false,
       collectedScrolls: [],
       inventory: [],
       equippedApparel: {},
@@ -505,6 +530,10 @@ export const useGameStore = create<GameStore>()(
       pigeons: [],
       pigeonRaceHistory: [],
       selectedPigeonId: undefined,
+
+      // Debuff 系统初始状态
+      activeDebuffs: [],
+      lastDebuffCheckDay: 0,
 
       markInteraction: () => {
         const state = get();
@@ -1206,6 +1235,10 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      setIsMoGuRenaming: (value) => {
+        set({ isMoGuRenaming: value });
+      },
+
       startGame: (roleId) => {
         const roleConfig = roles.find(r => r.id === roleId);
         if (!roleConfig) return;
@@ -1222,6 +1255,7 @@ export const useGameStore = create<GameStore>()(
           dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
+          isMoGuRenaming: false,
           collectedScrolls: [],
           activePolicyId: undefined,
           inventory: [],
@@ -1245,6 +1279,8 @@ export const useGameStore = create<GameStore>()(
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
         });
 
         if (firstTask) {
@@ -1493,6 +1529,46 @@ export const useGameStore = create<GameStore>()(
 
         return { success: false, message: '未知操作' };
       },
+      giftFoodToJiYiOu: (itemId) => {
+        const state = get();
+        const item = items.find(entry => entry.id === itemId);
+
+        if (!item) {
+          return { success: false, message: '礼物不存在。' };
+        }
+
+        if (!state.inventory.includes(itemId)) {
+          return { success: false, message: '行囊中没有这份礼物。' };
+        }
+
+        const giftCategory = getJiYiOuGiftCategory(item);
+        if (!giftCategory) {
+          return { success: false, message: '这份礼物暂时不适合赠予季一藕。' };
+        }
+
+        const interactionResult = get().interactWithNPC('ji_yi_ou', 'gift');
+        if (!interactionResult.success) {
+          return interactionResult;
+        }
+
+        const reward = getJiYiOuGiftReward(giftCategory);
+        const loreDrop = rollJiYiOuLoreDrop();
+
+        const rewardItems = reward.effect.itemsAdd ? [...reward.effect.itemsAdd] : undefined;
+        const effect: Effect = {
+          ...reward.effect,
+          itemsAdd: rewardItems,
+          itemsRemove: [itemId]
+        };
+
+        const loreText = loreDrop ? ` ${loreDrop}` : '';
+        get().handleEventOption(
+          effect,
+          `你把${item.name}递给季一藕，她眼睛一亮，连声道谢。${reward.rewardText}${loreText}`
+        );
+
+        return { success: true, message: '' };
+      },
 
       incrementGiftFailure: (npcId) => {
         set(state => ({
@@ -1619,6 +1695,12 @@ export const useGameStore = create<GameStore>()(
       },
 
       nextDay: () => {
+        // ── 步骤 1: 先检查 Debuff 触发条件（新增 Debuff）────────
+        get().checkDebuffTriggers();
+
+        // ── 步骤 2: 结算 Debuff 日效果（tickDebuffsPerDay 内部同时处理到期）──
+        const debuffResult = get().tickDebuffsPerDay();
+
         set(state => {
           const newOwnedFacilities = { ...state.ownedFacilities };
           const currentHealth = state.playerStats.health;
@@ -1672,6 +1754,14 @@ export const useGameStore = create<GameStore>()(
               newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation);
             }
           }
+
+          // ── 步骤 2 结果注入：Debuff 每日效果 ────────────────────
+          newCountyStats.economy = Math.min(100, Math.max(0, newCountyStats.economy + debuffResult.economyDelta));
+          newCountyStats.order = Math.min(100, Math.max(0, newCountyStats.order + debuffResult.orderDelta));
+          newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture + debuffResult.cultureDelta));
+          newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood + debuffResult.livelihoodDelta));
+          newPlayerStats.money += debuffResult.moneyDelta;
+          newPlayerStats.reputation = Math.max(0, newPlayerStats.reputation + debuffResult.reputationDelta);
 
           // Voice loss logic
           const chatTotal = state.dailyCounts.chatTotal;
@@ -1773,7 +1863,11 @@ export const useGameStore = create<GameStore>()(
           if (facilityIncome > 0) {
             // Apply Economy bonus (e.g., 1% per 2 points of economy above 50)
             const economyBonus = Math.max(0, (state.countyStats.economy - 50) / 200);
-            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus));
+            const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+            const developmentBonus = developmentPath?.facilityIncomeMultiplier || 1;
+            // 应用 Debuff 产业收益乘区（debuffResult.facilityIncomeMultiplier 已含路线减伤后的修正）
+            const debuffFacilityMult = Math.max(0, debuffResult.facilityIncomeMultiplier);
+            facilityIncome = Math.floor(facilityIncome * (1 + economyBonus) * developmentBonus * debuffFacilityMult);
             newPlayerStats.money += facilityIncome;
             facilityMessage = `【产业收益】昨日产业共盈利 ${facilityIncome} 文。`;
           }
@@ -1910,6 +2004,56 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
+          // External Threat (Bandits / War)
+          let threatMessage = '';
+          let warMessage = '';
+          let isGameOver = state.isGameOver;
+          let raidOccurred = false;
+          const avgCounty = (newCountyStats.economy + newCountyStats.order + newCountyStats.culture + newCountyStats.livelihood) / 4;
+          const noMaintenancePenalty = state.flags['defense_maintained_daily'] ? 0 : 4;
+          const declinePenalty = avgCounty < 50 ? Math.ceil((50 - avgCounty) / 6) : -2;
+          const orderPenalty = newCountyStats.order < 35 ? 3 : 0;
+          const disasterPenalty = nextDisasterState.active ? 3 : 0;
+          const officeDefenseBonus = Math.floor((state.officeState?.level || 1) / 2);
+
+          const nextDefense = Math.max(0, Math.min(100, (state.externalThreat?.defense || 40) - 2 + officeDefenseBonus));
+          const nextBanditThreat = Math.max(0, Math.min(100, (state.externalThreat?.banditThreat || 15) + noMaintenancePenalty + declinePenalty + orderPenalty + disasterPenalty));
+          const riskBase = nextBanditThreat - Math.floor(nextDefense * 0.6) + (newCountyStats.order < 25 ? 8 : 0);
+          const nextWarRisk = Math.max(0, Math.min(100, riskBase));
+
+          let nextExternalThreat = {
+            banditThreat: nextBanditThreat,
+            defense: nextDefense,
+            warRisk: nextWarRisk,
+            lastRaidDay: state.externalThreat?.lastRaidDay || 0,
+          };
+
+          if (!state.flags['defense_maintained_daily']) {
+            threatMessage = '【边防】今日未进行巡防维护，山贼活动加剧。';
+          }
+
+          if (nextWarRisk >= 70 && (nextDayVal - nextExternalThreat.lastRaidDay) >= 3 && Math.random() < (nextWarRisk - 60) / 100) {
+            const moneyLoss = Math.min(newPlayerStats.money, Math.floor(80 + nextWarRisk * 2));
+            const orderLoss = Math.min(newCountyStats.order, 8);
+            const livelihoodLoss = Math.min(newCountyStats.livelihood, 6);
+            newPlayerStats.money -= moneyLoss;
+            newCountyStats.order = Math.max(0, newCountyStats.order - orderLoss);
+            newCountyStats.livelihood = Math.max(0, newCountyStats.livelihood - livelihoodLoss);
+            nextExternalThreat = {
+              ...nextExternalThreat,
+              banditThreat: Math.min(100, nextExternalThreat.banditThreat + 6),
+              warRisk: Math.min(100, nextExternalThreat.warRisk + 8),
+              lastRaidDay: nextDayVal,
+            };
+            warMessage = `【战火】山贼夜袭县境，损失银两 ${moneyLoss} 文，治安-${orderLoss}、民生-${livelihoodLoss}。`;
+            raidOccurred = true;
+          }
+
+          if (nextExternalThreat.warRisk >= 95 && newCountyStats.order <= 10 && newCountyStats.economy <= 10) {
+            isGameOver = true;
+            warMessage = '【战火覆城】县城长期失修、民心离散，最终毁于战火。';
+          }
+
           // Reset daily flags
           const newFlags = { ...state.flags };
           Object.keys(newFlags).forEach(key => {
@@ -1962,6 +2106,10 @@ export const useGameStore = create<GameStore>()(
           if (maintenanceMessage) logs.unshift(maintenanceMessage);
           if (taxMessage) logs.unshift(taxMessage);
           if (disasterMessage) logs.unshift(disasterMessage);
+          if (threatMessage) logs.unshift(threatMessage);
+          if (warMessage) logs.unshift(warMessage);
+          // Debuff 日志（倒序插入，最新在最前）
+          debuffResult.logs.slice().reverse().forEach(m => logs.unshift(m));
           // 
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
@@ -1970,6 +2118,9 @@ export const useGameStore = create<GameStore>()(
             day: state.day + 1,
             weather: nextWeather,
             disasterState: nextDisasterState,
+            externalThreat: nextExternalThreat,
+            isGameOver,
+            raidAlert: raidOccurred || undefined,
             marketState: newMarketState,
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
@@ -2091,8 +2242,23 @@ export const useGameStore = create<GameStore>()(
           };
         });
         get().addLog(`第 ${get().day} 天`);
+        if (get().isGameOver) return;
         get().checkAchievements();
         get().checkTaskCompletion();
+
+        // ── 步骤 4（战火余波）：夜袭后附加安置压力 & 概率商会恐慌 ──
+        const currentStateAfter = get();
+        if (currentStateAfter.raidAlert) {
+          // 安置压力（必触发）
+          get().addDebuff('settlement_pressure', '山贼夜袭');
+          // 商会恐慌（概率触发）
+          const existingMerchantPanic = (currentStateAfter.activeDebuffs || []).find(d => d.configId === 'merchant_panic');
+          const panicProb = existingMerchantPanic ? 0.95 : 0.7;
+          if (Math.random() < panicProb) {
+            get().addDebuff('merchant_panic', '山贼夜袭');
+          }
+        }
+
         get().triggerEvent();
       },
 
@@ -2303,7 +2469,7 @@ export const useGameStore = create<GameStore>()(
       },
       // ─────────────────────────────────────────────────────────
 
-      handleEventOption: (effect, message) => {
+      handleEventOption: (effect, message, addDebuffIds) => {
         const state = get();
         let statChanges: string[] = [];
 
@@ -2350,6 +2516,32 @@ export const useGameStore = create<GameStore>()(
           if (effect.order) orderChange += effect.order;
           if (effect.culture) cultureChange += effect.culture;
           if (effect.livelihood) livelihoodChange += effect.livelihood;
+
+          const developmentPath = getCountyDevelopmentPath(state.countyDevelopment?.currentPath || 'none');
+          if (developmentPath) {
+            moneyChange = applyDevelopmentMultiplier(moneyChange, developmentPath.moneyGainMultiplier, 1);
+            reputationChange = applyDevelopmentMultiplier(reputationChange, developmentPath.reputationGainMultiplier, 1);
+            economyChange = applyDevelopmentMultiplier(
+              economyChange,
+              developmentPath.countyGainMultiplier.economy || 1,
+              developmentPath.countyLossMultiplier.economy || 1
+            );
+            orderChange = applyDevelopmentMultiplier(
+              orderChange,
+              developmentPath.countyGainMultiplier.order || 1,
+              developmentPath.countyLossMultiplier.order || 1
+            );
+            cultureChange = applyDevelopmentMultiplier(
+              cultureChange,
+              developmentPath.countyGainMultiplier.culture || 1,
+              developmentPath.countyLossMultiplier.culture || 1
+            );
+            livelihoodChange = applyDevelopmentMultiplier(
+              livelihoodChange,
+              developmentPath.countyGainMultiplier.livelihood || 1,
+              developmentPath.countyLossMultiplier.livelihood || 1
+            );
+          }
 
           // 3. Apply Talent Modifiers to positive gains
           if (moneyChange > 0) {
@@ -2482,6 +2674,13 @@ export const useGameStore = create<GameStore>()(
 
             const newFlags = { ...state.flags, ...effect.flagsSet };
 
+            // Handle special flags
+            let isMoGuRenaming = state.isMoGuRenaming;
+            if (newFlags['mo_gu_rename_triggered']) {
+              isMoGuRenaming = true;
+              delete newFlags['mo_gu_rename_triggered'];
+            }
+
             if (effect.flagsIncrement) {
               effect.flagsIncrement.forEach(key => {
                 newFlags[key] = (newFlags[key] || 0) + 1;
@@ -2505,11 +2704,19 @@ export const useGameStore = create<GameStore>()(
               flags: newFlags,
               eventQueue: nextEventQueue,
               currentEvent: null,
+              isMoGuRenaming: isMoGuRenaming
             };
           });
           // Check task completion after state update
           get().checkTaskCompletion();
           get().checkAchievements();
+
+          // 处理事件选项附加的 Debuff
+          if (addDebuffIds && addDebuffIds.length > 0) {
+            addDebuffIds.forEach(debuffId => {
+              get().addDebuff(debuffId, '事件选项触发');
+            });
+          }
 
           // Check for next event in queue
           const currentState = get();
@@ -2618,6 +2825,8 @@ export const useGameStore = create<GameStore>()(
           equippedApparel: {},
           equippedAccessories: [],
           officeState: { level: 1, isUpgrading: false },
+          countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
+          externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
@@ -2746,6 +2955,8 @@ export const useGameStore = create<GameStore>()(
           volume: state.volume,
           vibrationEnabled: state.vibrationEnabled,
           officeState: state.officeState,
+          countyDevelopment: state.countyDevelopment,
+          externalThreat: state.externalThreat,
           disasterState: state.disasterState,
           isExploring: state.isExploring,
           exploreResult: state.exploreResult,
@@ -2809,6 +3020,8 @@ export const useGameStore = create<GameStore>()(
             'volume',
             'vibrationEnabled',
             'officeState',
+            'countyDevelopment',
+            'externalThreat',
             'disasterState',
             'isExploring',
             'exploreResult',
@@ -2839,6 +3052,8 @@ export const useGameStore = create<GameStore>()(
               (nextState as any).officeState ||
               state.officeState ||
               ({ level: 1, isUpgrading: false } as any),
+            countyDevelopment: (nextState as any).countyDevelopment || state.countyDevelopment || { currentPath: 'none', lastSwitchedDay: 1 },
+            externalThreat: (nextState as any).externalThreat || state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
             disasterState: (nextState as any).disasterState || state.disasterState,
             timeSettings: (nextState as any).timeSettings || state.timeSettings,
           }));
@@ -3100,10 +3315,439 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
+      setCountyDevelopmentPath: (pathId) => {
+        const state = get();
+        if (pathId === state.countyDevelopment.currentPath) {
+          get().addLog('【治县路线】当前已处于该发展路线。');
+          return;
+        }
+
+        const targetPath = countyDevelopmentPaths.find(path => path.id === pathId);
+        if (!targetPath) {
+          get().addLog('【治县路线】无效的发展路线。');
+          return;
+        }
+
+        const officeLevel = state.officeState?.level || 1;
+        if (officeLevel < targetPath.unlockLevel) {
+          get().addLog(`【治县路线】官邸达到 LV.${targetPath.unlockLevel} 后可启用${targetPath.name}。`);
+          return;
+        }
+
+        const switchCost = state.countyDevelopment.currentPath === 'none' ? 0 : 500;
+        if (switchCost > 0 && state.playerStats.money < switchCost) {
+          get().addLog(`【治县路线】切换路线需要 ${switchCost} 文。`);
+          return;
+        }
+
+        set(prev => ({
+          countyDevelopment: {
+            currentPath: pathId,
+            lastSwitchedDay: prev.day,
+          },
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - switchCost,
+          }
+        }));
+
+        get().addLog(`【治县路线】已调整为「${targetPath.name}」。${switchCost > 0 ? ` 消耗${switchCost}文。` : ''}`);
+      },
+
+      maintainCountyDefense: () => {
+        const state = get();
+        if (state.flags['defense_maintained_daily']) {
+          get().addLog('【边防】今日已完成巡防维护。');
+          return;
+        }
+
+        const cost = 30;
+        if (state.playerStats.money < cost) {
+          get().addLog(`【边防】巡防维护需要 ${cost} 文。`);
+          return;
+        }
+
+        const current = state.externalThreat || { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 };
+        const defenseGain = 8;
+        const threatReduction = 6;
+
+        set(prev => ({
+          playerStats: {
+            ...prev.playerStats,
+            money: prev.playerStats.money - cost,
+          },
+          externalThreat: {
+            ...current,
+            defense: Math.min(100, current.defense + defenseGain),
+            banditThreat: Math.max(0, current.banditThreat - threatReduction),
+            warRisk: Math.max(0, current.warRisk - threatReduction),
+          },
+          flags: {
+            ...prev.flags,
+            defense_maintained_daily: true,
+          }
+        }));
+
+        get().addLog('【边防】你组织了巡防队与乡勇，边防戒备得到加强。');
+      },
+
+      dismissRaidAlert: () => {
+        set({ raidAlert: undefined });
+      },
+
+      // ── Debuff 系统 API ────────────────────────────────────────
+
+      addDebuff: (id: string, source?: string) => {
+        const state = get();
+        const config = getDebuffConfig(id);
+        if (!config) return;
+
+        const existing = (state.activeDebuffs || []).find(d => d.configId === id);
+        const currentDay = state.day;
+        const messages: string[] = [];
+
+        if (existing) {
+          if (config.stackRule === 'none') {
+            // 已有且不叠层，忽略
+            return;
+          } else if (config.stackRule === 'refresh') {
+            // 刷新持续时间
+            set(s => ({
+              activeDebuffs: (s.activeDebuffs || []).map(d =>
+                d.configId === id
+                  ? { ...d, remainingDays: config.duration, triggeredDay: currentDay }
+                  : d
+              ),
+            }));
+            messages.push(`【Debuff触发】${config.name} 持续时间已刷新（来源：${source || '未知'}）。`);
+          } else if (config.stackRule === 'stack' && existing.stacks < (config.maxStacks || 2)) {
+            // 叠加
+            set(s => ({
+              activeDebuffs: (s.activeDebuffs || []).map(d =>
+                d.configId === id
+                  ? { ...d, stacks: d.stacks + 1, triggeredDay: currentDay, remainingDays: config.duration, immediateApplied: false }
+                  : d
+              ),
+            }));
+            messages.push(`【Debuff触发】${config.name} 叠加至 ${existing.stacks + 1} 层（来源：${source || '未知'}）。`);
+          }
+        } else {
+          // 新增
+          const newDebuff: ActiveDebuff = {
+            configId: id,
+            triggeredDay: currentDay,
+            remainingDays: config.duration,
+            stacks: 1,
+            immediateApplied: false,
+            source,
+          };
+          set(s => ({
+            activeDebuffs: [...(s.activeDebuffs || []), newDebuff],
+          }));
+          messages.push(`【Debuff触发】${config.name} 已附加！（${config.description.substring(0, 30)}…）来源：${source || '未知'}。`);
+        }
+
+        messages.forEach(m => get().addLog(m));
+      },
+
+      removeDebuff: (id: string, reason?: string) => {
+        const state = get();
+        const config = getDebuffConfig(id);
+        const existing = (state.activeDebuffs || []).find(d => d.configId === id);
+        if (!existing) return;
+
+        set(s => ({
+          activeDebuffs: (s.activeDebuffs || []).filter(d => d.configId !== id),
+        }));
+        get().addLog(`【Debuff解除】${config?.name || id} 已解除。${reason ? `（${reason}）` : ''}`);
+      },
+
+      tickDebuffsPerDay: () => {
+        const state = get();
+        const activeDebuffs = state.activeDebuffs || [];
+        const logs: string[] = [];
+        let economyDelta = 0;
+        let orderDelta = 0;
+        let cultureDelta = 0;
+        let livelihoodDelta = 0;
+        let moneyDelta = 0;
+        let reputationDelta = 0;
+        let facilityIncomeMultiplier = 1.0;
+        let cultureGainMultiplier = 1.0;
+
+        const nextDebuffs: ActiveDebuff[] = [];
+
+        // 路线缓冲系数
+        const path = state.countyDevelopment?.currentPath || 'none';
+        const debuffMitigationMap: Record<string, number> = {
+          stability: 0.8,  // 民生/治安类 Debuff 负面系数 -20%
+          balanced: 0.9,   // 全属性小幅降低 -10%
+          trade: 1.0,
+          culture: 1.0,
+          none: 1.0,
+        };
+        const globalMitigation = debuffMitigationMap[path] || 1.0;
+
+        for (const debuff of activeDebuffs) {
+          const config = getDebuffConfig(debuff.configId);
+          if (!config) continue;
+
+          const stacks = debuff.stacks || 1;
+
+          // 1. 应用即时效果（仅首次）
+          let updatedDebuff = { ...debuff };
+          if (!debuff.immediateApplied) {
+            const e = config.effects;
+            let immEconomy = (e.immediateEconomy || 0) * stacks;
+            let immOrder = (e.immediateOrder || 0) * stacks;
+            let immCulture = (e.immediateCulture || 0) * stacks;
+            let immLivelihood = (e.immediateLivelihood || 0) * stacks;
+            let immMoney = (e.immediateMoney || 0) * stacks;
+            let immReputation = (e.immediateReputation || 0) * stacks;
+
+            // 路线减伤（仅对负面即时效果）
+            if (path === 'stability') {
+              if (immLivelihood < 0) immLivelihood = Math.ceil(immLivelihood * 0.8);
+              if (immOrder < 0) immOrder = Math.ceil(immOrder * 0.8);
+            } else if (path === 'balanced') {
+              if (immEconomy < 0) immEconomy = Math.ceil(immEconomy * 0.9);
+              if (immOrder < 0) immOrder = Math.ceil(immOrder * 0.9);
+              if (immCulture < 0) immCulture = Math.ceil(immCulture * 0.9);
+              if (immLivelihood < 0) immLivelihood = Math.ceil(immLivelihood * 0.9);
+            }
+
+            economyDelta += immEconomy;
+            orderDelta += immOrder;
+            cultureDelta += immCulture;
+            livelihoodDelta += immLivelihood;
+            moneyDelta += immMoney;
+            reputationDelta += immReputation;
+            updatedDebuff = { ...updatedDebuff, immediateApplied: true };
+
+            if (immEconomy || immOrder || immCulture || immLivelihood || immMoney || immReputation) {
+              logs.push(
+                `【Debuff生效】${config.name}（即时）：` +
+                [
+                  immEconomy ? `经济${immEconomy > 0 ? '+' : ''}${immEconomy}` : '',
+                  immOrder ? `治安${immOrder > 0 ? '+' : ''}${immOrder}` : '',
+                  immCulture ? `文化${immCulture > 0 ? '+' : ''}${immCulture}` : '',
+                  immLivelihood ? `民生${immLivelihood > 0 ? '+' : ''}${immLivelihood}` : '',
+                  immMoney ? `金钱${immMoney > 0 ? '+' : ''}${immMoney}文` : '',
+                  immReputation ? `声望${immReputation > 0 ? '+' : ''}${immReputation}` : '',
+                ].filter(Boolean).join('、') + '。'
+              );
+            }
+          }
+
+          // 2. 每日持续效果
+          {
+            const e = config.effects;
+            let dailyEco = (e.economy || 0) * stacks;
+            let dailyOrd = (e.order || 0) * stacks;
+            let dailyCul = (e.culture || 0) * stacks;
+            let dailyLiv = (e.livelihood || 0) * stacks;
+            let dailyMon = (e.money || 0) * stacks;
+            let dailyRep = (e.reputation || 0) * stacks;
+
+            // 路线减伤（仅对负面每日效果）
+            if (path === 'stability') {
+              if (dailyLiv < 0) dailyLiv = Math.ceil(dailyLiv * 0.8);
+              if (dailyOrd < 0) dailyOrd = Math.ceil(dailyOrd * 0.8);
+            } else if (path === 'balanced') {
+              if (dailyEco < 0) dailyEco = Math.ceil(dailyEco * globalMitigation);
+              if (dailyOrd < 0) dailyOrd = Math.ceil(dailyOrd * globalMitigation);
+              if (dailyCul < 0) dailyCul = Math.ceil(dailyCul * globalMitigation);
+              if (dailyLiv < 0) dailyLiv = Math.ceil(dailyLiv * globalMitigation);
+            }
+
+            economyDelta += dailyEco;
+            orderDelta += dailyOrd;
+            cultureDelta += dailyCul;
+            livelihoodDelta += dailyLiv;
+            moneyDelta += dailyMon;
+            reputationDelta += dailyRep;
+
+            // 百分比修正（乘区叠加）
+            if (e.facilityIncomeMultiplier) {
+              facilityIncomeMultiplier += e.facilityIncomeMultiplier * stacks;
+            }
+            if (e.cultureGainMultiplier) {
+              cultureGainMultiplier += e.cultureGainMultiplier * stacks;
+            }
+
+            const parts = [
+              dailyEco ? `经济${dailyEco > 0 ? '+' : ''}${dailyEco}` : '',
+              dailyOrd ? `治安${dailyOrd > 0 ? '+' : ''}${dailyOrd}` : '',
+              dailyCul ? `文化${dailyCul > 0 ? '+' : ''}${dailyCul}` : '',
+              dailyLiv ? `民生${dailyLiv > 0 ? '+' : ''}${dailyLiv}` : '',
+              dailyMon ? `金钱${dailyMon > 0 ? '+' : ''}${dailyMon}文/天` : '',
+              dailyRep ? `声望${dailyRep > 0 ? '+' : ''}${dailyRep}` : '',
+            ].filter(Boolean);
+            if (parts.length > 0) {
+              logs.push(
+                `【Debuff生效】${config.name}` +
+                (stacks > 1 ? `（×${stacks}层）` : '') +
+                `：${parts.join('、')}` +
+                (updatedDebuff.remainingDays > 0 ? `，剩余${updatedDebuff.remainingDays - 1}天` : '') +
+                `。解除方式：${config.clearMethods[0]?.label || '无'}`
+              );
+            }
+          }
+
+          // 3. 检查是否到期
+          if (updatedDebuff.remainingDays === -1) {
+            // 无限持续，保留
+            nextDebuffs.push(updatedDebuff);
+          } else if (updatedDebuff.remainingDays <= 1) {
+            // 到期
+            logs.push(`【Debuff解除】${config.name} 已自然到期解除。`);
+            // 不推入 nextDebuffs
+          } else {
+            nextDebuffs.push({ ...updatedDebuff, remainingDays: updatedDebuff.remainingDays - 1 });
+          }
+        }
+
+        // 4. 检查无限持续类 Debuff 的自动解除条件
+        const currentState = get();
+        const finalDebuffs = nextDebuffs.filter(debuff => {
+          const config = getDebuffConfig(debuff.configId);
+          if (!config || debuff.remainingDays !== -1) return true;
+          for (const method of config.clearMethods) {
+            if (method.autoCondition && method.autoCondition(currentState)) {
+              logs.push(`【Debuff解除】${config.name} 已满足自动解除条件（${method.label}）。`);
+              return false;
+            }
+          }
+          return true;
+        });
+
+        set({ activeDebuffs: finalDebuffs });
+
+        return { logs, economyDelta, orderDelta, cultureDelta, livelihoodDelta, moneyDelta, reputationDelta, facilityIncomeMultiplier, cultureGainMultiplier };
+      },
+
+      checkDebuffTriggers: () => {
+        const state = get();
+        const currentDay = state.day;
+
+        // 防止同日重复检查
+        if ((state.lastDebuffCheckDay || 0) >= currentDay) return;
+        set({ lastDebuffCheckDay: currentDay });
+
+        console.log(`[Debuff] 第 ${currentDay} 天触发检查 — order=${state.countyStats.order}, economy=${state.countyStats.economy}, culture=${state.countyStats.culture}, livelihood=${state.countyStats.livelihood}`);
+
+        for (const config of debuffConfigs) {
+          const existing = (state.activeDebuffs || []).find(d => d.configId === config.id);
+
+          // 已有且不允许叠层/刷新的，跳过
+          if (existing && config.stackRule === 'none') {
+            console.log(`[Debuff] ${config.id} 已激活且 stackRule=none，跳过`);
+            continue;
+          }
+          if (existing && config.stackRule === 'stack' && existing.stacks >= (config.maxStacks || 2)) continue;
+
+          // 触发检查
+          let shouldTrigger = false;
+          let debugReason = '';
+
+          if (config.trigger.type === 'consecutive' || config.trigger.type === 'event') {
+            // consecutive / event 类型只靠 custom 判断
+            if (config.trigger.custom) {
+              shouldTrigger = config.trigger.custom(state);
+              debugReason = `consecutive/event custom=${shouldTrigger}`;
+            }
+          } else if (config.trigger.custom) {
+            // threshold / probability 类型也可附带 custom 作为最终判定
+            shouldTrigger = config.trigger.custom(state);
+            debugReason = `custom=${shouldTrigger}`;
+          } else if (config.trigger.type === 'threshold' && config.trigger.field && config.trigger.value !== undefined) {
+            // 简单路径解析（支持 countyStats.order 等）
+            const parts = config.trigger.field.split('.');
+            let val: unknown = state as unknown as Record<string, unknown>;
+            for (const p of parts) {
+              val = (val as Record<string, unknown>)[p];
+            }
+            const numVal = typeof val === 'number' ? val : 0;
+            if (config.trigger.direction === 'below') {
+              shouldTrigger = numVal < config.trigger.value;
+            } else {
+              shouldTrigger = numVal > config.trigger.value;
+            }
+            debugReason = `threshold ${config.trigger.field}=${numVal} ${config.trigger.direction} ${config.trigger.value} → ${shouldTrigger}`;
+          } else if (config.trigger.type === 'probability' && config.trigger.probability !== undefined) {
+            shouldTrigger = Math.random() < config.trigger.probability;
+            debugReason = `probability=${shouldTrigger}`;
+          }
+
+          console.log(`[Debuff] ${config.id} 检查: ${debugReason || '无条件'} → shouldTrigger=${shouldTrigger}`);
+
+          if (shouldTrigger) {
+            get().addDebuff(config.id, '条件自动触发');
+          }
+        }
+      },
+
+      tryClearDebuff: (id: string, methodId: string) => {
+        const state = get();
+        const config = getDebuffConfig(id);
+        const existing = (state.activeDebuffs || []).find(d => d.configId === id);
+
+        if (!config || !existing) {
+          return { success: false, message: '该 Debuff 当前未激活。' };
+        }
+
+        const method = config.clearMethods.find(m => m.id === methodId);
+        if (!method) {
+          return { success: false, message: '解除方式不存在。' };
+        }
+
+        // 检查资源是否足够
+        if (method.moneyCost && state.playerStats.money < method.moneyCost) {
+          return { success: false, message: `银两不足，需要 ${method.moneyCost} 文。` };
+        }
+        if (method.reputationCost && state.playerStats.reputation < method.reputationCost) {
+          return { success: false, message: `声望不足，需要 ${method.reputationCost} 点。` };
+        }
+        if (method.healthCost && state.playerStats.health < method.healthCost) {
+          return { success: false, message: `体力不足，需要 ${method.healthCost} 点。` };
+        }
+        if (method.autoCondition && !method.autoCondition(state)) {
+          return { success: false, message: '自动解除条件尚未满足。' };
+        }
+        if (method.requiredFlag && !state.flags[method.requiredFlag]) {
+          return { success: false, message: '行为条件尚未满足。' };
+        }
+
+        // 扣除资源
+        const updates: Partial<GameState> = {};
+        const newStats = { ...state.playerStats };
+        if (method.moneyCost) newStats.money -= method.moneyCost;
+        if (method.reputationCost) newStats.reputation -= method.reputationCost;
+        if (method.healthCost) newStats.health -= method.healthCost;
+        if (method.moneyCost || method.reputationCost || method.healthCost) {
+          updates.playerStats = newStats;
+        }
+
+        set(updates);
+        get().removeDebuff(id, `主动解除：${method.label}`);
+
+        return { success: true, message: `${config.name} 已解除！（${method.label}）` };
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+      // 旧存档兼容：缺失字段回填默认值
+      merge: (persistedState: unknown, currentState) => {
+        const persisted = (persistedState || {}) as Partial<typeof currentState>;
+        return {
+          ...currentState,
+          ...persisted,
+          activeDebuffs: persisted.activeDebuffs ?? [],
+          lastDebuffCheckDay: persisted.lastDebuffCheckDay ?? 0,
+        };
+      },
       partialize: (state) => ({
         role: state.role,
         day: state.day,
@@ -3151,9 +3795,14 @@ export const useGameStore = create<GameStore>()(
         isExploring: state.isExploring,
         exploreResult: state.exploreResult,
         officeState: state.officeState,
+        countyDevelopment: state.countyDevelopment,
+        externalThreat: state.externalThreat,
         pigeons: state.pigeons,
         pigeonRaceHistory: state.pigeonRaceHistory,
         selectedPigeonId: state.selectedPigeonId,
+        // Debuff 系统持久化
+        activeDebuffs: state.activeDebuffs,
+        lastDebuffCheckDay: state.lastDebuffCheckDay,
       }), // Save everything except actions
     }
   )

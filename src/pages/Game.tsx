@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -29,6 +29,8 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
 import { PlayStreetModal } from '@/components/PlayStreetModal';
 import { WillowGardenModal } from '@/components/WillowGardenModal';
+import { RaidAlertOverlay } from '@/components/RaidAlertOverlay';
+import { DebuffPanel } from '@/components/DebuffPanel';
 import { items } from '@/data/items';
 import { Effect, StyleTag } from '@/types/game';
 
@@ -81,7 +83,15 @@ export const Game: React.FC = () => {
     equippedAccessories,
     processResourceTick,
     dismissEvent,
-    fillCave
+    fillCave,
+    externalThreat,
+    maintainCountyDefense,
+    isGameOver,
+    resetGame,
+    isMoGuRenaming,
+    setIsMoGuRenaming,
+    raidAlert,
+    dismissRaidAlert,
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -126,7 +136,37 @@ export const Game: React.FC = () => {
     }
   }, [isNightWarning]);
 
+  useEffect(() => {
+    if (isMoGuRenaming) {
+      setShowProfileModal(true);
+    }
+  }, [isMoGuRenaming]);
+
   if (!role) return null;
+
+
+  if (isGameOver) {
+    return (
+      <div className="flex justify-center items-center p-6 min-h-screen bg-background">
+        <div className="p-6 space-y-4 w-full max-w-xl text-center rounded-xl border bg-card">
+          <h2 className="text-2xl font-bold text-rose-600">县城已毁于战火</h2>
+          <p className="text-muted-foreground">山贼与战乱彻底摧毁了无宁县。你可以重新开局，尝试更稳健地维护治安与边防。</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                resetGame();
+                navigate('/');
+              }}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              重新开始
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getItemScore = (price?: number) => {
     const base = 10 + Math.floor((price || 0) / 200);
@@ -234,7 +274,7 @@ export const Game: React.FC = () => {
     const boostedEffect = applyStyleBonus(option.effect, match.bonusPercent);
     const baseMessage = option.message || '';
     const message = match.bonusPercent > 0 ? `${baseMessage}${baseMessage ? ' ' : ''}穿搭加成${match.bonusPercent}%` : baseMessage;
-    handleEventOption(boostedEffect, message);
+    handleEventOption(boostedEffect, message, option.addDebuffIds);
   };
 
   const handleWork = () => {
@@ -289,8 +329,36 @@ export const Game: React.FC = () => {
   };
 
   const handleSaveProfile = (name: string, avatar: string) => {
-    setPlayerProfile({ name, avatar });
-    addLog(`你更新了个人资料，改名为“${name}”。`);
+    const trimmedName = name.trim();
+    const currentName = (playerProfile?.name || '').trim();
+    const defaultName = (currentRoleConfig?.name || '').trim();
+    const hasUsedFreeNameChange = Boolean(playerProfile?.nameChangeUsed) || (!!defaultName && currentName !== defaultName);
+
+    if (!trimmedName) {
+      return;
+    }
+
+    if (trimmedName !== currentName && hasUsedFreeNameChange && !isMoGuRenaming) {
+      setPlayerProfile({ avatar });
+      addLog('【个人资料】名称修改请找墨骨进行修改。');
+      alert('名称修改请找墨骨进行修改');
+      return;
+    }
+
+    const nextProfile =
+      trimmedName !== currentName
+        ? { name: trimmedName, avatar, nameChangeUsed: true }
+        : { avatar };
+
+    setPlayerProfile(nextProfile);
+    if (isMoGuRenaming) {
+      setIsMoGuRenaming(false);
+    }
+    if (trimmedName !== currentName) {
+      addLog(`你更新了个人资料，改名为“${trimmedName}”。`);
+    } else {
+      addLog('你更新了个人资料。');
+    }
   };
 
   const handleSpecialAbility = () => {
@@ -349,8 +417,23 @@ export const Game: React.FC = () => {
   };
 
   const currentRoleConfig = roles.find(r => r.id === role);
+  const canEditProfileName = isMoGuRenaming || (!Boolean(playerProfile?.nameChangeUsed) && (playerProfile?.name || '').trim() === (currentRoleConfig?.name || '').trim());
   
   const isHeavySnow = weather === 'snow_heavy';
+
+  // 解析最近一条夜袭日志中的损失数值，用于警报显示
+  const raidLossInfo = React.useMemo(() => {
+    const raidLog = logs.find(l => l.includes('山贼夜袭县境'));
+    if (!raidLog) return {};
+    const money = raidLog.match(/损失银两 (\d+) 文/)?.[1];
+    const order = raidLog.match(/治安-(\d+)/)?.[1];
+    const livelihood = raidLog.match(/民生-(\d+)/)?.[1];
+    return {
+      moneyLoss: money ? Number(money) : undefined,
+      orderLoss: order ? Number(order) : undefined,
+      livelihoodLoss: livelihood ? Number(livelihood) : undefined,
+    };
+  }, [raidAlert, logs]);
 
   return (
     <div 
@@ -403,7 +486,9 @@ export const Game: React.FC = () => {
             onOpenOffice={() => setShowOffice(true)}
             equippedApparel={equippedApparel}
             equippedAccessories={equippedAccessories}
+            externalThreat={externalThreat}
           />
+          <DebuffPanel />
         </div>
 
         {/* Middle Column: Actions */}
@@ -462,6 +547,18 @@ export const Game: React.FC = () => {
             >
               <Coffee size={20} />
               <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
+            </button>
+            
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                maintainCountyDefense();
+              }}
+              disabled={!!currentEvent || !!flags['defense_maintained_daily']}
+              className="flex gap-2 justify-center items-center p-4 text-rose-700 bg-rose-50 rounded-lg transition-colors hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 disabled:opacity-50"
+            >
+              <Shield size={20} />
+              <span>巡防维护（每日一次）</span>
             </button>
             
             {role === 'magistrate' && (
@@ -803,9 +900,13 @@ export const Game: React.FC = () => {
 
       <ProfileModal 
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
+        onClose={() => {
+          setShowProfileModal(false);
+          if (isMoGuRenaming) setIsMoGuRenaming(false);
+        }}
         initialName={playerProfile?.name || ''}
         initialAvatar={playerProfile?.avatar || ''}
+        canEditName={canEditProfileName}
         onSave={handleSaveProfile}
       />
 
@@ -851,6 +952,15 @@ export const Game: React.FC = () => {
         <AchievementPopup 
           achievement={latestAchievement} 
           onClose={dismissAchievementPopup} 
+        />
+      )}
+
+      {raidAlert && (
+        <RaidAlertOverlay
+          moneyLoss={raidLossInfo.moneyLoss}
+          orderLoss={raidLossInfo.orderLoss}
+          livelihoodLoss={raidLossInfo.livelihoodLoss}
+          onDismiss={dismissRaidAlert}
         />
       )}
     </div>

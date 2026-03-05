@@ -737,7 +737,8 @@ export const npcs: NPC[] = [
         "你是初到无宁？市集物件都新鲜，可随意逛逛",
         "客官慢行，无宁安稳，尽可安心落脚"
       ]
-    }
+    },
+    interactionEventIds: ["mo_gu_rename"]
   },
   {
     id: "mo_dao_wu_qing",
