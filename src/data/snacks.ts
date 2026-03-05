@@ -171,8 +171,8 @@ export const snacks: Item[] = [
   },
   { 
     id: 'nodel_musiyunxian', 
-    name: '慕司云线面', 
-    description: '用慕司制作的线面。寓意着慕司和线面一样，不及时吃完就会无限繁殖', 
+    name: '韭菜线面', 
+    description: '用韭菜园的香韭制作的线面。韭菜割了一茬又一茬，如果不及时吃完就会无限繁殖', 
     type: 'consumable', 
     effect: { health: 3 } 
   }
