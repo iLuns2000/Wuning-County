@@ -57,7 +57,7 @@ function App() {
       <FireworksSplash />
       <MobileLogToast />
       <Watermark />
-      <div className="fixed bottom-2 left-0 w-full text-center z-40 text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
+      <div className="fixed bottom-2 left-0 w-full text-center text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
         <a 
           href="https://beian.miit.gov.cn/" 
           target="_blank" 

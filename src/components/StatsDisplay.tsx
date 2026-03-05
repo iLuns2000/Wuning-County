@@ -3,6 +3,8 @@ import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot, Exte
 import { Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, Edit2, Star, Award, Lightbulb, CloudSun, Building2, Flame } from 'lucide-react';
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
+import { useTheme } from '@/hooks/useTheme';
+import { useGameStore } from '@/store/gameStore';
 
 interface StatsDisplayProps {
   playerStats: PlayerStats;
@@ -54,7 +56,19 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   externalThreat
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
+  const { theme } = useTheme();
+  const { glassEffectEnabled } = useGameStore();
   const itemMap = new Map(items.map(item => [item.id, item]));
+  
+  // 判断是否为浅色模式
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  // 根据主题和毛玻璃开关决定背景样式
+  const shouldUseGlass = glassEffectEnabled && !isLightMode;
+  const bgClass = shouldUseGlass
+    ? 'bg-black/30 backdrop-blur-md border-white/10'
+    : 'bg-card border-border';
+  
   const getItemScore = (price?: number) => {
     const base = 10 + Math.floor((price || 0) / 200);
     return Math.min(30, Math.max(8, base));
@@ -82,7 +96,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   const accessorySummary = equippedAccessories.map(id => itemMap.get(id)?.name).filter((name): name is string => !!name);
 
   return (
-    <div className="flex flex-col gap-4 bg-card p-4 rounded-lg shadow-sm border text-card-foreground">
+    <div className={`flex flex-col gap-4 ${bgClass} p-4 rounded-lg shadow-sm border`}>
       {/* Profile Section */}
       <div className="flex items-center gap-4 pb-4 border-b">
         <div 

@@ -4,9 +4,10 @@ import { Sun, Moon, Clock, Pause, Play, Settings } from 'lucide-react';
 
 interface TimeManagerProps {
   onNightWarning?: () => void;
+  onNightChange?: (isNight: boolean) => void;
 }
 
-export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
+export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning, onNightChange }) => {
   const { 
     timeSettings, 
     nextDay, 
@@ -134,6 +135,11 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning }) => {
 
   const isNight = timeLeft <= 60;
   const progress = Math.min(100, ((timeSettings.dayDurationSeconds - timeLeft) / timeSettings.dayDurationSeconds) * 100);
+
+  // 通知父组件夜间状态变化
+  useEffect(() => {
+    onNightChange?.(isNight);
+  }, [isNight, onNightChange]);
 
   if (!timeSettings.isTimeFlowEnabled) return null;
 

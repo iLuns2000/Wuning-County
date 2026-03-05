@@ -142,7 +142,7 @@ export const DebuffPanel: React.FC = () => {
   const severeCount = debuffs.filter(d => getDebuffConfig(d.configId)?.severity === 'severe').length;
 
   return (
-    <div className="mt-2">
+    <div className="mt-2 p-3 rounded-lg border border-white/10 bg-black/30 backdrop-blur-md">
       <div className="flex items-center gap-1.5 mb-1.5">
         <AlertTriangle size={13} className="text-orange-400" />
         <span className="text-xs font-semibold text-orange-300">

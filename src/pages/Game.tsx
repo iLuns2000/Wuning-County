@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -33,10 +33,30 @@ import { RaidAlertOverlay } from '@/components/RaidAlertOverlay';
 import { DebuffPanel } from '@/components/DebuffPanel';
 import { items } from '@/data/items';
 import { Effect, StyleTag } from '@/types/game';
+import { ChoiceModal } from '@/components/ChoiceModal';
+import { useScreenOrientation } from '@/hooks/useScreenOrientation';
+import { getBackgroundImage, BACKGROUND_IMAGES } from '@/constants';
+import { useTheme } from '@/hooks/useTheme';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
   const vibrate = useGameVibrate();
+  const screenOrientation = useScreenOrientation();
+  const { theme } = useTheme();
+  
+  // 判断是否为浅色模式
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  // 根据主题和毛玻璃开关决定背景样式
+  const getGlassClass = (baseClasses: string = '') => {
+    // 如果关闭毛玻璃效果，或者浅色模式，都使用纯色背景
+    const shouldUseGlass = glassEffectEnabled && !isLightMode;
+    const glassClasses = shouldUseGlass
+      ? 'bg-black/30 backdrop-blur-md border-white/10'
+      : 'bg-card border-border';
+    return `${baseClasses} ${glassClasses}`.trim();
+  };
+  
   const [showPolicies, setShowPolicies] = React.useState(false);
   const [showProfileModal, setShowProfileModal] = React.useState(false);
   const [showTalents, setShowTalents] = React.useState(false);
@@ -55,6 +75,26 @@ export const Game: React.FC = () => {
   const [showPlayStreet, setShowPlayStreet] = React.useState(false);
   const [isNightWarning, setIsNightWarning] = React.useState(false);
   const [showTeaPopup, setShowTeaPopup] = React.useState(false);
+  const [showChoiceModal, setShowChoiceModal] = React.useState(false);
+  const [isNight, setIsNight] = useState(false);
+  
+  // 背景图过渡状态
+  const [currentBg, setCurrentBg] = useState<string>('');
+  const [nextBg, setNextBg] = useState<string>('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  const [choiceModalData, setChoiceModalData] = React.useState<{
+    title: string;
+    description: string;
+    choices: Array<{
+      id: string;
+      label: string;
+      description: string;
+      icon?: React.ReactNode;
+      effects: Array<string>;
+      onClick: () => void;
+    }>;
+  } | null>(null);
 
   const { 
     role, 
@@ -92,6 +132,8 @@ export const Game: React.FC = () => {
     setIsMoGuRenaming,
     raidAlert,
     dismissRaidAlert,
+    showBackgroundImage,
+    glassEffectEnabled,
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -100,6 +142,69 @@ export const Game: React.FC = () => {
   
   const MAX_DAILY_WORK = 3;
   const MAX_DAILY_REST = 1;
+
+  // 判断背景图类型
+  const getBackgroundType = (): string => {
+    if (!showBackgroundImage) return '';
+    
+    // 判断是否为雨天（包括大雨、小雨等）
+    const isRainy = weather === 'rain_heavy' || weather === 'rain_light';
+    
+    // 白天且雨天 → 雨天背景
+    if (!isNight && isRainy) {
+      return BACKGROUND_IMAGES.GAME_RAIN;
+    }
+    // 夜晚 → 夜晚背景
+    if (isNight) {
+      return BACKGROUND_IMAGES.GAME_NIGHT;
+    }
+    // 白天 → 白天背景
+    return BACKGROUND_IMAGES.GAME_DAY;
+  };
+
+  const backgroundType = getBackgroundType();
+  const isVertical = screenOrientation === 'vertical';
+  const backgroundImage = backgroundType ? getBackgroundImage(isVertical, backgroundType) : '';
+
+  // 监听背景图变化，触发淡入淡出过渡
+  useEffect(() => {
+    if (!showBackgroundImage || !backgroundImage) {
+      // 如果关闭背景图功能，清空所有背景
+      setCurrentBg('');
+      setNextBg('');
+      setIsTransitioning(false);
+      return;
+    }
+
+    // 如果当前没有背景，直接设置（初始化）
+    if (!currentBg) {
+      setCurrentBg(backgroundImage);
+      return;
+    }
+
+    // 如果背景图发生变化，开始过渡
+    if (backgroundImage !== currentBg) {
+      // 如果已经在过渡中，先立即完成当前过渡
+      if (isTransitioning && nextBg) {
+        setCurrentBg(nextBg);
+        setNextBg('');
+        setIsTransitioning(false);
+      }
+
+      // 开始新的过渡
+      setNextBg(backgroundImage);
+      setIsTransitioning(true);
+      
+      // 1.5秒后完成过渡（与CSS过渡时间一致）
+      const timer = setTimeout(() => {
+        setCurrentBg(backgroundImage);
+        setNextBg('');
+        setIsTransitioning(false);
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [backgroundImage, showBackgroundImage, currentBg, isTransitioning, nextBg]);
 
   // Meiwu Tea Seeking Logic
   const isTeaDay = ((day - 1) % 360 + 1) === 61 && weather === 'sunny';
@@ -146,9 +251,23 @@ export const Game: React.FC = () => {
 
 
   if (isGameOver) {
+    const gameOverBg = getBackgroundImage(
+      screenOrientation === 'vertical',
+      screenOrientation === 'vertical' 
+        ? BACKGROUND_IMAGES.GAME_RUINED_VERTICAL 
+        : BACKGROUND_IMAGES.GAME_RUINED
+    );
+    
     return (
-      <div className="flex justify-center items-center p-6 min-h-screen bg-background">
-        <div className="p-6 space-y-4 w-full max-w-xl text-center rounded-xl border bg-card">
+      <div className="relative flex justify-center items-center p-6 min-h-screen overflow-hidden">
+        {/* 背景图层 */}
+        <div 
+          className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${gameOverBg})` }}
+        />
+        
+        {/* 内容区域 */}
+        <div className="relative z-10 p-6 space-y-4 w-full max-w-xl text-center rounded-xl border bg-card/95 backdrop-blur-sm">
           <h2 className="text-2xl font-bold text-rose-600">县城已毁于战火</h2>
           <p className="text-muted-foreground">山贼与战乱彻底摧毁了无宁县。你可以重新开局，尝试更稳健地维护治安与边防。</p>
           <div className="flex gap-3 justify-center">
@@ -387,21 +506,57 @@ export const Game: React.FC = () => {
         addLog('资金不足，无法进行投资！');
         return;
       }
-      
+
       const isSuccess = Math.random() > 0.5;
-      if (isSuccess) {
-        handleEventOption({
-          money: 100, // +200 - 100 cost
-          health: -10,
-          ability: 2 // Add ability gain on success
-        }, '你的眼光独到，投资大获成功！商业头脑更敏锐了。');
-      } else {
+      if (!isSuccess) {
         handleEventOption({
           money: -100,
           health: -10,
-          ability: 1 // Learn from failure
+          ability: 1
         }, '市场风云变幻，这次投资血本无归... 但你从中吸取了教训。');
+        return;
       }
+
+      // 投资成功后，显示选择弹窗
+      setChoiceModalData({
+        title: '投资大获成功！',
+        description: '你的眼光独到，这次投资获得了丰厚回报。你准备如何处理这笔收益？',
+        choices: [
+          {
+            id: 'profit',
+            label: '逐利方案',
+            description: '将利润最大化，专注于商业扩张',
+            icon: <Briefcase className="w-6 h-6" />,
+            effects: ['金钱 +120', '体力 -10', '能力 +2'],
+            onClick: () => {
+              handleEventOption({
+                money: 120,
+                health: -10,
+                ability: 2
+              }, '你的眼光独到，投资大获成功！你选择了将利润最大化，商业头脑更敏锐了。');
+              setShowChoiceModal(false);
+            }
+          },
+          {
+            id: 'reputation',
+            label: '名望方案',
+            description: '赞助书院，以财富换文化声誉',
+            icon: <BookOpen className="w-6 h-6" />,
+            effects: ['金钱 +40', '文化 +2', '声望 +5', '体力 -10', '能力 +2'],
+            onClick: () => {
+              handleEventOption({
+                money: 40,
+                health: -10,
+                ability: 2,
+                culture: 2,
+                reputation: 5
+              }, '你的眼光独到，投资大获成功！你决定赞助县学书院，虽然利润减少，但赢得了士大夫阶层的赞誉，你的文化声望也随之提升。');
+              setShowChoiceModal(false);
+            }
+          }
+        ]
+      });
+      setShowChoiceModal(true);
     }
     else if (role === 'hero') {
       // 闭关修炼: Cost 30 Health, +5 Ability
@@ -409,10 +564,50 @@ export const Game: React.FC = () => {
         addLog('体力不足，无法闭关！');
         return;
       }
-      handleEventOption({
-        health: -30,
-        ability: 5
-      }, '你闭关修炼，领悟了新的武学要义。');
+
+      // 闭关修炼后，显示选择弹窗
+      setChoiceModalData({
+        title: '闭关修炼完成',
+        description: '你闭关修炼，领悟了新的武学要义！接下来你打算如何运用这次修炼的成果？',
+        choices: [
+          {
+            id: 'solo',
+            label: '独自精进',
+            description: '继续独自钻研武学，追求个人武力的极致',
+            icon: <User className="w-6 h-6" />,
+            effects: ['体力 -30', '能力 +5'],
+            onClick: () => {
+              handleEventOption({
+                health: -30,
+                ability: 5
+              }, '你闭关修炼，独自领悟了新的武学要义。');
+              setShowChoiceModal(false);
+            }
+          },
+          {
+            id: 'teach',
+            label: '开馆授徒',
+            description: '将武学传授给后辈，传承武学精神',
+            icon: <BookOpen className="w-6 h-6" />,
+            effects: ['体力 -40', '能力 +3', '文化 +2', '声望 +3'],
+            onClick: () => {
+              if (playerStats.health < 40) {
+                addLog('体力不足，开馆授徒需要额外消耗！');
+                setShowChoiceModal(false);
+                return;
+              }
+              handleEventOption({
+                health: -40,
+                ability: 3,
+                culture: 2,
+                reputation: 3
+              }, '你闭关修炼后，决定开馆授徒，将武学传授给后辈。虽然分散了精力提升自身武学，但你的武学思想和江湖声望都得到了传承和弘扬。');
+              setShowChoiceModal(false);
+            }
+          }
+        ]
+      });
+      setShowChoiceModal(true);
     }
   };
 
@@ -436,14 +631,50 @@ export const Game: React.FC = () => {
   }, [raidAlert, logs]);
 
   return (
-    <div 
-      className="flex justify-center p-4 min-h-screen transition-colors duration-1000 bg-background"
-      style={{
-        backgroundColor: isTeaDay ? 'rgb(0,191,255)' : undefined
-      }}
-    >
-      <TimeManager onNightWarning={() => setIsNightWarning(true)} />
-      <div className="grid grid-cols-1 gap-6 w-full max-w-7xl md:grid-cols-3 md:h-[calc(100vh-2rem)]">
+    <div className="relative flex justify-center p-4 min-h-screen overflow-hidden">
+      {/* 动态背景图层 - 双层交叉淡入淡出 */}
+      {showBackgroundImage && (
+        <>
+          {/* 当前背景层（底层） */}
+          {currentBg && (
+            <div 
+              className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+              style={{ 
+                backgroundImage: `url(${currentBg})`,
+                opacity: isTransitioning ? 0 : 1,
+                zIndex: 0,
+                transition: 'opacity 1500ms ease-in-out'
+              }}
+            />
+          )}
+          
+          {/* 新背景层（顶层） */}
+          {nextBg && (
+            <div 
+              className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+              style={{ 
+                backgroundImage: `url(${nextBg})`,
+                opacity: isTransitioning ? 1 : 0,
+                zIndex: 1,
+                transition: 'opacity 1500ms ease-in-out'
+              }}
+            />
+          )}
+        </>
+      )}
+      
+      {/* 内容区域 */}
+      <div className="relative z-10 flex justify-center w-full min-h-screen">
+        <TimeManager 
+          onNightWarning={() => setIsNightWarning(true)} 
+          onNightChange={(night) => setIsNight(night)}
+        />
+        <div 
+          className="grid grid-cols-1 gap-6 w-full max-w-7xl md:grid-cols-3 md:h-[calc(100vh-2rem)]"
+          style={{
+            backgroundColor: isTeaDay ? 'rgba(0,191,255,0.3)' : 'transparent'
+          }}
+        >
         
         {/* Left Column: Stats */}
         <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
@@ -496,7 +727,7 @@ export const Game: React.FC = () => {
           {currentTask && (
             <div className="space-y-1">
               <h2 className="ml-1 text-sm font-semibold text-muted-foreground">当前任务</h2>
-              <div className="p-4 space-y-2 rounded-lg border shadow-sm bg-card text-card-foreground border-primary/20">
+              <div className={`p-4 space-y-2 rounded-lg border shadow-sm text-card-foreground border-primary/20 ${getGlassClass()}`}>
                 <div className="flex gap-2 justify-between items-start">
                   <h3 className="flex gap-2 items-center text-base font-bold shrink-0">
                      <FileText size={18} className="text-primary" />
@@ -529,7 +760,7 @@ export const Game: React.FC = () => {
             <button 
               onClick={handleWork}
               disabled={!!currentEvent || dailyCounts.work >= MAX_DAILY_WORK || isHeavySnow}
-              className="flex relative gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50 group/btn"
+              className={`flex relative gap-2 justify-center items-center p-4 rounded-lg transition-colors disabled:opacity-50 group/btn ${getGlassClass('hover:bg-black/40')}`}
               title={isHeavySnow ? "大雪封山，无法工作" : ""}
             >
               <Briefcase size={20} />
@@ -543,7 +774,7 @@ export const Game: React.FC = () => {
             <button 
               onClick={handleRest}
               disabled={!!currentEvent || dailyCounts.rest >= MAX_DAILY_REST}
-              className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+              className={`flex gap-2 justify-center items-center p-4 rounded-lg transition-colors disabled:opacity-50 ${getGlassClass('hover:bg-black/40')}`}
             >
               <Coffee size={20} />
               <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
@@ -639,7 +870,7 @@ export const Game: React.FC = () => {
                 setShowSnackStreet(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-orange-600 bg-orange-100 rounded-lg transition-transform dark:bg-orange-950/30 dark:text-orange-400 group-hover:scale-110">
                 <Utensils size={18} />
@@ -653,7 +884,7 @@ export const Game: React.FC = () => {
                 setShowMarket(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-amber-600 bg-amber-100 rounded-lg transition-transform dark:bg-amber-950/30 dark:text-amber-400 group-hover:scale-110">
                 <ShoppingBag size={18} />
@@ -667,7 +898,7 @@ export const Game: React.FC = () => {
                 setShowPlayStreet(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-pink-600 bg-pink-100 rounded-lg transition-transform dark:bg-pink-950/30 dark:text-pink-400 group-hover:scale-110">
                 <ShoppingBag size={18} />
@@ -681,7 +912,7 @@ export const Game: React.FC = () => {
                 setShowLeekGarden(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-emerald-600 bg-emerald-100 rounded-lg transition-transform dark:bg-emerald-950/30 dark:text-emerald-400 group-hover:scale-110">
                 <Leaf size={18} />
@@ -695,7 +926,7 @@ export const Game: React.FC = () => {
                 setShowWillowGarden(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-green-600 bg-green-100 rounded-lg transition-transform dark:bg-green-950/30 dark:text-green-400 group-hover:scale-110">
                 <Trees size={18} />
@@ -709,7 +940,7 @@ export const Game: React.FC = () => {
                 setShowEstates(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-indigo-600 bg-indigo-100 rounded-lg transition-transform dark:bg-indigo-950/30 dark:text-indigo-400 group-hover:scale-110">
                 <Building2 size={18} />
@@ -723,7 +954,7 @@ export const Game: React.FC = () => {
                 setShowTreasure(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-purple-600 bg-purple-100 rounded-lg transition-transform dark:bg-purple-950/30 dark:text-purple-400 group-hover:scale-110">
                 <Gem size={18} />
@@ -737,7 +968,7 @@ export const Game: React.FC = () => {
                 setShowCharity(true);
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-rose-600 bg-rose-100 rounded-lg transition-transform dark:bg-rose-950/30 dark:text-rose-400 group-hover:scale-110">
                 <Heart size={18} />
@@ -750,7 +981,7 @@ export const Game: React.FC = () => {
                 navigate('/facilities');
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-cyan-600 bg-cyan-100 rounded-lg transition-transform dark:bg-cyan-950/30 dark:text-cyan-400 group-hover:scale-110">
                 <Dices size={18} />
@@ -764,7 +995,7 @@ export const Game: React.FC = () => {
                 navigate('/pigeon-race');
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-sky-600 bg-sky-100 rounded-lg transition-transform dark:bg-sky-950/30 dark:text-sky-400 group-hover:scale-110">
                 <Bird size={18} />
@@ -778,7 +1009,7 @@ export const Game: React.FC = () => {
                 navigate('/buildings');
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 rounded-lg transition-transform bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 group-hover:scale-110">
                 <Landmark size={18} />
@@ -792,7 +1023,7 @@ export const Game: React.FC = () => {
                 setShowExplore(true);
               }}
               disabled={!!currentEvent || isHeavySnow || (dailyCounts.explore || 0) >= 2}
-              className="flex relative gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 group/btn"
+              className={`flex relative gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 group/btn ${getGlassClass()}`}
               title={isHeavySnow ? "大雪封山，无法探险" : ""}
             >
               <div className="p-2 text-teal-600 bg-teal-100 rounded-lg transition-transform dark:bg-teal-950/30 dark:text-teal-400 group-hover:scale-110">
@@ -812,7 +1043,7 @@ export const Game: React.FC = () => {
                 fillCave();
               }}
               disabled={!!currentEvent || dailyCounts.caveFilled}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-amber-600 bg-amber-100 rounded-lg transition-transform dark:bg-amber-950/30 dark:text-amber-400 group-hover:scale-110">
                 <Shovel size={18} />
@@ -826,7 +1057,7 @@ export const Game: React.FC = () => {
                 navigate('/collection');
               }}
               disabled={!!currentEvent}
-              className="flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 text-yellow-600 bg-yellow-100 rounded-lg transition-transform dark:bg-yellow-950/30 dark:text-yellow-400 group-hover:scale-110">
                 <Scroll size={18} />
@@ -840,7 +1071,7 @@ export const Game: React.FC = () => {
                 setShowInventory(true);
               }}
               disabled={!!currentEvent}
-              className="flex col-span-2 gap-3 justify-center items-center p-3 rounded-xl border shadow-sm transition-all group border-border bg-card hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50"
+              className={`flex col-span-2 gap-3 justify-center items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
               <div className="p-2 rounded-lg transition-transform bg-primary/10 text-primary group-hover:scale-110">
                 <Backpack size={18} />
@@ -867,6 +1098,7 @@ export const Game: React.FC = () => {
           <LogPanel logs={logs} />
         </div>
 
+      </div>
       </div>
 
       {currentEvent && (
@@ -924,6 +1156,16 @@ export const Game: React.FC = () => {
       {showPlayStreet && <PlayStreetModal onClose={() => setShowPlayStreet(false)} />}
       {showTreasure && <TreasureModal onClose={() => setShowTreasure(false)} />}
       {showCharity && <CharityModal onClose={() => setShowCharity(false)} />}
+
+      {showChoiceModal && choiceModalData && (
+        <ChoiceModal
+          isOpen={showChoiceModal}
+          onClose={() => setShowChoiceModal(false)}
+          title={choiceModalData.title}
+          description={choiceModalData.description}
+          choices={choiceModalData.choices}
+        />
+      )}
 
       {showTeaPopup && (
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">

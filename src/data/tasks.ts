@@ -137,11 +137,11 @@ export const tasks: Task[] = [
     id: 'merchant_2',
     role: 'merchant',
     title: '商业帝国',
-    description: '有了资本，你不再满足于小打小闹。你要通过垄断关键物资，影响整个县城的经济命脉。',
-    goalDescription: '县城经济达到 70',
-    checkCompletion: (state: GameState) => state.countyStats.economy >= 70,
+    description: '有了资本，你不再满足于小打小闹。你要通过垄断关键物资，影响整个县城的经济命脉。同时，一个有远见的商人也懂得文化的重要性，士绅阶层的认可将为你打开更大的市场。',
+    goalDescription: '县城经济达到 70 且 文化达到 55',
+    checkCompletion: (state: GameState) => state.countyStats.economy >= 70 && state.countyStats.culture >= 55,
     reward: { money: 500, reputation: 50 },
-    rewardText: '你的商号已经控制了县城的半壁江山，连县令都要对你礼让三分。',
+    rewardText: '你的商号已经控制了县城的半壁江山，连县令都要对你礼让三分。同时，你在文化圈的声誉也为商业帝国的稳固打下了基础。',
     nextTaskId: 'merchant_3',
     specialAction: {
       label: '垄断市场',
@@ -158,7 +158,7 @@ export const tasks: Task[] = [
             money: -100, // Gain 100 net (spent 200, maybe gained 300?) - let's say cost 200, gain effect money +300 -> net +100
             health: -20,
             countyStats: { economy: 5 },
-            playerStats: { money: 300 } 
+            playerStats: { money: 300 }
           }
         };
       }
@@ -168,18 +168,18 @@ export const tasks: Task[] = [
     id: 'merchant_3',
     role: 'merchant',
     title: '乐善好施',
-    description: '富甲一方后，你意识到名声的重要性。是时候回馈乡里，做一个大善人了。',
-    goalDescription: '声望达到 500',
-    checkCompletion: (state: GameState) => state.playerStats.reputation >= 500,
+    description: '富甲一方后，你意识到名声的重要性。是时候回馈乡里，做一个大善人了。同时，持续的文化投入将让你的商业帝国基业长青。',
+    goalDescription: '声望达到 500 且 文化达到 60',
+    checkCompletion: (state: GameState) => state.playerStats.reputation >= 500 && state.countyStats.culture >= 60,
     reward: { ability: 20 },
-    rewardText: '你不仅富可敌国，更有着崇高的声望，成为了真正的商界领袖。',
+    rewardText: '你不仅富可敌国，更有着崇高的声望，成为了真正的商界领袖。你对文化的投入也得到了文人的赞颂，为子孙后代留下了精神财富。',
     specialAction: {
       label: '开仓放粮',
       description: '在城中设立粥棚，救济穷人。',
       costText: '消耗 100 金钱',
       handler: (state: GameState) => {
         if (state.playerStats.money < 100) return { success: false, message: '资金不足！' };
-        
+
         return {
           success: true,
           message: '你的善举感动了全城百姓，大家纷纷称颂你的功德。',
@@ -226,11 +226,11 @@ export const tasks: Task[] = [
     id: 'hero_2',
     role: 'hero',
     title: '除暴安良',
-    description: '有了名气，更要有侠义心肠。最近城中治安不靖，正需要你这样的侠士出手。',
-    goalDescription: '治安值达到 70',
-    checkCompletion: (state: GameState) => state.countyStats.order >= 70,
+    description: '有了名气，更要有侠义心肠。最近城中治安不靖，正需要你这样的侠士出手。同时，侠义精神不仅是武力的彰显，更需要文武并重，以文化武，方能真正树立一代侠客的风范。',
+    goalDescription: '治安值达到 70 且 文化达到 55',
+    checkCompletion: (state: GameState) => state.countyStats.order >= 70 && state.countyStats.culture >= 55,
     reward: { reputation: 100, health: 20 },
-    rewardText: '城中百姓视你为守护神，歹徒听到你的名字都要退避三舍。',
+    rewardText: '城中百姓视你为守护神，歹徒听到你的名字都要退避三舍。同时，你在传播武学文化方面的努力也赢得了士大夫的尊重。',
     nextTaskId: 'hero_3',
     specialAction: {
       label: '夜间巡逻',
@@ -238,7 +238,7 @@ export const tasks: Task[] = [
       costText: '消耗 20 体力',
       handler: (state: GameState) => {
         if (state.playerStats.health < 20) return { success: false, message: '体力不足！' };
-        
+
         return {
           success: true,
           message: '你抓获了几名趁夜行窃的小贼，维护了一方安宁。',
@@ -255,18 +255,17 @@ export const tasks: Task[] = [
     id: 'hero_3',
     role: 'hero',
     title: '一代宗师',
-    description: '行侠仗义固然重要，但武学之道永无止境。你需要在武学上更进一步，成为一代宗师。',
-    goalDescription: '能力达到 90',
-    checkCompletion: (state: GameState) => state.playerStats.ability >= 90,
+    description: '行侠仗义固然重要，但武学之道永无止境。你需要在武学上更进一步，成为一代宗师。武学的最高境界不仅是武技精湛，更要能将其升华为一种文化传承，以武载道，德艺双馨。',
+    goalDescription: '能力达到 90 且 文化达到 60',
+    checkCompletion: (state: GameState) => state.playerStats.ability >= 90 && state.countyStats.culture >= 60,
     reward: { reputation: 500 },
-    rewardText: '你的武功已臻化境，开宗立派，成为了一代宗师。',
+    rewardText: '你的武功已臻化境，开宗立派，成为了一代宗师。你不仅武学超群，更将武学文化传播四方，被后世奉为"武圣"。',
     specialAction: {
       label: '生死历练',
       description: '挑战江湖顶尖高手，在生死边缘领悟武学真谛。',
       costText: '消耗 50 体力',
       handler: (state: GameState) => {
         if (state.playerStats.health < 50) return { success: false, message: '体力不足！' };
-        
         const success = Math.random() > 0.3;
         if (success) {
           return {

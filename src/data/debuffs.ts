@@ -288,147 +288,147 @@ export const debuffConfigs: DebuffConfig[] = [
   },
 
   // ─── 9. 学宫失修（文化向）────────────────────────────────────
-  {
-    id: 'academy_neglect',
-    name: '学宫失修',
-    description:
-      '学宫檐角漏雨，讲席蒙尘，童生三三两两散去。街头说书替代了学堂晨读。',
-    severity: 'minor',
-    trigger: {
-      type: 'consecutive',
-      consecutiveDays: 4,
-      custom: (state) =>
-        (state.flags['culture_invest_days'] || 0) === 0 &&
-        state.countyStats.culture < 75,
-    },
-    duration: -1, // 直到进行文教修缮
-    effects: {
-      culture: -1,
-    },
-    clearMethods: [
-      {
-        id: 'academy_repair_money',
-        label: '执行"学宫修缮"（花费 100 文）',
-        moneyCost: 100,
-      },
-      {
-        id: 'cultural_festival',
-        label: '举办文会（花费 40 声望）',
-        reputationCost: 40,
-      },
-    ],
-    stackRule: 'none',
-    maxStacks: 1,
-  },
+  // {
+  //   id: 'academy_neglect',
+  //   name: '学宫失修',
+  //   description:
+  //     '学宫檐角漏雨，讲席蒙尘，童生三三两两散去。街头说书替代了学堂晨读。',
+  //   severity: 'minor',
+  //   trigger: {
+  //     type: 'consecutive',
+  //     consecutiveDays: 4,
+  //     custom: (state) =>
+  //       (state.flags['culture_invest_days'] || 0) === 0 &&
+  //       state.countyStats.culture < 75,
+  //   },
+  //   duration: -1, // 直到进行文教修缮
+  //   effects: {
+  //     culture: -1,
+  //   },
+  //   clearMethods: [
+  //     {
+  //       id: 'academy_repair_money',
+  //       label: '执行"学宫修缮"（花费 100 文）',
+  //       moneyCost: 100,
+  //     },
+  //     {
+  //       id: 'cultural_festival',
+  //       label: '举办文会（花费 40 声望）',
+  //       reputationCost: 40,
+  //     },
+  //   ],
+  //   stackRule: 'none',
+  //   maxStacks: 1,
+  // },
 
   // ─── 10. 科场舞弊风波（文化重创）────────────────────────────
-  {
-    id: 'exam_scandal',
-    name: '科场舞弊风波',
-    description:
-      '榜单一出，茶楼巷口尽是质疑。读书人愤而撕榜，士绅联名上书，县学威望一夜跌落。',
-    severity: 'severe',
-    trigger: {
-      type: 'event',
-      custom: (state) => !!(state.flags['exam_scandal_triggered']),
-    },
-    duration: 2,
-    effects: {
-      culture: -1,
-      immediateCulture: -6,
-      immediateReputation: -4,
-    },
-    clearMethods: [
-      {
-        id: 'investigate_rep',
-        label: '公开查案（花费 50 声望）',
-        reputationCost: 50,
-      },
-      {
-        id: 'reopen_exam_money',
-        label: '重开科试（花费 180 文）',
-        moneyCost: 180,
-      },
-    ],
-    stackRule: 'none',
-    maxStacks: 1,
-  },
+  // {
+  //   id: 'exam_scandal',
+  //   name: '科场舞弊风波',
+  //   description:
+  //     '榜单一出，茶楼巷口尽是质疑。读书人愤而撕榜，士绅联名上书，县学威望一夜跌落。',
+  //   severity: 'severe',
+  //   trigger: {
+  //     type: 'event',
+  //     custom: (state) => !!(state.flags['exam_scandal_triggered']),
+  //   },
+  //   duration: 2,
+  //   effects: {
+  //     culture: -1,
+  //     immediateCulture: -6,
+  //     immediateReputation: -4,
+  //   },
+  //   clearMethods: [
+  //     {
+  //       id: 'investigate_rep',
+  //       label: '公开查案（花费 50 声望）',
+  //       reputationCost: 50,
+  //     },
+  //     {
+  //       id: 'reopen_exam_money',
+  //       label: '重开科试（花费 180 文）',
+  //       moneyCost: 180,
+  //     },
+  //   ],
+  //   stackRule: 'none',
+  //   maxStacks: 1,
+  // },
 
   // ─── 11. 市井粗俗化（文化慢性流失）──────────────────────────
-  {
-    id: 'culture_vulgarization',
-    name: '市井粗俗化',
-    description:
-      '街市越发喧腾，快钱玩法盛行。热闹是热闹了，读书风气却被不断挤压。',
-    severity: 'minor',
-    trigger: {
-      type: 'consecutive',
-      consecutiveDays: 3,
-      custom: (state) =>
-        (state.flags['entertainment_windfall_days'] || 0) >= 2 &&
-        (state.flags['culture_invest_days'] || 0) === 0,
-    },
-    duration: 3,
-    effects: {
-      culture: -2,
-      economy: 1, // 短期甜头
-    },
-    clearMethods: [
-      {
-        id: 'cultural_festival_rep',
-        label: '举办文会（花费 40 声望）',
-        reputationCost: 40,
-      },
-      {
-        id: 'academy_subsidy_money',
-        label: '学宫补贴（花费 80 文）',
-        moneyCost: 80,
-      },
-    ],
-    stackRule: 'none',
-    maxStacks: 1,
-  },
+  // {
+  //   id: 'culture_vulgarization',
+  //   name: '市井粗俗化',
+  //   description:
+  //     '街市越发喧腾，快钱玩法盛行。热闹是热闹了，读书风气却被不断挤压。',
+  //   severity: 'minor',
+  //   trigger: {
+  //     type: 'consecutive',
+  //     consecutiveDays: 3,
+  //     custom: (state) =>
+  //       (state.flags['entertainment_windfall_days'] || 0) >= 2 &&
+  //       (state.flags['culture_invest_days'] || 0) === 0,
+  //   },
+  //   duration: 3,
+  //   effects: {
+  //     culture: -2,
+  //     economy: 1, // 短期甜头
+  //   },
+  //   clearMethods: [
+  //     {
+  //       id: 'cultural_festival_rep',
+  //       label: '举办文会（花费 40 声望）',
+  //       reputationCost: 40,
+  //     },
+  //     {
+  //       id: 'academy_subsidy_money',
+  //       label: '学宫补贴（花费 80 文）',
+  //       moneyCost: 80,
+  //     },
+  //   ],
+  //   stackRule: 'none',
+  //   maxStacks: 1,
+  // },
 
   // ─── 12. 人才外流（文化核心惩罚）────────────────────────────
-  {
-    id: 'talent_exodus',
-    name: '人才外流',
-    description:
-      '教谕、匠师、账房先生纷纷"另谋高就"，留下的是空席与未完的教案、账册和工图。',
-    severity: 'severe',
-    trigger: {
-      type: 'consecutive',
-      consecutiveDays: 3,
-      custom: (state) => {
-        const lowEco = state.countyStats.economy < 35;
-        const lowLiv = state.countyStats.livelihood < 35;
-        const lowCulture = state.countyStats.culture < 45;
-        return (lowEco || lowLiv) && lowCulture;
-      },
-    },
-    duration: 4,
-    effects: {
-      culture: -2,
-      cultureGainMultiplier: -0.2,
-    },
-    clearMethods: [
-      {
-        id: 'recovery_auto',
-        label: '经济或民生恢复到 45+ 并保持 2 天（自动解除）',
-        autoCondition: (state) =>
-          (state.countyStats.economy >= 45 || state.countyStats.livelihood >= 45) &&
-          (state.flags['recovery_days'] || 0) >= 2,
-      },
-      {
-        id: 'talent_retention_plan',
-        label: '"人才挽留计划"（150 文 + 25 声望）',
-        moneyCost: 150,
-        reputationCost: 25,
-      },
-    ],
-    stackRule: 'none',
-    maxStacks: 1,
-  },
+  // {
+  //   id: 'talent_exodus',
+  //   name: '人才外流',
+  //   description:
+  //     '教谕、匠师、账房先生纷纷"另谋高就"，留下的是空席与未完的教案、账册和工图。',
+  //   severity: 'severe',
+  //   trigger: {
+  //     type: 'consecutive',
+  //     consecutiveDays: 3,
+  //     custom: (state) => {
+  //       const lowEco = state.countyStats.economy < 35;
+  //       const lowLiv = state.countyStats.livelihood < 35;
+  //       const lowCulture = state.countyStats.culture < 45;
+  //       return (lowEco || lowLiv) && lowCulture;
+  //     },
+  //   },
+  //   duration: 4,
+  //   effects: {
+  //     culture: -2,
+  //     cultureGainMultiplier: -0.2,
+  //   },
+  //   clearMethods: [
+  //     {
+  //       id: 'recovery_auto',
+  //       label: '经济或民生恢复到 45+ 并保持 2 天（自动解除）',
+  //       autoCondition: (state) =>
+  //         (state.countyStats.economy >= 45 || state.countyStats.livelihood >= 45) &&
+  //         (state.flags['recovery_days'] || 0) >= 2,
+  //     },
+  //     {
+  //       id: 'talent_retention_plan',
+  //       label: '"人才挽留计划"（150 文 + 25 声望）',
+  //       moneyCost: 150,
+  //       reputationCost: 25,
+  //     },
+  //   ],
+  //   stackRule: 'none',
+  //   maxStacks: 1,
+  // },
 ];
 
 /** 按 id 快速查找配置 */

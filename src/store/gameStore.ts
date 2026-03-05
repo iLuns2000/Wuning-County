@@ -416,6 +416,14 @@ interface GameStore extends GameState {
   vibrationEnabled: boolean;
   setVibrationEnabled: (enabled: boolean) => void;
 
+  // Background Settings
+  showBackgroundImage: boolean;
+  setShowBackgroundImage: (show: boolean) => void;
+  
+  // Glass Effect Settings
+  glassEffectEnabled: boolean;
+  setGlassEffectEnabled: (enabled: boolean) => void;
+
   plantLeek: (plotId: number, variety: { id: string; growthTicks: number; baseYield: number; baseQuality: number; toughness?: number }) => void;
   waterLeek: (plotId: number) => void;
   fertilizeLeek: (plotId: number) => void;
@@ -475,6 +483,10 @@ export const useGameStore = create<GameStore>()(
       volume: 0.5,
       // Haptic Defaults
       vibrationEnabled: true,
+      // Background Defaults
+      showBackgroundImage: true,
+      // Glass Effect Defaults
+      glassEffectEnabled: true,
       officeState: { level: 1, isUpgrading: false },
       countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
       externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
@@ -3070,6 +3082,8 @@ export const useGameStore = create<GameStore>()(
       setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
       setVolume: (volume) => set({ volume }),
       setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
+      setShowBackgroundImage: (show) => set({ showBackgroundImage: show }),
+      setGlassEffectEnabled: (enabled) => set({ glassEffectEnabled: enabled }),
 
       // Office Upgrades Implementation
       startUpgradeOffice: () => {

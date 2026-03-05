@@ -9,6 +9,8 @@
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
 import React, { useState } from 'react';
+import { useTheme } from '@/hooks/useTheme';
+import { useGameStore } from '@/store/gameStore';
 
 interface LogPanelProps {
   logs: string[];
@@ -93,8 +95,20 @@ const LogEntry: React.FC<{ log: string; index: number }> = ({ log }) => {
 };
 
 export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
+  const { theme } = useTheme();
+  const { glassEffectEnabled } = useGameStore();
+  
+  // 判断是否为浅色模式
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  // 根据主题和毛玻璃开关决定背景样式
+  const shouldUseGlass = glassEffectEnabled && !isLightMode;
+  const bgClass = shouldUseGlass
+    ? 'bg-black/30 backdrop-blur-md border-white/10'
+    : 'bg-card border-border';
+
   return (
-    <div className="flex overflow-hidden flex-col p-4 h-full rounded-lg border shadow-sm bg-card">
+    <div className={`flex overflow-hidden flex-col p-4 h-full rounded-lg border shadow-sm ${bgClass}`}>
       <h3 className="mb-2 text-sm font-semibold shrink-0">事件记录</h3>
       <div className="overflow-y-auto flex-1 space-y-0.5 min-h-0">
         {logs.map((log, index) => (

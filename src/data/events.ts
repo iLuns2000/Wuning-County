@@ -179,8 +179,13 @@ export const randomEvents: GameEvent[] = [
         effect: { money: -200, economy: 10 } // Merchant passive makes earning back easier
       },
       {
+        label: '资助县学',
+        message: '你决定将这块地皮捐给县学作为分校，虽然少赚了一笔，但文风鼎盛，书香门第的声誉为你的生意带来更多贵人相助。',
+        effect: { money: -100, culture: 3, reputation: 15 }
+      },
+      {
         label: '暂时观望',
-        message: '你觉得时机未到，放弃了这个机会。',
+        message: '你觉得时机未到，放弃了这个机会。'
       }
     ]
   },
@@ -225,8 +230,13 @@ export const randomEvents: GameEvent[] = [
         effect: { reputation: 30, money: 100, health: -30, order: 5 }
       },
       {
+        label: '公开讲武',
+        message: '你虽然不想直接卷入官府事务，但借此机会在城中广场公开讲述武学心得，吸引了许多年轻武者。这场讲武不仅传播了侠义精神，也让你的江湖声望和文化影响力都得到了提升。',
+        effect: { reputation: 15, culture: 2, ability: 1 }
+      },
+      {
         label: '不惹麻烦',
-        message: '你决定不去招惹这个亡命之徒。',
+        message: '你决定不去招惹这个亡命之徒。'
       }
     ]
   },

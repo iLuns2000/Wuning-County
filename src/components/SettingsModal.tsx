@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2 } from 'lucide-react';
+import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
@@ -19,9 +19,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     soundEnabled, 
     volume, 
     vibrationEnabled,
+    showBackgroundImage,
+    glassEffectEnabled,
     setSoundEnabled, 
     setVolume,
     setVibrationEnabled,
+    setShowBackgroundImage,
+    setGlassEffectEnabled,
     addLog,
     resetGame,
     saveToFile,
@@ -207,6 +211,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               >
                 {vibrationEnabled ? <Vibrate size={20} /> : <VibrateOff size={20} />}
               </button>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border border-dashed bg-muted/30 border-border">
+            <h3 className="mb-4 font-semibold">视觉效果</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                 <div className="flex flex-col flex-1">
+                   <span className="text-sm font-medium">动态背景图</span>
+                   <span className="text-xs text-muted-foreground">根据时间和天气显示不同的背景图片</span>
+                 </div>
+                 <button 
+                  onClick={() => setShowBackgroundImage(!showBackgroundImage)}
+                  className="p-2 rounded-full border transition-colors bg-background hover:bg-muted"
+                  title={showBackgroundImage ? "关闭背景图" : "开启背景图"}
+                >
+                  {showBackgroundImage ? <Image size={20} /> : <ImageOff size={20} />}
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                 <div className="flex flex-col flex-1">
+                   <span className="text-sm font-medium">毛玻璃效果</span>
+                   <span className="text-xs text-muted-foreground">为面板和按钮添加半透明模糊效果（深色模式）</span>
+                 </div>
+                 <button 
+                  onClick={() => setGlassEffectEnabled(!glassEffectEnabled)}
+                  className="p-2 rounded-full border transition-colors bg-background hover:bg-muted"
+                  title={glassEffectEnabled ? "关闭毛玻璃效果" : "开启毛玻璃效果"}
+                >
+                  {glassEffectEnabled ? <Sparkles size={20} /> : <Layers size={20} />}
+                </button>
+              </div>
             </div>
           </div>
 
