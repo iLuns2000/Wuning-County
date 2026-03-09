@@ -278,7 +278,8 @@ const XimengTower: React.FC = () => {
     }
 
     const q = questions[Math.floor(Math.random() * questions.length)];
-    setQuizState({ active: true, question: q });
+    const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+    setQuizState({ active: true, question: { ...q, options: shuffledOptions } });
   };
 
   const handleAnswer = (option: string) => {
@@ -363,7 +364,7 @@ const XimengTower: React.FC = () => {
                  onClick={() => handleAnswer(opt)}
                  className="p-3 text-sm text-left rounded-md border hover:bg-secondary"
                >
-                 {String.fromCharCode(65 + idx)}. {opt}
+                 {opt}
                </button>
              ))}
            </div>
@@ -934,13 +935,13 @@ const FengEGe: React.FC = () => {
           ))}
         </div>
         <div className="text-xs text-muted-foreground">已选：{selected.map(getName).join('、') || '无'}</div>
-        <button onClick={handleForge} disabled={selected.length !== 3} className="w-full p-3 rounded-lg border hover:bg-secondary disabled:opacity-50">
+        <button onClick={handleForge} disabled={selected.length !== 3} className="p-3 w-full rounded-lg border hover:bg-secondary disabled:opacity-50">
           开炉锻造
         </button>
       </div>
 
       {pendingItem && (
-        <div className="space-y-2 pt-2 border-t">
+        <div className="pt-2 space-y-2 border-t">
           <h3 className="text-sm font-semibold">锻造完成：{pendingLabel}</h3>
           <div className="grid grid-cols-2 gap-2">
             <button onClick={handlePayTail} disabled={playerStats.money < 50} className="p-3 rounded-lg border hover:bg-secondary disabled:opacity-50">
@@ -953,14 +954,14 @@ const FengEGe: React.FC = () => {
         </div>
       )}
 
-      <div className="space-y-2 pt-2 border-t">
+      <div className="pt-2 space-y-2 border-t">
         <h3 className="text-sm font-semibold">售卖武器</h3>
         {weaponInventory.length === 0 ? (
           <div className="text-xs text-muted-foreground">暂无可售武器。</div>
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {weaponInventory.map(id => (
-              <button key={id} onClick={() => sellWeapon(id)} className="p-3 rounded-lg border text-xs hover:bg-secondary">
+              <button key={id} onClick={() => sellWeapon(id)} className="p-3 text-xs rounded-lg border hover:bg-secondary">
                 {getName(id)}（+{weaponSellPrice(id)}）
               </button>
             ))}
