@@ -105,9 +105,12 @@
   --bg-primary: #1a1a1a;
   --bg-secondary: #1e2d2f;
   --bg-tertiary: #2d3f47;
-  --text-primary: #e8e4df;
-  --text-secondary: #a8a4a0;
-  --text-muted: #6b6662;
+  
+  /* 深色模式文字颜色 - 重要：必须使用亮色以保证可读性 */
+  --text-primary: #f5f3f0;      /* 主要文字 - 高亮度米白 */
+  --text-secondary: #c4c0bc;    /* 次要文字 - 柔和灰白 */
+  --text-muted: #8a8682;        /* 辅助文字 - 降低对比度但仍清晰 */
+  --text-inverse: #1a1a1a;      /* 反色文字 - 用于浅色背景 */
   
   /* 强调色 */
   --color-primary: #c94043;
@@ -118,6 +121,53 @@
   --color-danger: #c94043;
 }
 ```
+
+### 3.3 深色模式文字颜色规范（重要）
+
+为了确保深色模式下的可读性，文字必须使用亮色。具体规范如下：
+
+| 用途 | 颜色变量 | HEX | 亮度 | 说明 |
+|------|----------|-----|------|------|
+| **主要文字** | `--text-primary` | `#f5f3f0` | 95% | 标题、重要内容，纯白偏暖 |
+| **次要文字** | `--text-secondary` | `#c4c0bc` | 75% | 正文、描述文字 |
+| **辅助文字** | `--text-muted` | `#8a8682` | 55% | 标签、提示、占位符 |
+| **禁用文字** | `--text-disabled` | `#5a5856` | 35% | 禁用状态的文字 |
+| **高亮文字** | `--text-accent` | 直接使用强调色 | - | 数值、金币、按钮文字 |
+
+#### 实现要点
+
+```css
+/* 深色模式下的文字颜色 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 文字必须比背景亮至少 50% */
+    --text-primary: #f5f3f0;  /* 不要低于 #d0d0d0 */
+    --text-secondary: #c4c0bc;
+    --text-muted: #8a8682;    /* 不要低于 #707070 */
+  }
+  
+  /* 所有使用 text-muted-foreground 的组件需确保足够亮 */
+  .text-muted-foreground {
+    color: #8a8682 !important;
+  }
+}
+
+/* 浅色模式（可选） */
+.light-mode {
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #707070;
+}
+```
+
+#### 组件检查清单
+
+- [ ] 标题文字：#f5f3f0（主要）
+- [ ] 正文文字：#c4c0bc（次要）  
+- [ ] 提示文字：#8a8682（辅助）
+- [ ] 金额/数值：使用藤黄 #d4a84b 高亮
+- [ ] 按钮文字：白色或浅色
+- [ ] 禁用状态：#5a5852（不可太暗）
 
 ---
 

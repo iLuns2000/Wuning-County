@@ -35,7 +35,7 @@ const tierStyles: Record<string, { bg: string; text: string; stars: string }> = 
   excellent: { bg: 'bg-amber-500/20', text: 'text-amber-300', stars: '★★★★★' },
   good: { bg: 'bg-green-500/20', text: 'text-green-400', stars: '★★★★☆' },
   normal: { bg: 'bg-blue-500/20', text: 'text-blue-400', stars: '★★★☆☆' },
-  none: { bg: 'bg-gray-500/20', text: 'text-gray-400', stars: '★☆☆☆☆' },
+  none: { bg: 'bg-gray-500/20', text: 'text-gray-300', stars: '★☆☆☆☆' },
 };
 
 export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, onClose, styleMatch }) => {
@@ -197,7 +197,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
                     {/* 选项序号 */}
                     <span className={`
                       w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
-                      ${allowed ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-500'}
+                      ${allowed ? 'bg-primary/20 text-primary' : 'bg-gray-500/20 text-gray-400'}
                     `}>
                       {index + 1}
                     </span>

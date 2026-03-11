@@ -110,7 +110,7 @@ const FortuneTeller: React.FC = () => {
       <div className="flex flex-col gap-3">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>花费 5 文</span>
-          <span className={dailyCounts.fortune > 0 ? 'text-gray-400' : 'text-purple-400'}>
+          <span className={dailyCounts.fortune > 0 ? 'text-gray-300' : 'text-purple-400'}>
             {dailyCounts.fortune > 0 ? '今日已算' : '可求签'}
           </span>
         </div>
@@ -367,7 +367,7 @@ const ArcheryGallery: React.FC = () => {
                 <div className="text-xs text-muted-foreground">剩余箭</div>
               </div>
               <div className="text-center">
-                <div className={`text-2xl font-bold ${score >= targetScore ? 'text-green-400' : 'text-gray-400'}`}>
+                <div className={`text-2xl font-bold ${score >= targetScore ? 'text-green-400' : 'text-gray-300'}`}>
                   {score >= targetScore ? '✓' : `${targetScore - score}`}
                 </div>
                 <div className="text-xs text-muted-foreground">目标</div>

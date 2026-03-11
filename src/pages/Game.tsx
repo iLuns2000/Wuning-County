@@ -1011,7 +1011,7 @@ export const Game: React.FC = () => {
               disabled={!!currentEvent}
               className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
             >
-              <div className="p-2 rounded-lg transition-transform bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 group-hover:scale-110">
+              <div className="p-2 rounded-lg transition-transform bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 group-hover:scale-110">
                 <Landmark size={18} />
               </div>
               <span className="text-sm font-medium">建筑阁</span>

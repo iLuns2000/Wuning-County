@@ -741,7 +741,7 @@ const BlacksmithShop: React.FC = () => {
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
-        <Hammer className="text-gray-600" />
+        <Hammer className="text-gray-400" />
         <h2 className="text-xl font-bold">豆沙铁匠铺</h2>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -913,7 +913,7 @@ const FengEGe: React.FC = () => {
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
       <div className="flex gap-2 items-center pb-2 border-b">
-        <Hammer className="text-gray-700" />
+        <Hammer className="text-gray-500" />
         <h2 className="text-xl font-bold">锋锷阁</h2>
       </div>
       <p className="text-sm text-muted-foreground">委托铸剑之所，先提交材料后再付尾款取件，亦可售剑换钱。</p>

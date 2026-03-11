@@ -210,12 +210,12 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
           }}
           className="absolute top-2 right-2 p-1 rounded-full transition-colors hover:bg-black/10 dark:hover:bg-white/10"
         >
-          <X size={24} className="text-[#8b5a2b] dark:text-[#d4b483]" />
+          <X size={24} className="text-[#8b5a2b] dark:text-[#f0e0b8]" />
         </button>
 
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-[#8b5a2b] dark:text-[#d4b483] mb-1">丹房炼化</h2>
-          <p className="text-sm text-[#8b5a2b]/80 dark:text-[#d4b483]/80">合成药材，炼制绝世仙丹</p>
+          <h2 className="text-2xl font-bold text-[#8b5a2b] dark:text-[#f0e0b8] mb-1">丹房炼化</h2>
+          <p className="text-sm text-[#8b5a2b]/80 dark:text-[#e0d0a8]/80">合成药材，炼制绝世仙丹</p>
         </div>
 
         {/* Game Board */}
@@ -254,8 +254,8 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
         {/* Controls / Info */}
         <div className="space-y-4">
             <div className="flex justify-between items-center bg-[#fff8e7] dark:bg-[#3e3020] p-3 rounded-lg border border-[#8b5a2b]/30 dark:border-[#d4b483]/30">
-                <span className="text-[#8b5a2b] dark:text-[#d4b483] font-medium">当前最高品质:</span>
-                <span className="font-bold text-[#8b5a2b] dark:text-[#d4b483]">
+                <span className="text-[#8b5a2b] dark:text-[#f0e0b8] font-medium">当前最高品质:</span>
+                <span className="font-bold text-[#8b5a2b] dark:text-[#f0e0b8]">
                     {ALCHEMY_LEVELS[highestTile]?.name || '无'}
                 </span>
             </div>
@@ -290,7 +290,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
                         vibrate(VIBRATION_PATTERNS.MEDIUM);
                         initGame();
                     }}
-                    className="text-xs text-[#8b5a2b]/60 dark:text-[#d4b483]/60 hover:text-[#8b5a2b] dark:hover:text-[#d4b483] flex items-center justify-center gap-1 mx-auto"
+                    className="text-xs text-[#8b5a2b]/60 dark:text-[#f0e0b8]/60 hover:text-[#8b5a2b] dark:hover:text-[#d4b483] flex items-center justify-center gap-1 mx-auto"
                 >
                     <RefreshCw size={12} />
                     重置丹炉 (放弃当前进度)
