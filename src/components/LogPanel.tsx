@@ -119,17 +119,8 @@ function getLogStyle(log: string): LogStyle {
 // 日志条目组件
 const LogEntry: React.FC<{ log: string; index: number; isNew?: boolean }> = ({ log, index, isNew }) => {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [isVisible, setIsVisible] = useState(!isNew);
   const style = getLogStyle(log);
   const isDebuffRelated = log.includes('【Debuff触发】') || log.includes('【Debuff生效】') || log.includes('【Debuff解除】');
-  
-  // 新日志动画
-  useEffect(() => {
-    if (isNew) {
-      const timer = setTimeout(() => setIsVisible(true), 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isNew]);
   
   // 提取前缀和内容
   const prefixMatch = log.match(/^(【.+?】)/);
@@ -166,7 +157,7 @@ const LogEntry: React.FC<{ log: string; index: number; isNew?: boolean }> = ({ l
 
       {/* 底部装饰线（非最后一项） */}
       {!isDebuffRelated && style.border.includes('border-b') && (
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+        <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent to-transparent via-white/5" />
       )}
 
       {/* Tooltip */}
@@ -224,8 +215,8 @@ export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
   return (
     <div className={`flex overflow-hidden flex-col p-4 h-full rounded-xl border ${bgClass}`}>
       {/* 标题栏 */}
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <h3 className="text-sm font-semibold flex items-center gap-2">
+      <div className="flex justify-between items-center mb-3 shrink-0">
+        <h3 className="flex gap-2 items-center text-sm font-semibold">
           <span className="w-1 h-4 bg-amber-500 rounded-full" />
           事件记录
         </h3>
@@ -239,10 +230,10 @@ export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
       {/* 日志内容区 */}
       <div className="overflow-y-auto flex-1 space-y-0.5 min-h-0 pr-1">
         {logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50">
-            <span className="text-2xl mb-2">📜</span>
+          <div className="flex flex-col justify-center items-center h-full text-center text-muted-foreground/50">
+            <span className="mb-2 text-2xl">📜</span>
             <span className="text-sm">暂无记录</span>
-            <span className="text-xs mt-1">开始你的县城之旅...</span>
+            <span className="mt-1 text-xs">开始你的县城之旅...</span>
           </div>
         ) : (
           logs.map((log, index) => (
@@ -258,11 +249,11 @@ export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
       </div>
       
       {/* 底部装饰 */}
-      <div className="mt-2 pt-2 border-t border-white/5">
+      <div className="pt-2 mt-2 border-t border-white/5">
         <div className="flex justify-between items-center text-[10px] text-muted-foreground/50">
           <span>共 {logs.length} 条记录</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1 h-1 bg-amber-500/50 rounded-full" />
+          <span className="flex gap-1 items-center">
+            <span className="w-1 h-1 rounded-full bg-amber-500/50" />
             滚动查看历史
           </span>
         </div>

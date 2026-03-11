@@ -17,6 +17,7 @@ export interface Talent {
   description: string;
   maxLevel: number;
   baseCost: number;
+  rarity?: 'common' | 'rare' | 'epic' | 'legend';
   effectType: 'money_gain' | 'reputation_gain' | 'max_health' | 'ability_gain' | 'action_cost';
   effectValue: number; // value per level
 }
@@ -26,6 +27,7 @@ export interface Achievement {
   name: string;
   description: string;
   rewardExp: number;
+  rarity?: 'common' | 'rare' | 'epic' | 'legend';
   isHidden?: boolean; // If true, description is hidden until unlocked
   provider?: string; // The person who provided this achievement idea
 }
@@ -293,6 +295,7 @@ export interface EventOption {
   label: string;
   effect?: Effect;
   message: string;
+  description?: string;
   /** 选择此选项后附加的 Debuff id 列表 */
   addDebuffIds?: string[];
 }

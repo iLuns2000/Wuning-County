@@ -11,7 +11,6 @@ import {
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { useTheme } from '@/hooks/useTheme';
-import { useGameStore } from '@/store/gameStore';
 
 interface StatsDisplayProps {
   playerStats: PlayerStats;
@@ -152,7 +151,6 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
   const { theme } = useTheme();
-  const { glassEffectEnabled } = useGameStore();
   const itemMap = new Map(items.map(item => [item.id, item]));
   
   // 存储上一次的资源值用于动画
@@ -161,10 +159,6 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   useEffect(() => {
     setPrevStats(playerStats);
   }, []);
-  
-  const handleStatsChange = () => {
-    setPrevStats(playerStats);
-  };
   
   // 判断是否为浅色模式
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -191,14 +185,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
     styleScores[item.style] += score;
     totalStyleScore += score;
   });
-  const apparelSummary = [
-    { label: '发型', id: equippedApparel.hair },
-    { label: '上衣', id: equippedApparel.top },
-    { label: '下装', id: equippedApparel.bottom },
-    { label: '外披', id: equippedApparel.outer },
-    { label: '鞋履', id: equippedApparel.shoes }
-  ];
-  const accessorySummary = equippedAccessories.map(id => itemMap.get(id)?.name).filter((name): name is string => !!name);
+
 
   return (
     <div className={`flex flex-col gap-4 ${bgClass} p-4`}>
