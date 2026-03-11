@@ -163,10 +163,10 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   // 判断是否为浅色模式
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   
-  // 古风背景样式
+  // 古风背景样式（不使用 card-ancient 以避免背景图片）
   const bgClass = isLightMode 
     ? 'bg-card border-border' 
-    : 'card-ancient';
+    : 'rounded-xl border border-white/5 bg-gradient-to-b from-[#1e2d2f] to-[#182628] shadow-lg shadow-black/30';
   
   const getItemScore = (price?: number) => {
     const base = 10 + Math.floor((price || 0) / 200);

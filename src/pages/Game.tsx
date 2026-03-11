@@ -676,9 +676,9 @@ export const Game: React.FC = () => {
           }}
         >
         
-        {/* Left Column: Stats */}
-        <div className="flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
-          <header className="flex justify-between items-center py-10 shrink-0">
+        {/* Left Column: Stats - 毛玻璃效果 */}
+        <div className={`flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar rounded-xl p-2 ${getGlassClass()}`}>
+          <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <div className="flex gap-2">
               <button 

@@ -1,70 +1,152 @@
+/**
+ * 古风珍宝阁弹窗 - 珍宝阁
+ * 金色调，体现稀世珍宝、身份象征
+ */
 import React from 'react';
-import { X, Gem, Coins } from 'lucide-react';
+import { X, Gem, Coins, Sparkles, Crown } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { treasures, treasurePrices } from '@/data/treasures';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { useTheme } from '@/hooks/useTheme';
 
 interface TreasureModalProps {
   onClose: () => void;
 }
 
+// 珍宝稀有度颜色
+const rarityColors: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+  common: { bg: 'bg-gray-500/20', border: 'border-gray-500/40', text: 'text-gray-300', glow: 'shadow-gray-500/20' },
+  rare: { bg: 'bg-blue-500/20', border: 'border-blue-500/40', text: 'text-blue-300', glow: 'shadow-blue-500/30' },
+  epic: { bg: 'bg-purple-500/20', border: 'border-purple-500/40', text: 'text-purple-300', glow: 'shadow-purple-500/30' },
+  legend: { bg: 'bg-amber-500/20', border: 'border-amber-500/50', text: 'text-amber-300', glow: 'shadow-amber-500/40' },
+};
+
 export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
   const { inventory, playerStats, buyTreasure } = useGameStore();
   const vibrate = useGameVibrate();
+  const { theme } = useTheme();
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const getOwnedCount = (id: string) => {
     return inventory.filter(itemId => itemId === id).length;
   };
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl border border-border">
-        <div className="flex justify-between items-center p-4 bg-amber-50/50 dark:bg-amber-950/30 border-b border-border">
-          <h2 className="flex gap-2 items-center text-xl font-bold text-amber-900 dark:text-amber-100">
-            <Gem className="w-5 h-5" />
-            珍宝阁
-          </h2>
-          <button onClick={() => {
-              vibrate(VIBRATION_PATTERNS.LIGHT);
-              onClose();
-          }} className="p-1 rounded-full transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/50">
-            <X className="w-5 h-5 text-amber-900 dark:text-amber-100" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      
+      {/* 弹窗主体 - 金色调 */}
+      <div 
+        className={`relative w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col rounded-2xl
+                   border shadow-2xl
+                   ${isLightMode 
+                     ? 'bg-gradient-to-b from-[#fef9e7] to-[#fdf5d8] border-amber-300' 
+                     : 'bg-gradient-to-b from-[#1a1810] to-[#0f0d08] border-amber-500/30'
+                   }`}
+        onClick={e => e.stopPropagation()}
+        style={{ animation: 'modalIn 0.3s ease-out forwards' }}
+      >
+        {/* 顶部装饰 */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-700" />
+        <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-amber-500/40 rounded-tl-3xl" />
+        <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-amber-500/40 rounded-tr-3xl" />
+        
+        {/* 荣誉装饰 */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2">
+          <Crown className="w-6 h-6 text-amber-400 animate-pulse" />
         </div>
         
-        <div className="flex justify-between items-center p-4 bg-amber-50/30 dark:bg-amber-950/20 border-b border-border">
-            <div className="flex gap-2 items-center text-amber-800 dark:text-amber-200">
-                <Coins className="w-4 h-4" />
-                <span className="font-bold">持有资金: {playerStats.money} 文</span>
+        {/* 标题栏 */}
+        <div className="relative p-5 pt-8 bg-gradient-to-r from-amber-950/80 to-yellow-900/80 border-b border-amber-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg shadow-amber-500/30">
+                <Gem className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white font-display">珍宝阁</h2>
+                <p className="text-xs text-amber-300/70">稀世珍宝，身份的象征</p>
+              </div>
             </div>
-            <div className="text-xs text-amber-600 dark:text-amber-400">
-                * 稀世珍宝，身份的象征，并无实际用途
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                onClose();
+              }} 
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <X className="w-6 h-6 text-amber-200" />
+            </button>
+          </div>
+        </div>
+
+        {/* 金钱显示 */}
+        <div className="px-6 py-4 bg-gradient-to-r from-amber-950/50 to-yellow-950/50 border-b border-amber-500/10">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Coins className="w-5 h-5 text-amber-400" />
+                    <span className="font-bold text-xl text-amber-400 font-mono">{playerStats.money}</span>
+                    <span className="text-sm text-amber-400/60">文</span>
+                </div>
+                <div className="flex items-center gap-1 text-amber-500/80 text-sm">
+                   <Sparkles size={14} />
+                   <span>稀世奇珍·价值连城</span>
+                </div>
             </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-4 space-y-4 bg-muted/30">
-          {treasures.map((treasure) => {
+        {/* 珍宝列表 */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {treasures.map((treasure, index) => {
             const price = treasurePrices[treasure.id];
             const owned = getOwnedCount(treasure.id);
             const canBuy = playerStats.money >= price;
+            const rarity = treasure.rarity || 'common';
+            const rarityStyle = rarityColors[rarity] || rarityColors.common;
             
             return (
-              <div key={treasure.id} className="overflow-hidden relative p-4 bg-card rounded-lg border border-amber-100 dark:border-amber-900/50 shadow-sm">
+              <div 
+                key={treasure.id} 
+                className={`
+                  group relative p-5 rounded-xl border transition-all duration-300
+                  ${rarityStyle.bg} ${rarityStyle.border}
+                  hover:shadow-lg ${rarityStyle.glow}
+                  bg-gradient-to-b from-[#1f1a10] to-[#151008]
+                `}
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                {/* 稀有度标识 */}
+                <div className="absolute top-0 right-0">
+                  <span className={`
+                    inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-bl-xl rounded-tr-lg
+                    ${rarityStyle.bg} ${rarityStyle.text} ${rarityStyle.border}
+                  `}>
+                    <Sparkles size={12} />
+                    {rarity === 'legend' ? '传说' : rarity === 'epic' ? '史诗' : rarity === 'rare' ? '稀有' : '普通'}
+                  </span>
+                </div>
+
+                {/* 已有数量 */}
                 {owned > 0 && (
-                    <div className="absolute top-0 right-0 px-2 py-1 text-xs font-bold text-amber-800 dark:text-amber-100 bg-amber-100 dark:bg-amber-900/60 rounded-bl-lg">
-                        已收藏: {owned}
-                    </div>
+                  <div className="absolute -top-1 -left-1 w-8 h-8 flex items-center justify-center 
+                                bg-gradient-to-br from-amber-500 to-yellow-600 rounded-full shadow-lg">
+                    <span className="text-sm font-bold text-white">×{owned}</span>
+                  </div>
                 )}
                 
-                <div className="flex justify-between items-start pr-12 mb-2">
+                <div className="flex justify-between items-start pr-24 mb-3">
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">{treasure.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{treasure.description}</p>
+                    <h3 className={`text-lg font-bold ${rarityStyle.text}`}>{treasure.name}</h3>
+                    <p className="mt-1 text-sm text-amber-200/60">{treasure.description}</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center mt-4">
-                    <div className="p-2 font-mono font-bold text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 rounded">
+                    <div className={`
+                      px-4 py-2 font-mono font-bold text-lg rounded-lg
+                      bg-gradient-to-r from-amber-600/30 to-yellow-600/30 
+                      border border-amber-500/30 ${rarityStyle.text}
+                    `}>
                         {price.toLocaleString()} 文
                     </div>
                     
@@ -75,21 +157,63 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                       }}
                       disabled={!canBuy}
                       className={`
-                        flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all
+                        flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all duration-300
                         ${canBuy 
-                            ? 'text-white bg-amber-600 shadow-md hover:bg-amber-700 hover:shadow-lg dark:bg-amber-700 dark:hover:bg-amber-600' 
-                            : 'cursor-not-allowed bg-muted text-muted-foreground'}
+                            ? 'bg-gradient-to-r from-amber-600 to-yellow-500 text-white shadow-lg hover:shadow-amber-500/30 hover:scale-105 active:scale-95' 
+                            : 'bg-amber-900/30 text-amber-500/50 cursor-not-allowed border border-amber-500/20'
+                        }
                       `}
                     >
-                      <Coins className="w-4 h-4" />
+                      <Gem size={16} />
                       {canBuy ? '购买收藏' : '囊中羞涩'}
                     </button>
                 </div>
+
+                {/* 悬停光效 */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity
+                              bg-gradient-to-r from-transparent via-amber-500/5 to-transparent rounded-xl pointer-events-none" />
               </div>
             );
           })}
         </div>
+
+        {/* 底部提示 */}
+        <div className="px-6 py-3 border-t border-amber-500/10 bg-amber-950/20">
+          <div className="flex justify-center">
+            <span className="text-xs text-amber-500/60 flex items-center gap-1">
+              <Gem size={12} />
+              珍宝并无实际用途，仅为收藏与身份象征
+            </span>
+          </div>
+        </div>
+
+        {/* 底部装饰 */}
+        <div className="px-6 py-2 border-t border-amber-500/10">
+          <div className="flex justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500/50" />
+            <span className="w-2 h-2 rounded-full bg-yellow-500/30" />
+            <span className="w-2 h-2 rounded-full bg-amber-500/20" />
+          </div>
+        </div>
       </div>
+      
+      <style>{`
+        @keyframes modalIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(15px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        
+        @keyframes glow {
+          0%, 100% { filter: brightness(1); }
+          50% { filter: brightness(1.2); }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,5 +1,10 @@
+/**
+ * 古风游乐街弹窗 - 游乐街
+ * 服装店 + 首饰店 + 梳妆台
+ * 淡雅古风设计 - 米色纸张质感 + 墨色线条
+ */
 import React, { useMemo, useState } from 'react';
-import { X, ShoppingBag, Gem, Star, Coins } from 'lucide-react';
+import { X, ShoppingBag, Gem, Star, Coins, Check } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { AccessorySlot, ApparelSlot, Item } from '@/types/game';
@@ -63,11 +68,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
 
   const styleSummary = useMemo(() => {
     const styleScores: Record<'清雅' | '华贵' | '英气' | '俏皮' | '典雅', number> = {
-      清雅: 0,
-      华贵: 0,
-      英气: 0,
-      俏皮: 0,
-      典雅: 0
+      清雅: 0, 华贵: 0, 英气: 0, 俏皮: 0, 典雅: 0
     };
     const equippedIds = [
       ...Object.values(equippedApparel).filter((id): id is string => !!id),
@@ -84,86 +85,130 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
     return { totalScore, styleScores };
   }, [equippedApparel, equippedAccessories, itemMap]);
 
+  // Tab配置 - 更淡雅的颜色
+  const tabs = [
+    { id: 'apparel' as const, label: '服装店', icon: ShoppingBag },
+    { id: 'accessory' as const, label: '首饰店', icon: Gem },
+    { id: 'dressing' as const, label: '梳妆台', icon: Star }
+  ];
+
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 duration-200 bg-black/60 animate-in fade-in backdrop-blur-sm">
-      <div className="bg-[#fff9e6] dark:bg-card rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-4 border-amber-800 dark:border-amber-900">
-        <div className="flex justify-between items-center p-4 text-amber-50 bg-amber-800 dark:bg-amber-900 shadow-md">
-          <div className="flex gap-3 items-center">
-            <ShoppingBag className="w-6 h-6" />
-            <h2 className="text-2xl font-bold tracking-wider">游乐街</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      
+      {/* 弹窗主体 - 淡雅米色纸张风格 */}
+      <div 
+        className="relative w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col rounded-lg
+                   bg-[#f5f0e6] dark:bg-[#1a1815]
+                   border border-[#d4c9b5] dark:border-[#3d3629]
+                   shadow-2xl"
+        onClick={e => e.stopPropagation()}
+        style={{ animation: 'modalIn 0.3s ease-out forwards' }}
+      >
+        {/* 纸张纹理背景 */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
+        
+        {/* 顶部装饰线 */}
+        <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />
+        
+        {/* 标题栏 */}
+        <div className="relative px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
+                <ShoppingBag className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0] font-display">游乐街</h2>
+                <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">古装服饰 · 梳妆打扮</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                onClose();
+              }}
+              className="p-2 rounded-lg hover:bg-[#8b7355]/10 transition-colors"
+            >
+              <X className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              vibrate(VIBRATION_PATTERNS.LIGHT);
-              onClose();
-            }}
-            className="p-2 rounded-full transition-colors hover:bg-amber-700 dark:hover:bg-amber-800"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
 
-        <div className="flex justify-between items-center p-3 px-6 bg-amber-100 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/40">
-          <div className="flex gap-2 items-center font-bold text-amber-900 dark:text-amber-100">
-            <Coins className="w-5 h-5" />
-            <span>{playerStats.money} 文</span>
-          </div>
-          <div className="text-sm text-amber-700 dark:text-amber-300">
-            * 选购古风衣饰，梳妆更显风采
+        {/* 金钱显示 */}
+        <div className="px-6 py-3 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629]">
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2 text-[#6b5544] dark:text-[#c4a86a] font-bold">
+                <Coins className="w-4 h-4" />
+                <span className="font-mono">{playerStats.money}</span>
+                <span className="text-sm text-[#8b7355]/60">文</span>
+             </div>
           </div>
         </div>
 
-        <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-900/40">
-          <button
-            onClick={() => setTab('apparel')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'apparel' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
-          >
-            <div className="flex gap-2 items-center">
-              <ShoppingBag className="w-4 h-4" />
-              服装店
-            </div>
-          </button>
-          <button
-            onClick={() => setTab('accessory')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'accessory' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
-          >
-            <div className="flex gap-2 items-center">
-              <Gem className="w-4 h-4" />
-              首饰店
-            </div>
-          </button>
-          <button
-            onClick={() => setTab('dressing')}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === 'dressing' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'}`}
-          >
-            <div className="flex gap-2 items-center">
-              <Star className="w-4 h-4" />
-              梳妆台
-            </div>
-          </button>
+        {/* Tab 切换 - 简洁线条风格 */}
+        <div className="flex gap-1 p-3 px-6 bg-[#f8f4eb] dark:bg-[#1e1a12] border-b border-[#e0d9cc] dark:border-[#3d3629]">
+          {tabs.map(t => {
+            const Icon = t.icon;
+            const isActive = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`
+                  relative px-4 py-2 rounded text-sm font-medium transition-all duration-200
+                  flex items-center gap-2
+                  ${isActive 
+                    ? 'text-[#4a3f32] dark:text-[#e8e0d0] bg-[#e8e0d8] dark:bg-[#3d3629] border-b-2 border-[#8b7355]' 
+                    : 'text-[#8b7355] dark:text-[#a08060] hover:text-[#6b5544] dark:hover:text-[#c4a86a]'
+                  }
+                `}
+              >
+                <Icon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] dark:bg-none dark:bg-transparent">
+        {/* 内容区域 - 米白背景 */}
+        <div className="flex-1 overflow-y-auto p-5 bg-[#faf7f0] dark:bg-[#1a1815]">
+          {/* 服装店 */}
           {tab === 'apparel' && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {apparelItems.map(item => {
                 const price = getPrice(item);
                 const canBuy = playerStats.money >= price;
                 const slotLabel = item.slot ? apparelSlots.find(s => s.id === item.slot)?.label : undefined;
                 return (
-                  <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
+                  <div 
+                    key={item.id} 
+                    className="group p-4 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] 
+                               bg-white dark:bg-[#242018]
+                               hover:border-[#8b7355]/40 hover:shadow-md
+                               transition-all duration-200"
+                  >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
-                      <span className="px-2 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 rounded-full">
+                      <h3 className="text-base font-bold text-[#4a3f32] dark:text-[#e8e0d0]">{item.name}</h3>
+                      <span className="px-2 py-0.5 text-xs font-medium text-[#8b7355] bg-[#f0ebe0] dark:bg-[#3d3629] rounded">
                         {price} 文
                       </span>
                     </div>
-                    <p className="mb-3 h-10 text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
+                    <p className="mb-2 text-xs text-[#8b7355] dark:text-[#a08060] line-clamp-2">
                       {item.description}
                     </p>
-                    <div className="flex gap-2 mb-3 text-xs text-amber-700 dark:text-amber-300">
-                      {slotLabel && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{slotLabel}</span>}
-                      {item.style && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{item.style}</span>}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {slotLabel && (
+                        <span className="px-1.5 py-0.5 text-[10px] bg-[#f8f4eb] dark:bg-[#2a2318] text-[#8b7355] dark:text-[#a08060] rounded">
+                          {slotLabel}
+                        </span>
+                      )}
+                      {item.style && (
+                        <span className="px-1.5 py-0.5 text-[10px] bg-[#f8f4eb] dark:bg-[#2a2318] text-[#8b7355] dark:text-[#a08060] rounded">
+                          {item.style}
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => {
@@ -171,7 +216,13 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                         buyItem(item.id, price);
                       }}
                       disabled={!canBuy}
-                      className={`w-full py-2 rounded text-sm font-medium transition-colors ${canBuy ? 'text-white bg-amber-600 hover:bg-amber-700' : 'text-amber-300 bg-amber-100 dark:bg-amber-900/30 cursor-not-allowed'}`}
+                      className={`
+                        w-full py-2 rounded text-sm font-medium transition-all duration-200
+                        ${canBuy 
+                          ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6] hover:bg-[#3d3228]' 
+                          : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#a08060] cursor-not-allowed'
+                        }
+                      `}
                     >
                       {canBuy ? '购买' : '囊中羞涩'}
                     </button>
@@ -181,26 +232,41 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
             </div>
           )}
 
+          {/* 首饰店 */}
           {tab === 'accessory' && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {accessoryItems.map(item => {
                 const price = getPrice(item);
                 const canBuy = playerStats.money >= price;
                 const slotLabel = item.slot ? accessorySlotLabels[item.slot as AccessorySlot] : undefined;
                 return (
-                  <div key={item.id} className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-md transition-all hover:shadow-lg">
+                  <div 
+                    key={item.id} 
+                    className="group p-4 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] 
+                               bg-white dark:bg-[#242018]
+                               hover:border-[#8b7355]/40 hover:shadow-md
+                               transition-all duration-200"
+                  >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-bold text-amber-900">{item.name}</h3>
-                      <span className="px-2 py-1 text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 rounded-full">
+                      <h3 className="text-base font-bold text-[#4a3f32] dark:text-[#e8e0d0]">{item.name}</h3>
+                      <span className="px-2 py-0.5 text-xs font-medium text-[#8b7355] bg-[#f0ebe0] dark:bg-[#3d3629] rounded">
                         {price} 文
                       </span>
                     </div>
-                    <p className="mb-3 h-10 text-sm text-gray-600 dark:text-muted-foreground line-clamp-2">
+                    <p className="mb-2 text-xs text-[#8b7355] dark:text-[#a08060] line-clamp-2">
                       {item.description}
                     </p>
-                    <div className="flex gap-2 mb-3 text-xs text-amber-700 dark:text-amber-300">
-                      {slotLabel && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{slotLabel}</span>}
-                      {item.style && <span className="px-2 py-1 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-200 rounded">{item.style}</span>}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {slotLabel && (
+                        <span className="px-1.5 py-0.5 text-[10px] bg-[#f8f4eb] dark:bg-[#2a2318] text-[#8b7355] dark:text-[#a08060] rounded">
+                          {slotLabel}
+                        </span>
+                      )}
+                      {item.style && (
+                        <span className="px-1.5 py-0.5 text-[10px] bg-[#f8f4eb] dark:bg-[#2a2318] text-[#8b7355] dark:text-[#a08060] rounded">
+                          {item.style}
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => {
@@ -208,7 +274,13 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                         buyItem(item.id, price);
                       }}
                       disabled={!canBuy}
-                      className={`w-full py-2 rounded text-sm font-medium transition-colors ${canBuy ? 'text-white bg-amber-600 hover:bg-amber-700' : 'text-amber-300 bg-amber-100 cursor-not-allowed'}`}
+                      className={`
+                        w-full py-2 rounded text-sm font-medium transition-all duration-200
+                        ${canBuy 
+                          ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6] hover:bg-[#3d3228]' 
+                          : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#a08060] cursor-not-allowed'
+                        }
+                      `}
                     >
                       {canBuy ? '购买' : '囊中羞涩'}
                     </button>
@@ -218,51 +290,57 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
             </div>
           )}
 
+          {/* 梳妆台 */}
           {tab === 'dressing' && (
-            <div className="space-y-6">
-              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
+            <div className="space-y-4">
+              {/* 风格评分 */}
+              <div className="p-4 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] bg-white dark:bg-[#242018]">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">风格评分</h3>
-                  <div className="text-sm text-amber-700 dark:text-amber-300">总分 {styleSummary.totalScore}</div>
+                  <h3 className="text-base font-bold text-[#4a3f32] dark:text-[#e8e0d0]">风格评分</h3>
+                  <span className="px-3 py-1 text-sm font-bold text-[#6b5544] bg-[#f0ebe0] dark:bg-[#3d3629] rounded">
+                    总分 {styleSummary.totalScore}
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-amber-800 dark:text-amber-200 md:grid-cols-5">
+                <div className="grid grid-cols-5 gap-2">
                   {Object.entries(styleSummary.styleScores).map(([style, score]) => (
-                    <div key={style} className="px-2 py-2 text-center bg-amber-50 dark:bg-amber-950/30 rounded">
-                      <div className="font-semibold">{style}</div>
-                      <div>{score}</div>
+                    <div key={style} className="p-2 text-center bg-[#f8f4eb] dark:bg-[#2a2318] rounded">
+                      <div className="text-[10px] text-[#8b7355] dark:text-[#a08060]">{style}</div>
+                      <div className="text-lg font-bold text-[#6b5544] dark:text-[#c4a86a]">{score}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
-                <h3 className="mb-4 text-lg font-bold text-amber-900 dark:text-amber-100">衣装搭配</h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+              {/* 衣装搭配 */}
+              <div className="p-4 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] bg-white dark:bg-[#242018]">
+                <h3 className="text-base font-bold text-[#4a3f32] dark:text-[#e8e0d0] mb-3">衣装搭配</h3>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {apparelSlots.map(slot => {
                     const equippedId = equippedApparel[slot.id];
                     const equippedItem = equippedId ? itemMap.get(equippedId) : undefined;
                     const slotItems = ownedApparelItems.filter(i => i.slot === slot.id);
                     return (
-                      <div key={slot.id} className="p-3 rounded-lg border border-amber-100 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="text-sm font-semibold text-amber-800 dark:text-amber-200">{slot.label}</div>
+                      <div key={slot.id} className="p-3 rounded border border-[#e8e0d8] dark:border-[#3d3629] bg-[#faf7f0] dark:bg-[#1e1a12]">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <div className="text-xs font-medium text-[#6b5544] dark:text-[#a08060]">{slot.label}</div>
                           {equippedItem && (
                             <button
                               onClick={() => {
                                 vibrate(VIBRATION_PATTERNS.LIGHT);
                                 unequipApparel(slot.id);
                               }}
-                              className="text-xs text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
+                              className="text-[10px] text-[#8b7355] hover:text-[#6b5544]"
                             >
                               卸下
                             </button>
                           )}
                         </div>
-                        <div className="mb-2 text-sm font-medium text-amber-900 dark:text-amber-100">
+                        <div className="text-sm text-[#4a3f32] dark:text-[#e8e0d0] mb-1.5">
                           {equippedItem ? equippedItem.name : '未装备'}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1">
                           {slotItems.length === 0 && (
-                            <span className="text-xs text-amber-600 dark:text-amber-400">暂无该部位衣装</span>
+                            <span className="text-[10px] text-[#a08060]">暂无</span>
                           )}
                           {slotItems.map(item => (
                             <button
@@ -271,7 +349,13 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                                 vibrate(VIBRATION_PATTERNS.LIGHT);
                                 equipApparel(slot.id, item.id);
                               }}
-                              className={`px-2 py-1 rounded text-xs border transition-colors ${equippedItem?.id === item.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-card text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30'}`}
+                              className={`
+                                px-1.5 py-0.5 rounded text-[10px] border transition-colors
+                                ${equippedItem?.id === item.id 
+                                  ? 'bg-[#4a3f32] text-white border-[#4a3f32]' 
+                                  : 'bg-white dark:bg-[#242018] text-[#6b5544] border-[#d4c9b5] dark:border-[#3d3629] hover:border-[#8b7355]'
+                                }
+                              `}
                             >
                               {item.name}
                             </button>
@@ -283,14 +367,15 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 </div>
               </div>
 
-              <div className="p-4 bg-white dark:bg-card rounded-lg border border-amber-200 dark:border-amber-800 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">首饰佩戴</h3>
-                  <div className="text-xs text-amber-700 dark:text-amber-300">已佩戴 {equippedAccessories.length}/3</div>
+              {/* 首饰佩戴 */}
+              <div className="p-4 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] bg-white dark:bg-[#242018]">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base font-bold text-[#4a3f32] dark:text-[#e8e0d0]">首饰佩戴</h3>
+                  <span className="text-xs text-[#8b7355]">已佩戴 {equippedAccessories.length}/3</span>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-1.5 mb-3">
                   {equippedAccessories.length === 0 && (
-                    <span className="text-xs text-amber-600 dark:text-amber-400">暂无佩戴首饰</span>
+                    <span className="text-xs text-[#a08060]">暂无佩戴首饰</span>
                   )}
                   {equippedAccessories.map(id => {
                     const item = itemMap.get(id);
@@ -302,17 +387,16 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                           vibrate(VIBRATION_PATTERNS.LIGHT);
                           unequipAccessory(id);
                         }}
-                        className="px-2 py-1 text-xs text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/50 rounded border border-amber-200 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900/70"
+                        className="px-2 py-1 text-xs text-[#6b5544] bg-[#f0ebe0] dark:bg-[#3d3629] rounded border border-[#d4c9b5] hover:bg-[#e8e0d8]"
                       >
-                        {item.name}
+                        {item.name} ✕
                       </button>
                     );
                   })}
                 </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                   {ownedAccessoryItems.map(item => {
                     const isEquipped = equippedAccessories.includes(item.id);
-                    const slotLabel = item.slot ? accessorySlotLabels[item.slot as AccessorySlot] : undefined;
                     return (
                       <button
                         key={item.id}
@@ -320,13 +404,15 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                           vibrate(VIBRATION_PATTERNS.LIGHT);
                           equipAccessory(item.id);
                         }}
-                        className={`p-3 rounded-lg border text-left transition-colors ${isEquipped ? 'bg-amber-200 dark:bg-amber-800 border-amber-300 dark:border-amber-700' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30'}`}
+                        className={`
+                          p-2 rounded border text-left transition-colors text-xs
+                          ${isEquipped 
+                            ? 'bg-[#4a3f32] text-white border-[#4a3f32]' 
+                            : 'bg-white dark:bg-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] border-[#d4c9b5] dark:border-[#3d3629] hover:border-[#8b7355]'
+                          }
+                        `}
                       >
-                        <div className="text-sm font-semibold text-amber-900 dark:text-amber-100">{item.name}</div>
-                        <div className="flex gap-2 mt-1 text-xs text-amber-700 dark:text-amber-300">
-                          {slotLabel && <span>{slotLabel}</span>}
-                          {item.style && <span>{item.style}</span>}
-                        </div>
+                        {item.name}
                       </button>
                     );
                   })}
@@ -335,7 +421,28 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
             </div>
           )}
         </div>
+
+        {/* 底部装饰 */}
+        <div className="px-6 py-2 bg-[#ebe5d8] dark:bg-[#221e16] border-t border-[#d4c9b5] dark:border-[#3d3629]">
+          <div className="flex justify-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8b7355]/40" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8b7355]/30" />
+          </div>
+        </div>
       </div>
+      
+      <style>{`
+        @keyframes modalIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
