@@ -30,6 +30,11 @@ import { useTheme } from '@/hooks/useTheme';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
 
+/* 古风字体类名工具 */
+export const cn = (...classes: (string | undefined | null | false)[]) => {
+  return classes.filter(Boolean).join(' ');
+};
+
 const Router = HashRouter;
 
 function App() {
