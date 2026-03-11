@@ -5,6 +5,7 @@
 import React from 'react';
 import { GameEvent, PlayerStats, Effect } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { useTheme } from '@/hooks/useTheme';
 import { X, Sparkles, ArrowRight } from 'lucide-react';
 
 interface EventModalProps {
@@ -39,7 +40,9 @@ const tierStyles: Record<string, { bg: string; text: string; stars: string }> = 
 
 export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, onClose, styleMatch }) => {
   const vibrate = useGameVibrate();
+  const { theme } = useTheme();
   const typeStyle = eventTypeStyles[event.type] || eventTypeStyles.daily;
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   
   const checkRequirement = (effect?: Effect) => {
     if (!effect) return { allowed: true, reason: '' };

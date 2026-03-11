@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, User } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [name, setName] = useState(initialName);
   const [avatar, setAvatar] = useState(initialAvatar);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { theme } = useTheme();
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // Sync state when prop changes
   useEffect(() => {
