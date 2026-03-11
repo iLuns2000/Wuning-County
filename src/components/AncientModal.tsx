@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { X } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AncientModalProps {
   isOpen: boolean;
@@ -29,6 +30,9 @@ export const AncientModal: React.FC<AncientModalProps> = ({
   size = 'md',
   showCloseButton = true,
 }) => {
+  const { theme } = useTheme();
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   if (!isOpen) return null;
 
   return (
@@ -49,8 +53,10 @@ export const AncientModal: React.FC<AncientModalProps> = ({
       <div 
         className={`
           relative w-full ${modalSizeClasses[size]} p-6 rounded-2xl
-          bg-gradient-to-b from-[#1e2d2f] to-[#182628]
-          border border-white/10 shadow-2xl shadow-black/50
+          ${isLightMode 
+            ? 'bg-gradient-to-b from-[#f5f0e6] to-[#ebe5d8] border-amber-200/50' 
+            : 'bg-gradient-to-b from-[#1e2d2f] to-[#182628] border-white/10'}
+          shadow-2xl shadow-black/50
           animate-modalIn
           overflow-hidden
         `}
