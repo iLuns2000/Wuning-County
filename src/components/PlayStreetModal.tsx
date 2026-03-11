@@ -4,7 +4,7 @@
  * 淡雅古风设计 - 米色纸张质感 + 墨色线条
  */
 import React, { useMemo, useState } from 'react';
-import { X, ShoppingBag, Gem, Star, Coins, Check } from 'lucide-react';
+import { X, ShoppingBag, Gem, Star, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { AccessorySlot, ApparelSlot, Item } from '@/types/game';

@@ -36,10 +36,10 @@ const FacilityCard: React.FC<{
       bg-gradient-to-b from-[#1e2d2f] to-[#182628]
     `}>
       {/* 顶部装饰 */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+      <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent to-transparent via-amber-500/30" />
       
       {/* 标题区 */}
-      <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/10">
+      <div className="flex gap-3 items-center pb-3 mb-3 border-b border-white/10">
         <div className={`p-2.5 rounded-lg bg-gradient-to-br ${style.gradient}`}>
           {icon}
         </div>
@@ -49,7 +49,7 @@ const FacilityCard: React.FC<{
       </div>
 
       {/* 描述 */}
-      <p className="text-sm text-muted-foreground/80 mb-4 leading-relaxed">
+      <p className="mb-4 text-sm leading-relaxed text-muted-foreground/80">
         {description}
       </p>
 
@@ -140,7 +140,8 @@ const FortuneTeller: React.FC = () => {
 
 // 小司赌坊组件
 const GamblingHouse: React.FC = () => {
-  const { playerStats, addLog, handleEventOption, fortuneLevel } = useGameStore();
+  const { playerStats, addLog, handleEventOption, fortuneLevel: fortuneLevelFromStore } = useGameStore();
+  const fortuneLevel = fortuneLevelFromStore || 'normal';
   const [betAmount, setBetAmount] = useState<string>('10');
   const [lastResult, setLastResult] = useState<{ dice: number[], sum: number, win: boolean, msg?: string } | null>(null);
   const vibrate = useGameVibrate();
@@ -218,14 +219,13 @@ const GamblingHouse: React.FC = () => {
     >
       <div className="flex flex-col gap-3">
         {/* 输入框 */}
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <span className="text-sm text-muted-foreground">赌注：</span>
           <input
             type="number"
             value={betAmount}
             onChange={(e) => setBetAmount(e.target.value)}
-            className="flex-1 px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-white/10 
-                       focus:outline-none focus:ring-2 focus:ring-red-500/30"
+            className="flex-1 px-3 py-2 text-sm rounded-lg border bg-secondary/50 border-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30"
             placeholder="金额"
           />
           <span className="text-sm text-muted-foreground">文</span>
@@ -268,10 +268,10 @@ const GamblingHouse: React.FC = () => {
 
         {/* 上次结果 */}
         {lastResult && (
-          <div className="p-2 rounded bg-black/30 text-center">
-            <div className="flex justify-center gap-2 mb-1">
+          <div className="p-2 text-center rounded bg-black/30">
+            <div className="flex gap-2 justify-center mb-1">
               {lastResult.dice.map((d, i) => (
-                <span key={i} className="w-6 h-6 flex items-center justify-center rounded bg-white/10 text-sm">
+                <span key={i} className="flex justify-center items-center w-6 h-6 text-sm rounded bg-white/10">
                   {d}
                 </span>
               ))}
@@ -288,7 +288,7 @@ const GamblingHouse: React.FC = () => {
 
 // 无宁箭馆组件
 const ArcheryGallery: React.FC = () => {
-  const { playerStats, addLog, dailyCounts } = useGameStore();
+  const { playerStats, addLog, dailyCounts, handleEventOption } = useGameStore();
   const vibrate = useGameVibrate();
   const [targetScore, setTargetScore] = useState<number>(30);
   const [gameActive, setGameActive] = useState(false);
@@ -388,7 +388,7 @@ const ArcheryGallery: React.FC = () => {
             
             <button
               onClick={() => setGameActive(false)}
-              className="text-xs text-muted-foreground hover:text-foreground text-center"
+              className="text-xs text-center text-muted-foreground hover:text-foreground"
             >
               放弃本次练习
             </button>
@@ -410,15 +410,15 @@ export const Facilities: React.FC = () => {
   if (showAlchemy) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto p-4">
+        <div className="p-4 mx-auto max-w-4xl">
           <button
             onClick={() => setShowAlchemy(false)}
-            className="flex items-center gap-2 mb-4 text-muted-foreground hover:text-foreground"
+            className="flex gap-2 items-center mb-4 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft size={20} />
             返回游乐坊
           </button>
-          <AlchemyGame />
+          <AlchemyGame onClose={() => setShowAlchemy(false)} />
         </div>
       </div>
     );
@@ -426,20 +426,20 @@ export const Facilities: React.FC = () => {
 
   return (
     <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-5xl">
+      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl lg:grid-cols-2">
         
         {/* 左侧：游乐设施 */}
         <div className="space-y-4">
           {/* 头部 */}
-          <header className="flex items-center justify-between py-2">
+          <header className="flex justify-between items-center py-2">
             <button
               onClick={() => navigate('/game')}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="flex gap-2 items-center text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft size={20} />
               返回
             </button>
-            <h1 className="text-2xl font-bold font-display flex items-center gap-2">
+            <h1 className="flex gap-2 items-center text-2xl font-bold font-display">
               <Gamepad2 className="text-primary" />
               游乐坊
             </h1>

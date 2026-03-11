@@ -68,8 +68,7 @@ const AnimatedNumber: React.FC<{
           font-mono font-bold text-lg transition-all duration-300
           ${color}
           ${isPositive ? 'resource-pop positive' : ''}
-          ${isNegative ? 'resource-pop negative' : ''}
-        `}>
+          ${isNegative ? 'resource-pop negative' : ''}`}>
           {displayValue.toLocaleString()}
         </span>
       </div>
@@ -113,8 +112,8 @@ const AncientStatItem: React.FC<{
   
   return (
     <div className="relative group">
-      <div className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center p-2 rounded-lg border bg-black/20 border-white/5">
+        <div className="flex gap-2 items-center">
           <span className={color}>{icon}</span>
           <span className="text-xs text-muted-foreground">{label}</span>
         </div>
@@ -166,7 +165,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   // 古风背景样式（不使用 card-ancient 以避免背景图片）
   const bgClass = isLightMode 
     ? 'bg-card border-border' 
-    : 'rounded-xl border border-white/5 bg-gradient-to-b from-[#1e2d2f] to-[#182628] shadow-lg shadow-black/30';
+    : 'rounded-xl border border-white/5  shadow-lg ';
   
   const getItemScore = (price?: number) => {
     const base = 10 + Math.floor((price || 0) / 200);
@@ -188,41 +187,37 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 
 
   return (
-    <div className={`flex flex-col gap-4 ${bgClass} p-4`}>
+    <div className={`flex flex-col gap-4 p-4 ${bgClass}`}>
       {/* 头部：玩家信息和日期天气 */}
-      <div className="flex items-center gap-4 pb-4 border-b border-white/10">
+      <div className="flex gap-4 items-center pb-4 border-b border-white/10">
         {/* 头像 */}
         <div 
-          className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden 
-                     bg-gradient-to-br from-primary/20 to-secondary
-                     border-2 border-primary/20 cursor-pointer
-                     hover:border-primary/50 transition-colors group"
+          className="overflow-hidden relative w-14 h-14 bg-gradient-to-br rounded-full border-2 transition-colors cursor-pointer shrink-0 from-primary/20 to-secondary border-primary/20 hover:border-primary/50 group"
           onClick={onEditProfile}
         >
           {playerProfile?.avatar ? (
-            <img src={playerProfile.avatar} alt={playerProfile.name} className="w-full h-full object-cover" />
+            <img src={playerProfile.avatar} alt={playerProfile.name} className="object-cover w-full h-full" />
           ) : (
-            <div className="flex items-center justify-center w-full h-full">
+            <div className="flex justify-center items-center w-full h-full">
               <User className="w-6 h-6 text-muted-foreground" />
             </div>
           )}
           {/* 编辑图标 */}
-          <div className="absolute inset-0 flex items-center justify-center 
-                          bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+          <div className="flex absolute inset-0 justify-center items-center rounded-full opacity-0 transition-opacity bg-black/50 group-hover:opacity-100">
             <Edit2 size={14} className="text-white" />
           </div>
         </div>
         
         {/* 名称和时间 */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="font-bold text-lg truncate font-display">
+          <div className="flex gap-2 items-center">
+            <h2 className="text-lg font-bold truncate font-display">
               {playerProfile?.name || '无名侠客'}
             </h2>
           </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex gap-3 items-center text-sm text-muted-foreground">
             {/* 季节日期 */}
-            <span className="flex items-center gap-1">
+            <span className="flex gap-1 items-center">
               <span className="text-amber-300">◆</span>
               第 {year} 年 {season} ({dayOfSeason}日)
             </span>
@@ -237,8 +232,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
       
       {/* 玩家资源区 */}
       <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <span className="w-1 h-3 bg-primary rounded-full" />
+        <h3 className="flex gap-2 items-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+          <span className="w-1 h-3 rounded-full bg-primary" />
           个人状态
         </h3>
         
@@ -282,11 +277,11 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         
         {/* 体力进度条 */}
         <div className="mt-2">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+          <div className="flex justify-between mb-1 text-xs text-muted-foreground">
             <span>体力</span>
             <span>{playerStats.health}/100</span>
           </div>
-          <div className="h-2 bg-black/30 rounded-full overflow-hidden">
+          <div className="overflow-hidden h-2 rounded-full bg-black/30">
             <div 
               className={`
                 h-full rounded-full transition-all duration-500
@@ -303,22 +298,14 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         <div className="grid grid-cols-2 gap-2 mt-2">
              <button 
                 onClick={onOpenTalents}
-                className="flex items-center justify-center gap-2 p-2 rounded-lg 
-                         bg-gradient-to-r from-amber-500/10 to-yellow-500/10
-                         border border-amber-500/20 
-                         hover:border-amber-500/40 hover:from-amber-500/20 hover:to-yellow-500/20
-                         transition-all group"
+                className="flex gap-2 justify-center items-center p-2 bg-gradient-to-r rounded-lg border transition-all from-amber-500/10 to-yellow-500/10 border-amber-500/20 hover:border-amber-500/40 hover:from-amber-500/20 hover:to-yellow-500/20 group"
              >
                 <Lightbulb size={14} className="text-amber-400 group-hover:text-amber-300" />
                 <span className="text-xs font-medium">天赋</span>
              </button>
              <button 
                 onClick={onOpenAchievements}
-                className="flex items-center justify-center gap-2 p-2 rounded-lg 
-                         bg-gradient-to-r from-orange-500/10 to-red-500/10
-                         border border-orange-500/20
-                         hover:border-orange-500/40 hover:from-orange-500/20 hover:to-red-500/20
-                         transition-all group"
+                className="flex gap-2 justify-center items-center p-2 bg-gradient-to-r rounded-lg border transition-all from-orange-500/10 to-red-500/10 border-orange-500/20 hover:border-orange-500/40 hover:from-orange-500/20 hover:to-red-500/20 group"
              >
                 <Award size={14} className="text-orange-400 group-hover:text-orange-300" />
                 <span className="text-xs font-medium">成就</span>
@@ -328,7 +315,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 
       {/* 县城状态区 */}
       <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+        <h3 className="flex gap-2 items-center text-xs font-semibold tracking-wider uppercase text-muted-foreground">
           <span className="w-1 h-3 bg-cyan-500 rounded-full" />
           县城状况
         </h3>
@@ -341,7 +328,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         
         {/* 战火系统 */}
         {externalThreat && (
-          <div className="space-y-2 pt-2 border-t border-white/5">
+          <div className="pt-2 space-y-2 border-t border-white/5">
             <div className="grid grid-cols-3 gap-2">
               <AncientStatItem icon={<Flame size={12} />} value={externalThreat.banditThreat} label="匪患" color="text-red-500" maxValue={100} />
               <AncientStatItem icon={<Shield size={12} />} value={externalThreat.defense} label="边防" color="text-cyan-400" maxValue={100} />
@@ -352,11 +339,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
         
         <button 
           onClick={onOpenOffice}
-          className="w-full mt-3 flex items-center justify-center gap-2 p-2 rounded-lg 
-                   bg-gradient-to-r from-indigo-500/10 to-purple-500/10
-                   border border-indigo-500/20
-                   hover:border-indigo-500/40 hover:from-indigo-500/20 hover:to-purple-500/20
-                   transition-all group"
+          className="flex gap-2 justify-center items-center p-2 mt-3 w-full bg-gradient-to-r rounded-lg border transition-all from-indigo-500/10 to-purple-500/10 border-indigo-500/20 hover:border-indigo-500/40 hover:from-indigo-500/20 hover:to-purple-500/20 group"
         >
            <Building2 size={14} className="text-indigo-400 group-hover:text-indigo-300" />
            <span className="text-xs font-medium text-indigo-300">官邸修缮</span>

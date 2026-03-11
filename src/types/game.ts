@@ -60,6 +60,8 @@ export interface Item {
   style?: StyleTag;
   color?: string;
   textColor?: string;
+  category?: string;
+  rarity?: 'common' | 'rare' | 'epic' | 'legend';
 }
 
 export interface Facility {

@@ -4,8 +4,7 @@ import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
-import { useTheme } from '@/hooks/useTheme';
-import { imageCache, CachedImage } from '@/utils/imageCache';
+import { CachedImage } from '@/utils/imageCache';
 
 interface InventoryModalProps {
   onClose: () => void;
@@ -30,8 +29,6 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   const { inventory, useItem } = useGameStore();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const vibrate = useGameVibrate();
-  const { theme } = useTheme();
-  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // Reset selected item if it's no longer in inventory
   useEffect(() => {

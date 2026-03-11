@@ -3,7 +3,7 @@
  * 用于缓存游戏中的图片，减少网络请求和加载时间
  */
 
-import { DBSchema, IDBPDatabase } from 'idb';
+import { DBSchema, openDB, IDBPDatabase } from 'idb';
 
 // 数据库配置
 const DB_NAME = 'WuningCountyCache';
@@ -35,14 +35,15 @@ class ImageCacheManager {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
-      this.db = await window.indexedDB.open(DB_NAME, DB_VERSION);
-      
-      // 创建对象存储
-      if (!this.db.objectStoreNames.contains(STORE_NAME)) {
-        const store = this.db.createObjectStore(STORE_NAME, { keyPath: 'url' });
-        store.createIndex('by-url', 'url', { unique: true });
-        store.createIndex('by-timestamp', 'timestamp', { unique: false });
-      }
+      this.db = await openDB<ImageCacheDB>(DB_NAME, DB_VERSION, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            const store = db.createObjectStore(STORE_NAME, { keyPath: 'url' });
+            store.createIndex('by-url', 'url', { unique: true });
+            store.createIndex('by-timestamp', 'timestamp', { unique: false });
+          }
+        }
+      });
 
       // 首次打开或版本升级时清理过期缓存
       await this.cleanExpiredCache();
@@ -81,20 +82,11 @@ class ImageCacheManager {
     await this.init();
     if (!this.db) return null;
 
-    const tx = this.db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index('by-url');
-    const result = await new Promise<any>((resolve, reject) => {
-      const request = index.get(url);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+    const result = await this.db.get('images', url);
 
     if (result) {
       // 更新访问时间
-      const updateTx = this.db!.transaction(STORE_NAME, 'readwrite');
-      const updateStore = updateTx.objectStore(STORE_NAME);
-      updateStore.put({
+      await this.db.put('images', {
         ...result,
         timestamp: Date.now()
       });
@@ -117,38 +109,23 @@ class ImageCacheManager {
     await this.init();
     if (!this.db) return 0;
 
-    const tx = this.db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.count();
-      request.onsuccess = () => {
-        // 估算：平均图片100KB
-        resolve(request.result * 100 * 1024);
-      };
-      request.onerror = () => reject(0);
-    });
+    const count = await this.db.count('images');
+    // 估算：平均图片100KB
+    return count * 100 * 1024;
   }
 
   // 清理过期缓存（30天前的）
   private async cleanExpiredCache(): Promise<void> {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
     
-    const tx = this.db!.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index('by-timestamp');
+    if (!this.db) return;
+
+    let cursor = await this.db.transaction('images', 'readwrite').store.index('by-timestamp').openCursor(IDBKeyRange.upperBound(thirtyDaysAgo, true));
     
-    // 删除超时的记录
-    const range = IDBKeyRange.upperBound(thirtyDaysAgo, true);
-    const request = index.openCursor(range);
-    
-    request.onsuccess = (event: any) => {
-      const cursor = event.target.result;
-      if (cursor) {
-        cursor.delete();
-        cursor.continue();
-      }
-    };
+    while (cursor) {
+      await cursor.delete();
+      cursor = await cursor.continue();
+    }
   }
 
   // 检查并清理缓存
@@ -156,24 +133,18 @@ class ImageCacheManager {
     const currentSize = await this.getCacheSize();
     
     if (currentSize + newSize > MAX_CACHE_SIZE) {
-      // 按时间排序，删除最老的图片直到有足够空间
-      const tx = this.db!.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
-      const index = store.index('by-timestamp');
-      
+      if (!this.db) return;
+
       let freedSpace = 0;
       const targetFree = newSize;
       
-      const request = index.openCursor();
+      let cursor = await this.db.transaction('images', 'readwrite').store.index('by-timestamp').openCursor();
       
-      request.onsuccess = (event: any) => {
-        const cursor = event.target.result;
-        if (cursor && freedSpace < targetFree) {
-          freedSpace += cursor.value.size;
-          cursor.delete();
-          cursor.continue();
-        }
-      };
+      while (cursor && freedSpace < targetFree) {
+        freedSpace += cursor.value.size;
+        await cursor.delete();
+        cursor = await cursor.continue();
+      }
     }
   }
 

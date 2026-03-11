@@ -3,7 +3,6 @@ import { X, TrendingUp, TrendingDown, Coins, Store } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { goods } from '@/data/goods';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
-import { useTheme } from '@/hooks/useTheme';
 
 interface MarketModalProps {
   onClose: () => void;
@@ -12,8 +11,6 @@ interface MarketModalProps {
 export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
   const { marketPrices, marketInventory, ownedGoods, playerStats, buyGood, sellGood, marketState, flags, npcRelations } = useGameStore();
   const vibrate = useGameVibrate();
-  const { theme } = useTheme();
-  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const getEffectivePrices = (goodId: string, basePrice: number) => {
     const marketPrice = marketPrices[goodId] || basePrice;

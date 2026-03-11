@@ -6,7 +6,6 @@ import { X, Zap, ArrowUp, Star, Sparkles } from 'lucide-react';
 import { talents } from '@/data/talents';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
-import { useTheme } from '@/hooks/useTheme';
 
 interface TalentModalProps {
   isOpen: boolean;
@@ -24,8 +23,6 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
 export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => {
   const { talents: playerTalents, playerStats, upgradeTalent } = useGameStore();
   const vibrate = useGameVibrate();
-  const { theme } = useTheme();
-  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   if (!isOpen) return null;
 
