@@ -16,6 +16,7 @@ import { User, Briefcase, Sword } from 'lucide-react';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useScreenOrientation } from '@/hooks/useScreenOrientation';
 import { getBackgroundImage, BACKGROUND_IMAGES } from '@/constants';
+import { preloadGameBackgrounds } from '@/utils/backgroundCache';
 
 // 角色图标颜色映射
 const roleColors: Record<string, string> = {
@@ -40,6 +41,12 @@ export const Home: React.FC = () => {
   // 根据屏幕方向获取背景图片
   const isVertical = screenOrientation === 'vertical';
   const backgroundImage = getBackgroundImage(isVertical, BACKGROUND_IMAGES.HOME);
+
+  // 预加载游戏背景图片
+  React.useEffect(() => {
+    // 静默预加载，不阻塞界面
+    preloadGameBackgrounds().catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     if (role) {

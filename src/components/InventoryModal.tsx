@@ -5,30 +5,22 @@ import { items } from '@/data/items';
 import { Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useTheme } from '@/hooks/useTheme';
+import { imageCache, CachedImage } from '@/utils/imageCache';
 
 interface InventoryModalProps {
   onClose: () => void;
 }
 
 const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = ({ item, size = 24, className }) => {
-  const [error, setError] = useState(false);
   const imagePath = `/images/${item.id}.jpg`;
-
-  useEffect(() => {
-    setError(false);
-  }, [item.id]);
-
-  if (error) {
-    return <Package size={size} className={className} />;
-  }
 
   return (
     <div className={`flex overflow-hidden justify-center items-center rounded-md bg-secondary/20 ${className}`} style={{ width: size, height: size }}>
-      <img 
+      <CachedImage 
         src={imagePath} 
         alt={item.name} 
         className="object-contain w-full h-full"
-        onError={() => setError(true)}
+        placeholder={<Package size={size * 0.6} className="text-muted-foreground opacity-50" />}
       />
     </div>
   );
