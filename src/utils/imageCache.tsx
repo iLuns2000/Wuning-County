@@ -57,11 +57,12 @@ class ImageCacheManager {
     await this.init();
     if (!this.db) return;
 
+    // 先检查缓存大小，必要时清理
+    await this.checkAndCleanCache(blob.size);
+
+    // 再创建事务保存图片
     const tx = this.db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-
-    // 检查缓存大小，必要时清理
-    await this.checkAndCleanCache(blob.size);
 
     await store.put({
       url,
@@ -249,6 +250,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   }
 
   if (error) {
+    console.error(error)
     return (
       <div className={`flex items-center justify-center bg-gray-100 text-gray-400 ${className}`}>
         <span>图片加载失败</span>
