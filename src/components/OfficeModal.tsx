@@ -48,11 +48,11 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
     if (pathId === 'none') return '未选择';
     return countyDevelopmentPaths.find(path => path.id === pathId)?.name || '未选择';
   };
-  // Calculate resources
-  const woodCount = inventory.filter(id => id === 'wood').length;
-  const stoneCount = inventory.filter(id => id === 'stone').length;
-  const constructionOrderCount = inventory.filter(id => id === 'construction_order').length;
-  const rareStoneCount = inventory.filter(id => id === 'rare_stone').length;
+  // Calculate resources (新格式: Record<string, number>)
+  const woodCount = inventory['wood'] || 0;
+  const stoneCount = inventory['stone'] || 0;
+  const constructionOrderCount = inventory['construction_order'] || 0;
+  const rareStoneCount = inventory['rare_stone'] || 0;
 
   // Calculate progress
   let progress = 0;

@@ -23,6 +23,21 @@ import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
 // Weather System Helper
 const SEASON_LENGTH = 90;
 const SEASONS = ['春', '夏', '秋', '冬'] as const;
+// 数据迁移辅助函数：将旧格式 inventory (string[]) 转换为新格式 (Record<string, number>)
+const migrateInventory = (inventory: any): Record<string, number> => {
+  if (inventory && typeof inventory === 'object' && !Array.isArray(inventory)) {
+    return inventory as Record<string, number>;
+  }
+  if (Array.isArray(inventory)) {
+    const newInventory: Record<string, number> = {};
+    inventory.forEach((itemId: string) => {
+      newInventory[itemId] = (newInventory[itemId] || 0) + 1;
+    });
+    return newInventory;
+  }
+  return {};
+};
+
 
 export const getDateInfo = (day: number) => {
   const adjustedDay = day - 1;
@@ -2145,7 +2160,7 @@ export const useGameStore = create<GameStore>()(
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },
             countyStats: newCountyStats,
             inventory: nextInventory,
-            logs: logs.slice(0, 50),
+            logs: logs.slice(0, 500),
             timeSettings: { ...state.timeSettings, dayStartTime: Date.now() }, // Reset timer
             priceLocks: currentPriceLocks,
             fortuneLevel: undefined, // Reset daily fortune
@@ -2462,7 +2477,7 @@ export const useGameStore = create<GameStore>()(
               }
             : p
           ),
-          pigeonRaceHistory: [record, ...(s.pigeonRaceHistory || [])].slice(0, 50),
+          pigeonRaceHistory: [record, ...(s.pigeonRaceHistory || [])].slice(0, 500),
           dailyCounts: { ...s.dailyCounts, pigeonRace: (s.dailyCounts.pigeonRace || 0) + 1 },
         }));
 
@@ -2750,10 +2765,13 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
-      addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 50) })),
+      addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 500) })),
 
       triggerEvent: () => {
         const state = get();
+
+        // 预计算当前季节索引 (缓存计算)
+        const seasonIndex = Math.floor(((state.day - 1) % 360) / 90);
 
         const checkBasicCondition = (e: GameEvent) => {
           const cond = e.triggerCondition;
@@ -2764,44 +2782,59 @@ export const useGameStore = create<GameStore>()(
           if (cond.minMoney && state.playerStats.money < cond.minMoney) return false;
           if (cond.minAbility && state.playerStats.ability < cond.minAbility) return false;
           if (cond.minDay && state.day < cond.minDay) return false;
+          // 预过滤季节事件
+          if (cond.season && cond.season !== SEASONS[seasonIndex]) return false;
           if (cond.custom && !cond.custom(state)) return false;
 
           return true;
         };
 
-        const allEvents = [...npcEvents, ...randomEvents];
-        const candidates = allEvents.filter(checkBasicCondition);
+        // 优化：先按概率分类，减少遍历次数
+        const guaranteedEvents: GameEvent[] = [];
+        const randomCandidates: GameEvent[] = [];
+        
+        // 遍历一次同时分类
+        for (const e of randomEvents) {
+          if (!checkBasicCondition(e)) continue;
+          const prob = e.triggerCondition?.probability;
+          if (prob === 1 || prob === undefined) {
+            guaranteedEvents.push(e);
+          } else {
+            randomCandidates.push(e);
+          }
+        }
+        
+        // NPC 事件也加入候选
+        for (const e of npcEvents) {
+          if (!checkBasicCondition(e)) continue;
+          const prob = e.triggerCondition?.probability;
+          if (prob === 1 || prob === undefined) {
+            guaranteedEvents.push(e);
+          } else {
+            randomCandidates.push(e);
+          }
+        }
 
-        // 1. Priority: Guaranteed events (probability === 1)
-        // Collect ALL guaranteed events
-        const guaranteedEvents = candidates.filter(e => e.triggerCondition?.probability === 1);
+        const candidates = [...guaranteedEvents, ...randomCandidates];
 
+        // 1. 如果有必定触发的事件，直接触发
         if (guaranteedEvents.length > 0) {
-          // If there are guaranteed events, trigger them all (queue them)
-          // We do NOT trigger random events if guaranteed events occur (to avoid event spam)
           const [first, ...rest] = guaranteedEvents;
           set({ currentEvent: first, eventQueue: rest });
           return;
         }
 
-        // 2. Global 30% chance for other events
+        // 2. 全局 30% 触发概率
         if (Math.random() > 0.3) {
           set({ currentEvent: null, eventQueue: [] });
           return;
         }
 
-        // 3. Filter remaining events by their specific probability
-        const possibleEvents = candidates.filter(e => {
-          // Guaranteed events are already handled, so we only look at others here
-          // undefined probability implies 100% chance IF global check passes (default behavior)
+        // 3. 从候选中按概率筛选
+        const possibleEvents = randomCandidates.filter(e => {
           const prob = e.triggerCondition?.probability;
-          if (prob !== undefined) {
-            // Exclude probability 1 as they should have been caught above, 
-            // but if for some reason one slipped (e.g. logic error), we filter it to be safe or treat as 100%
-            if (prob === 1) return false;
-            return Math.random() < prob;
-          }
-          return true;
+          if (prob === undefined) return true;
+          return Math.random() < prob;
         });
 
         if (possibleEvents.length > 0) {

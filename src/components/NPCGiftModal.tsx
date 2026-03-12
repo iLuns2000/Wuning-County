@@ -31,12 +31,11 @@ export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcName, onClose, on
   const [selectedItemId, setSelectedItemId] = useState<string>('');
 
   const giftCandidates = useMemo(() => {
-    const counts = inventory.reduce((acc, id) => {
-      acc[id] = (acc[id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // 新格式 inventory: Record<string, number>
+    const counts = inventory;
 
     const candidates = Object.entries(counts)
+      .filter(([_, count]) => count > 0)
       .map(([itemId, count]) => {
         const item = items.find(entry => entry.id === itemId);
         if (!item) return null;

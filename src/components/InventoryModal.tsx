@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Package, Info, Sparkles } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
@@ -10,8 +10,9 @@ interface InventoryModalProps {
   onClose: () => void;
 }
 
-const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = ({ item, size = 24, className }) => {
-  const imagePath = `/images/${item.id}.jpg`;
+const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = React.memo(({ item, size = 24, className }) => {
+  // 使用 webp 格式，CachedImage 会自动处理回退
+  const imagePath = `/images/${item.id}.webp`;
 
   return (
     <div className={`flex overflow-hidden justify-center items-center rounded-md bg-secondary/20 ${className}`} style={{ width: size, height: size }}>
@@ -23,35 +24,36 @@ const ItemImage: React.FC<{ item: Item; size?: number; className?: string }> = (
       />
     </div>
   );
-};
+});
 
 export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   const { inventory, useItem } = useGameStore();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const vibrate = useGameVibrate();
 
-  // Reset selected item if it's no longer in inventory
+  // Reset selected item if it's no longer in inventory (新格式)
   useEffect(() => {
-    if (selectedItem && !inventory.includes(selectedItem.id)) {
+    if (selectedItem && (!inventory[selectedItem.id] || inventory[selectedItem.id] === 0)) {
       setSelectedItem(null);
     }
   }, [inventory, selectedItem]);
 
-  // Map inventory IDs to Item objects
-  const inventoryItems = inventory
-    .filter(id => id !== 'wood' && id !== 'stone')
-    .map(id => items.find(i => i.id === id))
-    .filter((i): i is Item => !!i);
-
-  // Group items by ID to show counts (if we allow duplicates in inventory array)
-  // Currently inventory is string[], assuming it can contain duplicates.
-  const itemCounts = inventoryItems.reduce((acc, item) => {
-    acc[item.id] = (acc[item.id] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  // Unique items for display
-  const uniqueItems = Array.from(new Set(inventoryItems));
+  // 新格式: inventory 是 Record<string, number>
+  // 使用 useMemo 缓存物品列表计算结果
+  const { itemCounts, uniqueItems } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const itemList: Item[] = [];
+    
+    Object.entries(inventory).forEach(([id, count]) => {
+      if (id !== 'wood' && id !== 'stone' && count > 0) {
+        counts[id] = count;
+        const item = items.find(i => i.id === id);
+        if (item) itemList.push(item);
+      }
+    });
+    
+    return { itemCounts: counts, uniqueItems: itemList };
+  }, [inventory]);
 
   return (
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-200 bg-black/50 animate-in fade-in">

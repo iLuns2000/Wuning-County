@@ -69,7 +69,7 @@ const LingrongGarden: React.FC = () => {
     
     const potentialRelation = relation + (updates.relationChange?.[npcId] || 0);
     
-    if (potentialRelation >= 20 && !inventory.includes('mogu_gift')) {
+    if (potentialRelation >= 20 && (inventory['mogu_gift'] || 0) === 0) {
         updates.itemsAdd = ['mogu_gift'];
         msg += ' 墨骨被你的诚心打动，送了你一份谢礼！';
     }
@@ -272,7 +272,7 @@ const XimengTower: React.FC = () => {
 
   const handleChallenge = () => {
     vibrate(VIBRATION_PATTERNS.MEDIUM);
-    if (!inventory.includes('ximeng_invitation')) {
+    if ((inventory['ximeng_invitation'] || 0) === 0) {
       handleEventOption(undefined, '【曦梦楼】你需要一张邀请函才能参与问答挑战。');
       return;
     }
@@ -298,7 +298,7 @@ const XimengTower: React.FC = () => {
       let msg = `【曦梦楼】你回答：“${option}”。云曦微笑着点了点头：“正是此理。”`;
 
       if (newChallengeCount === 10) {
-        if (!inventory.includes('sword_edge_method')) {
+        if ((inventory['sword_edge_method'] || 0) === 0) {
             updates.itemsAdd = ['sword_edge_method'];
             updates.ability = 10; // Speed/Ability boost
             msg += ' 完成10次挑战，云曦赠予你《剑走偏锋》心法！你的速度大幅提升了。';
@@ -340,7 +340,7 @@ const XimengTower: React.FC = () => {
 
             <button
               onClick={handleChallenge}
-              disabled={!inventory.includes('ximeng_invitation')}
+              disabled={(inventory['ximeng_invitation'] || 0) === 0}
               className="flex flex-col justify-center items-center p-4 rounded-lg border transition-all hover:bg-secondary disabled:opacity-50"
             >
               <HelpCircle className="mb-2" />
@@ -625,7 +625,7 @@ const YuntuntunShop: React.FC = () => {
     const isSuccess = Math.random() < 0.3; // 30% success rate
 
     if (isSuccess) {
-      if (inventory.includes('wonton_72_transformations')) {
+      if ((inventory['wonton_72_transformations'] || 0) > 0) {
            handleEventOption({
             health: -15,
             ability: 5
@@ -822,7 +822,7 @@ const FengEGe: React.FC = () => {
       return;
     }
 
-    const ownedCount = selected.reduce((ok, id) => ok && inventory.includes(id), true);
+    const ownedCount = selected.reduce((ok, id) => ok && (inventory[id] || 0) > 0, true);
     if (!ownedCount) {
       handleEventOption(undefined, '【锋锷阁】材料不足，无法锻造。');
       return;
@@ -907,8 +907,8 @@ const FengEGe: React.FC = () => {
     handleEventOption({ money: price, itemsRemove: [id] }, `【锋锷阁】售出${getName(id)}，获得 ${price} 文。`);
   };
 
-  const forgeInventory = inventory.filter(id => forgeMaterials.has(id));
-  const weaponInventory = inventory.filter(id => ['weapon_common', 'weapon_fine', 'weapon_legend'].includes(id));
+  const forgeInventory = Object.keys(inventory).filter(id => forgeMaterials.has(id) && (inventory[id] || 0) > 0);
+  const weaponInventory = Object.keys(inventory).filter(id => ['weapon_common', 'weapon_fine', 'weapon_legend'].includes(id) && (inventory[id] || 0) > 0);
 
   return (
     <div className="p-4 space-y-4 rounded-lg border shadow-sm bg-card text-card-foreground">
@@ -991,7 +991,7 @@ const LingyinMusicHouse: React.FC = () => {
       flagsSet: { lingyin_listen_count: newCount }
     };
     let msg = '【泠音乐坊】你在乐坊静听一曲，心旷神怡。';
-    if (newCount >= 100 && !inventory.includes('gold_microphone')) {
+    if (newCount >= 100 && (inventory['gold_microphone'] || 0) === 0) {
       updates.itemsAdd = ['gold_microphone'];
       msg += ' 坊主泠音笑意温柔，赠你一支“金话筒”。';
     }

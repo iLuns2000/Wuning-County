@@ -48,7 +48,7 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     name: '无宁收藏家',
     description: '集齐无宁县微缩景观一套',
     rewardExp: 200,
-    condition: (state) => state.inventory.includes('wuning_landscape')
+    condition: (state) => (state.inventory['wuning_landscape'] || 0) > 0
   },
   {
     id: 'master',
@@ -94,14 +94,14 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     name: '临安记忆',
     description: '伞柄上刻着临安制造四个字，也许上一任主人曾经撑着这把伞在断桥等人...',
     rewardExp: 50,
-    condition: (state) => state.inventory.includes('oil_paper_umbrella')
+    condition: (state) => (state.inventory['oil_paper_umbrella'] || 0) > 0
   },
   {
     id: 'lovesickness_tablet_found',
     name: '相思碑',
     description: '冷雁南飞 而我面向北 自锁眉 凭栏等谁归',
     rewardExp: 100,
-    condition: (state) => state.inventory.includes('lovesickness_tablet')
+    condition: (state) => (state.inventory['lovesickness_tablet'] || 0) > 0
   },
   {
     id: 'guest_please_enter',
@@ -122,14 +122,14 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     name: '夜雨江湖',
     description: '恭喜你在夜雨中依旧有外出江湖探索的勇气',
     rewardExp: 200,
-    condition: (state) => state.inventory.includes('cursed_sword')
+    condition: (state) => (state.inventory['cursed_sword'] || 0) > 0
   },
   {
     id: 'first_moon',
     name: '第一枚月亮',
     description: '在秋天掉落一枚弯月亮，无论凑近端详还是远望，都算吾乡',
     rewardExp: 100,
-    condition: (state) => state.inventory.includes('crescent_moon_badge')
+    condition: (state) => (state.inventory['crescent_moon_badge'] || 0) > 0
   },
   {
     id: 'slacking_off_song',
@@ -441,9 +441,9 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '江湖险恶，你孤身一人须有宝物护身',
     rewardExp: 300,
     condition: (state) => 
-      state.inventory.includes('wolf_claw') &&
-      state.inventory.includes('goose_feather') &&
-      state.inventory.includes('holy_water')
+      (state.inventory['wolf_claw'] || 0) > 0 &&
+      (state.inventory['goose_feather'] || 0) > 0 &&
+      (state.inventory['holy_water'] || 0) > 0
   },
   {
     id: 'blacksmith_beginner',
@@ -531,15 +531,15 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '同时拥有八把县好剑与绝世好剑',
     rewardExp: 500,
     condition: (state) => 
-      state.inventory.includes('county_eight_swords') &&
-      state.inventory.includes('peerless_sword')
+      (state.inventory['county_eight_swords'] || 0) > 0 &&
+      (state.inventory['peerless_sword'] || 0) > 0
   },
   {
     id: 'evil_meets_evil',
     name: '恶人自有恶人磨',
     description: '抢走锻造品后只得一根惊鹊的羽毛',
     rewardExp: 100,
-    condition: (state) => state.inventory.includes('startled_magpie_feather')
+    condition: (state) => (state.inventory['startled_magpie_feather'] || 0) > 0
   }
   ,
   {

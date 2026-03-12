@@ -7,7 +7,7 @@ export const BarberShop: React.FC = () => {
   const { playerStats, handleEventOption, inventory, flags } = useGameStore();
   const vibrate = useGameVibrate();
 
-  const hasCoupon = inventory.includes('barber_discount_coupon');
+  const hasCoupon = (inventory['barber_discount_coupon'] || 0) > 0;
   const firstDone = !!flags['barber_first_done'];
 
   const haircutBasePrice = 15;

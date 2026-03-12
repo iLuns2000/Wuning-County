@@ -28,7 +28,7 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const getOwnedCount = (id: string) => {
-    return inventory.filter(itemId => itemId === id).length;
+    return inventory[id] || 0;
   };
 
   return (
@@ -108,10 +108,13 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
               <div 
                 key={treasure.id} 
                 className={`
-                  group relative p-5 rounded-xl border transition-all duration-300
+                  group relative p-3 sm:p-5 rounded-xl border transition-all duration-300
                   ${rarityStyle.bg} ${rarityStyle.border}
                   hover:shadow-lg ${rarityStyle.glow}
-                  bg-gradient-to-b from-[#1f1a10] to-[#151008]
+                  ${isLightMode 
+                    ? 'bg-gradient-to-b from-[#fffbf0] to-[#fff5d8]' 
+                    : 'bg-gradient-to-b from-[#1f1a10] to-[#151008]'
+                  }
                 `}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
@@ -136,16 +139,16 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                 
                 <div className="flex justify-between items-start pr-24 mb-3">
                   <div>
-                    <h3 className={`text-lg font-bold ${rarityStyle.text}`}>{treasure.name}</h3>
-                    <p className="mt-1 text-sm text-amber-200/60">{treasure.description}</p>
+                    <h3 className={`text-sm sm:text-lg font-bold ${isLightMode ? 'text-amber-900' : rarityStyle.text}`}>{treasure.name}</h3>
+                    <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${isLightMode ? 'text-amber-700/70' : 'text-amber-200/60'} line-clamp-2`}>{treasure.description}</p>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-2 sm:mt-4">
                     <div className={`
-                      px-4 py-2 font-mono font-bold text-lg rounded-lg
+                      px-2 sm:px-4 py-1 sm:py-2 font-mono font-bold text-sm sm:text-lg rounded-lg
                       bg-gradient-to-r from-amber-600/30 to-yellow-600/30 
-                      border border-amber-500/30 ${rarityStyle.text}
+                      border border-amber-500/30 ${isLightMode ? 'text-amber-800' : rarityStyle.text}
                     `}>
                         {price.toLocaleString()} 文
                     </div>
@@ -157,14 +160,14 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                       }}
                       disabled={!canBuy}
                       className={`
-                        flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all duration-300
+                        flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto
                         ${canBuy 
                             ? 'bg-gradient-to-r from-amber-600 to-yellow-500 text-white shadow-lg hover:shadow-amber-500/30 hover:scale-105 active:scale-95' 
                             : 'bg-amber-900/30 text-amber-500/50 cursor-not-allowed border border-amber-500/20'
                         }
                       `}
                     >
-                      <Gem size={16} />
+                      <Gem size={14} />
                       {canBuy ? '购买收藏' : '囊中羞涩'}
                     </button>
                 </div>

@@ -183,6 +183,48 @@ interface CachedImageProps {
   onError?: (error: Error) => void;
 }
 
+// 支持 WebP 回退的加载函数
+const loadImageWithFallback = async (src: string, onError?: (err: Error) => void): Promise<string | null> => {
+  // 提取基础路径和尝试的扩展名顺序
+  const tryFormats = ['.webp', '.jpg', '.png', '.jpeg'];
+  let basePath = src;
+  
+  // 找到当前扩展名位置
+  const currentExt = tryFormats.find(ext => src.toLowerCase().endsWith(ext));
+  if (currentExt) {
+    basePath = src.slice(0, -currentExt.length);
+    // 重新排序，优先尝试用户指定的格式
+    const idx = tryFormats.indexOf(currentExt);
+    if (idx > 0) {
+      tryFormats.splice(idx, 1);
+      tryFormats.unshift(currentExt);
+    }
+  }
+
+  // 尝试加载每种格式
+  for (const ext of tryFormats) {
+    const trySrc = basePath + ext;
+    try {
+      // 先从缓存获取
+      let url = await imageCache.getImage(trySrc);
+      if (url) return url;
+
+      // 下载并缓存
+      const response = await fetch(trySrc);
+      if (!response.ok) continue;
+      
+      const blob = await response.blob();
+      await imageCache.cacheImage(trySrc, blob);
+      return URL.createObjectURL(blob);
+    } catch {
+      // 继续尝试下一种格式
+    }
+  }
+  
+  onError?.(new Error('All formats failed'));
+  return null;
+};
+
 export const CachedImage: React.FC<CachedImageProps> = ({
   src,
   alt = '',
@@ -204,21 +246,18 @@ export const CachedImage: React.FC<CachedImageProps> = ({
       }
 
       try {
-        // 尝试从缓存获取
-        let url = await imageCache.getImage(src);
+        const url = await loadImageWithFallback(src, (err) => {
+          if (mounted) {
+            setError(err);
+            onError?.(err);
+          }
+        });
 
-        // 如果缓存没有，下载并缓存
-        if (!url) {
-          const response = await fetch(src);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          
-          const blob = await response.blob();
-          await imageCache.cacheImage(src, blob);
-          url = URL.createObjectURL(blob);
-        }
-
-        if (mounted) {
+        if (mounted && url) {
           setImageUrl(url);
+          setLoading(false);
+        } else if (mounted) {
+          setError(new Error('Image load failed'));
           setLoading(false);
         }
       } catch (err) {
@@ -234,12 +273,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
     return () => {
       mounted = false;
-      // 清理临时URL（如果是我们创建的）
-      if (imageUrl && imageUrl.startsWith('blob:')) {
-        //URL.revokeObjectURL(imageUrl); // 保持缓存，不需要清理
-      }
     };
-  }, [src]);
+  }, [src, onError]);
 
   if (loading) {
     return placeholder ? (
@@ -263,6 +298,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
       src={imageUrl || src} 
       alt={alt} 
       className={className}
+      loading="lazy"
+      decoding="async"
       onError={() => setError(new Error('Image load failed'))}
     />
   );

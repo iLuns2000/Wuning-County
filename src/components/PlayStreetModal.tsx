@@ -59,7 +59,8 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
   const accessoryItems = useMemo(() => items.filter(i => i.type === 'accessory'), []);
 
   const ownedItems = useMemo(() => {
-    const uniqueIds = Array.from(new Set(inventory));
+    // 新格式 inventory: Record<string, number>
+    const uniqueIds = Object.keys(inventory).filter(id => (inventory[id] || 0) > 0);
     return uniqueIds.map(id => itemMap.get(id)).filter((i): i is Item => !!i);
   }, [inventory, itemMap]);
 

@@ -385,7 +385,7 @@ export const randomEvents: GameEvent[] = [
       custom: (state) => {
         const isRainy = state.weather === 'rain_light' || state.weather === 'rain_heavy';
         const hasMoney = state.playerStats.money >= 50;
-        const hasUmbrella = state.inventory.includes('oil_paper_umbrella');
+        const hasUmbrella = (state.inventory['oil_paper_umbrella'] || 0) > 0;
         // Check if achievement is already unlocked
         const hasAchievement = state.achievements.includes('linan_memory');
         return isRainy && hasMoney && !hasUmbrella && !hasAchievement;
@@ -488,7 +488,7 @@ export const randomEvents: GameEvent[] = [
         return seasonIndex === 2 &&
           (dayOfSeason === 7 || dayOfSeason === 8) &&
 
-          !state.inventory.includes('crescent_moon_badge') &&
+          !((state.inventory['crescent_moon_badge'] || 0) > 0) &&
           !state.achievements.includes('first_moon');
       }
     },
@@ -2640,10 +2640,10 @@ export const npcEvents: GameEvent[] = [
     triggerCondition: {
       probability: 1.0,
       custom: (state) => {
-        const hasPlum = state.inventory.includes('gentleman_plum');
-        const hasOrchid = state.inventory.includes('gentleman_orchid');
-        const hasBamboo = state.inventory.includes('gentleman_bamboo');
-        const hasChrysanthemum = state.inventory.includes('gentleman_chrysanthemum');
+        const hasPlum = (state.inventory['gentleman_plum'] || 0) > 0;
+        const hasOrchid = (state.inventory['gentleman_orchid'] || 0) > 0;
+        const hasBamboo = (state.inventory['gentleman_bamboo'] || 0) > 0;
+        const hasChrysanthemum = (state.inventory['gentleman_chrysanthemum'] || 0) > 0;
         return hasPlum && hasOrchid && hasBamboo && hasChrysanthemum && !state.flags['yuelao_prayer_done'];
       }
     },

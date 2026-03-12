@@ -9,10 +9,10 @@ export const MobileStall: React.FC = () => {
   const vibrate = useGameVibrate();
   const [tab, setTab] = useState<'shop' | 'craft'>('shop');
 
-  // Count resources
-  const woodCount = inventory.filter(id => id === 'wood').length;
-  const stoneCount = inventory.filter(id => id === 'stone').length;
-  const fragmentCount = inventory.filter(id => id === 'wuning_fragment').length;
+  // Count resources (新格式: Record<string, number>)
+  const woodCount = inventory['wood'] || 0;
+  const stoneCount = inventory['stone'] || 0;
+  const fragmentCount = inventory['wuning_fragment'] || 0;
 
   // Shop items
   const shopItems = ['clay_shopkeeper', 'wooden_gold_fridge', 'wood_carving_spongebob'];

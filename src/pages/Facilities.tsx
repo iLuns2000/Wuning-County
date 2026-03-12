@@ -31,13 +31,14 @@ const FacilityCard: React.FC<{
       relative p-5 rounded-xl border transition-all duration-300
       ${style.bg} ${style.border}
       hover:shadow-lg hover:scale-[1.02]
-      bg-gradient-to-b from-[#1e2d2f] to-[#182628]
+      bg-gradient-to-b from-[#faf6f1] to-[#f0ebe3] dark:from-[#1e2d2f] dark:to-[#182628]
+      shadow-sm dark:shadow-none
     `}>
       {/* 顶部装饰 */}
-      <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent to-transparent via-amber-500/30" />
+      <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 dark:via-amber-500/30 via-amber-600/20" />
       
       {/* 标题区 */}
-      <div className="flex gap-3 items-center pb-3 mb-3 border-b border-white/10">
+      <div className="flex gap-3 items-center pb-3 mb-3 border-b border-amber-500/20 dark:border-white/10">
         <div className={`p-2.5 rounded-lg bg-gradient-to-br ${style.gradient}`}>
           {icon}
         </div>
@@ -216,7 +217,7 @@ const GamblingHouse: React.FC = () => {
             type="number"
             value={betAmount}
             onChange={(e) => setBetAmount(e.target.value)}
-            className="flex-1 px-3 py-2 text-sm rounded-lg border bg-secondary/50 border-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+            className="flex-1 px-3 py-2 text-sm rounded-lg border bg-white dark:bg-secondary/50 border-amber-500/20 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-red-500/30"
             placeholder="金额"
           />
           <span className="text-sm text-muted-foreground">文</span>
@@ -259,7 +260,7 @@ const GamblingHouse: React.FC = () => {
 
         {/* 上次结果 */}
         {lastResult && (
-          <div className="p-2 text-center rounded bg-black/30">
+          <div className="p-2 text-center rounded bg-amber-100/50 dark:bg-black/30">
             <div className="flex gap-2 justify-center mb-1">
               {lastResult.dice.map((d, i) => (
                 <span key={i} className="flex justify-center items-center w-6 h-6 text-sm rounded bg-white/10">
@@ -348,7 +349,7 @@ const ArcheryGallery: React.FC = () => {
         ) : (
           <div className="flex flex-col gap-3">
             {/* 状态显示 */}
-            <div className="flex justify-between items-center p-3 rounded bg-black/30">
+            <div className="flex justify-between items-center p-3 rounded bg-amber-100/50 dark:bg-black/30">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-400">{score}</div>
                 <div className="text-xs text-muted-foreground">得分</div>

@@ -19,8 +19,8 @@ export const Developer: React.FC = () => {
     livelihood: countyStats.livelihood,
     day: day,
     fortuneLevel: fortuneLevel || 'normal',
-    stone: inventory.filter(i => i === 'stone').length,
-    wood: inventory.filter(i => i === 'wood').length,
+    stone: inventory['stone'] || 0,
+    wood: inventory['wood'] || 0,
     banditThreat: externalThreat.banditThreat,
     defense: externalThreat.defense,
     warRisk: externalThreat.warRisk
@@ -52,11 +52,17 @@ export const Developer: React.FC = () => {
   };
 
   const handleSave = () => {
-    // Reconstruct inventory with new stone and wood counts
-    const otherItems = inventory.filter(i => i !== 'stone' && i !== 'wood');
-    const newStone = Array(Math.max(0, formData.stone)).fill('stone');
-    const newWood = Array(Math.max(0, formData.wood)).fill('wood');
-    const newInventory = [...otherItems, ...newStone, ...newWood];
+    // Reconstruct inventory with new stone and wood counts (新格式: Record<string, number>)
+    const newInventory: Record<string, number> = {};
+    // 保留非 stone 和 wood 的物品
+    Object.entries(inventory).forEach(([key, val]) => {
+      if (key !== 'stone' && key !== 'wood') {
+        newInventory[key] = val;
+      }
+    });
+    // 设置新的 stone 和 wood 数量
+    if (formData.stone > 0) newInventory['stone'] = formData.stone;
+    if (formData.wood > 0) newInventory['wood'] = formData.wood;
 
     updateStats({
       day: formData.day,

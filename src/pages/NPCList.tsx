@@ -415,8 +415,7 @@ export const NPCList: React.FC = () => {
                 return (
                   <div 
                     key={npc.id} 
-                    className="p-4 space-y-3 rounded-xl border transition-all duration-300 cursor-pointer bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
-                    onClick={() => navigate(`/npcs/${npc.id}`)}
+                    className="p-4 space-y-3 rounded-xl border transition-all duration-300 bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -457,6 +456,17 @@ export const NPCList: React.FC = () => {
 
                     {/* 交互按钮 */}
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
+                      {/* 详情按钮 */}
+                      <button
+                        onClick={() => navigate(`/npcs/${npc.id}`)}
+                        className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground min-w-[80px]"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                        <span>详情</span>
+                      </button>
                       <button
                         onClick={() => handleInteraction(npc.id, 'talk')}
                         className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 min-w-[80px]"

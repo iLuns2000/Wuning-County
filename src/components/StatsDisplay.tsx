@@ -107,23 +107,29 @@ const AncientStatItem: React.FC<{
   label: string; 
   color: string;
   maxValue?: number;
-}> = ({ icon, value, label, color, maxValue }) => {
+  isLightMode?: boolean;
+}> = ({ icon, value, label, color, maxValue, isLightMode }) => {
   const percentage = maxValue ? (value / maxValue) * 100 : null;
   
   return (
-    <div className="relative group">
-      <div className="flex justify-between items-center p-2 rounded-lg border bg-black/20 border-white/5">
-        <div className="flex gap-2 items-center">
-          <span className={color}>{icon}</span>
-          <span className="text-xs text-muted-foreground">{label}</span>
+    <div className="relative group min-w-0">
+      <div className={`flex justify-between items-center p-1.5 sm:p-2 rounded-lg border transition-colors
+        ${isLightMode 
+          ? 'bg-amber-50/80 border-amber-200/50' 
+          : 'bg-black/20 border-white/5'
+        }`}>
+        <div className="flex gap-1 sm:gap-2 items-center min-w-0">
+          <span className={`${color} shrink-0`}>{icon}</span>
+          <span className={`text-xs truncate hidden sm:inline ${isLightMode ? 'text-stone-600' : 'text-muted-foreground'}`}>{label}</span>
+          <span className={`text-xs truncate sm:hidden ${isLightMode ? 'text-stone-600' : 'text-muted-foreground'}`}>{label.slice(0,1)}</span>
         </div>
-        <span className={`font-mono font-bold ${color}`}>
+        <span className={`font-mono font-bold ${color} text-xs sm:text-sm shrink-0`}>
           {value}{maxValue ? `/${maxValue}` : ''}
         </span>
       </div>
       {/* 进度条底色 */}
       {percentage !== null && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30 rounded-b">
+        <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-b ${isLightMode ? 'bg-amber-200/50' : 'bg-black/30'}`}>
           <div 
             className={`h-full ${color.replace('text-', 'bg-')} transition-all duration-500`}
             style={{ width: `${Math.min(100, percentage)}%` }}
@@ -320,19 +326,19 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           县城状况
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          <AncientStatItem icon={<TrendingUp size={14} />} value={countyStats.economy} label="经济" color="text-green-400" maxValue={100} />
-          <AncientStatItem icon={<Shield size={14} />} value={countyStats.order} label="治安" color="text-slate-400" maxValue={100} />
-          <AncientStatItem icon={<BookOpen size={14} />} value={countyStats.culture} label="文化" color="text-pink-400" maxValue={100} />
-          <AncientStatItem icon={<Users size={14} />} value={countyStats.livelihood} label="民生" color="text-orange-400" maxValue={100} />
+          <AncientStatItem icon={<TrendingUp size={14} />} value={countyStats.economy} label="经济" color="text-green-400" maxValue={100} isLightMode={isLightMode} />
+          <AncientStatItem icon={<Shield size={14} />} value={countyStats.order} label="治安" color="text-slate-400" maxValue={100} isLightMode={isLightMode} />
+          <AncientStatItem icon={<BookOpen size={14} />} value={countyStats.culture} label="文化" color="text-pink-400" maxValue={100} isLightMode={isLightMode} />
+          <AncientStatItem icon={<Users size={14} />} value={countyStats.livelihood} label="民生" color="text-orange-400" maxValue={100} isLightMode={isLightMode} />
         </div>
         
         {/* 战火系统 */}
         {externalThreat && (
           <div className="pt-2 space-y-2 border-t border-white/5">
             <div className="grid grid-cols-3 gap-2">
-              <AncientStatItem icon={<Flame size={12} />} value={externalThreat.banditThreat} label="匪患" color="text-red-500" maxValue={100} />
-              <AncientStatItem icon={<Shield size={12} />} value={externalThreat.defense} label="边防" color="text-cyan-400" maxValue={100} />
-              <AncientStatItem icon={<Flame size={12} />} value={externalThreat.warRisk} label="战火" color="text-rose-500" maxValue={100} />
+              <AncientStatItem icon={<Flame size={12} />} value={externalThreat.banditThreat} label="匪患" color="text-red-500" maxValue={100} isLightMode={isLightMode} />
+              <AncientStatItem icon={<Shield size={12} />} value={externalThreat.defense} label="边防" color="text-cyan-400" maxValue={100} isLightMode={isLightMode} />
+              <AncientStatItem icon={<Flame size={12} />} value={externalThreat.warRisk} label="战火" color="text-rose-500" maxValue={100} isLightMode={isLightMode} />
             </div>
           </div>
         )}
