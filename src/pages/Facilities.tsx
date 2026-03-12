@@ -5,12 +5,10 @@
 import React, { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Dices, Target, Trophy, Coins, Sparkles, ScrollText, FlaskConical, Gamepad2, Flame, Gem, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Dices, Target, Sparkles, ScrollText, FlaskConical, Gamepad2 } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 import { AlchemyGame } from '@/components/AlchemyGame';
-import { SnakeGame } from '@/components/SnakeGame';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
-import { useTheme } from '@/hooks/useTheme';
 
 // 设施卡片通用样式
 const FacilityCard: React.FC<{
@@ -62,7 +60,6 @@ const FacilityCard: React.FC<{
 // 长生丹房组件
 const AlchemyFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
   const vibrate = useGameVibrate();
-  const { playerStats } = useGameStore();
 
   return (
     <FacilityCard
@@ -171,7 +168,7 @@ const GamblingHouse: React.FC = () => {
       winChance -= penalty;
     }
     winChance = Math.max(0.1, Math.min(0.9, winChance));
-    const isWin = Math.random() < winChance;
+    Math.random() < winChance;
 
     const rand6 = () => Math.floor(Math.random() * 6) + 1;
     let d1 = rand6(), d2 = rand6(), d3 = rand6(), sum = d1 + d2 + d3;
@@ -203,12 +200,6 @@ const GamblingHouse: React.FC = () => {
     handleEventOption({ money: moneyChange }, msg);
     setLastResult({ dice: [d1, d2, d3], sum, win: win && !isLeopard, msg });
   };
-
-  // 运势加成显示
-  const fortuneBonus = fortuneLevel === 'great_blessing' ? '+15%' : 
-                      fortuneLevel === 'blessing' ? '+8%' : 
-                      fortuneLevel === 'bad_luck' ? '-5%' : 
-                      fortuneLevel === 'terrible_luck' ? '-10%' : '0%';
 
   return (
     <FacilityCard
@@ -288,9 +279,9 @@ const GamblingHouse: React.FC = () => {
 
 // 无宁箭馆组件
 const ArcheryGallery: React.FC = () => {
-  const { playerStats, addLog, dailyCounts, handleEventOption } = useGameStore();
+  const { playerStats, addLog, handleEventOption } = useGameStore();
   const vibrate = useGameVibrate();
-  const [targetScore, setTargetScore] = useState<number>(30);
+  const [targetScore] = useState<number>(30);
   const [gameActive, setGameActive] = useState(false);
   const [score, setScore] = useState(0);
   const [arrows, setArrows] = useState(10);
@@ -404,8 +395,6 @@ export const Facilities: React.FC = () => {
   const { logs } = useGameStore();
   const navigate = useNavigate();
   const [showAlchemy, setShowAlchemy] = useState(false);
-  const { theme } = useTheme();
-  const isLightMode = theme === 'light';
 
   if (showAlchemy) {
     return (
