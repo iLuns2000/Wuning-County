@@ -6,6 +6,7 @@ import React from 'react';
 import { GameEvent, PlayerStats, Effect } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { X, Sparkles, ArrowRight } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface EventModalProps {
   event: GameEvent;
@@ -39,6 +40,8 @@ const tierStyles: Record<string, { bg: string; text: string; stars: string }> = 
 
 export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOptionSelect, onClose, styleMatch }) => {
   const vibrate = useGameVibrate();
+  const { theme } = useTheme();
+  const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   const typeStyle = eventTypeStyles[event.type] || eventTypeStyles.daily;
   
   const checkRequirement = (effect?: Effect) => {
@@ -74,9 +77,11 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
       
       {/* 弹窗主体 */}
       <div 
-        className="relative w-full max-w-md p-6 rounded-2xl overflow-hidden
-                   bg-gradient-to-b from-[#1e2d2f] to-[#182628]
-                   border border-white/10 shadow-2xl shadow-black/50"
+        className={`relative w-full max-w-md p-6 rounded-2xl overflow-hidden
+                   border shadow-2xl shadow-black/50
+                   ${isLightMode 
+                     ? 'bg-gradient-to-b from-[#f5f0e6] to-[#ebe5d8] border-amber-200/50' 
+                     : 'bg-gradient-to-b from-[#1e2d2f] to-[#182628] border-white/10'}`}
         style={{
           animation: 'modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
         }}
