@@ -31,8 +31,12 @@ export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcName, onClose, on
   const [selectedItemId, setSelectedItemId] = useState<string>('');
 
   const giftCandidates = useMemo(() => {
-    // 新格式 inventory: Record<string, number>
-    const counts = inventory;
+    // inventory 是 string[] 数组
+    // 计算每个物品的数量
+    const counts: Record<string, number> = {};
+    inventory.forEach((id) => {
+      counts[id] = (counts[id] || 0) + 1;
+    });
 
     const candidates = Object.entries(counts)
       .filter(([_, count]) => count > 0)

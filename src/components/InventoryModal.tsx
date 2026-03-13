@@ -38,17 +38,19 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
     }
   }, [inventory, selectedItem]);
 
-  // 新格式: inventory 是 Record<string, number>
+  // inventory 是 string[] 数组
   // 使用 useMemo 缓存物品列表计算结果
   const { itemCounts, uniqueItems } = useMemo(() => {
     const counts: Record<string, number> = {};
     const itemList: Item[] = [];
     
-    Object.entries(inventory).forEach(([id, count]) => {
-      if (id !== 'wood' && id !== 'stone' && count > 0) {
-        counts[id] = count;
-        const item = items.find(i => i.id === id);
-        if (item) itemList.push(item);
+    inventory.forEach((id) => {
+      if (id !== 'wood' && id !== 'stone') {
+        counts[id] = (counts[id] || 0) + 1;
+        if (!itemList.find(i => i.id === id)) {
+          const item = items.find(i => i.id === id);
+          if (item) itemList.push(item);
+        }
       }
     });
     

@@ -198,7 +198,7 @@ export interface GameState {
   isMoGuRenaming: boolean; // Whether the user is currently renaming at Mo Gu
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
-  inventory: Record<string, number>; // itemId -> count, 优化存储
+  inventory: string[]; // 物品ID数组
   equippedApparel: Partial<Record<ApparelSlot, string>>;
   equippedAccessories: string[];
   flags: Record<string, any>;
@@ -317,6 +317,7 @@ export interface GameEvent {
     minDay?: number;
     probability?: number; // 0-1
     requiredRole?: RoleType;
+    season?: string;
     custom?: (state: GameState) => boolean;
   };
   options: EventOption[];

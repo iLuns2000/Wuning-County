@@ -52,17 +52,15 @@ export const Developer: React.FC = () => {
   };
 
   const handleSave = () => {
-    // Reconstruct inventory with new stone and wood counts (新格式: Record<string, number>)
-    const newInventory: Record<string, number> = {};
+    // Reconstruct inventory as string[] array
     // 保留非 stone 和 wood 的物品
-    Object.entries(inventory).forEach(([key, val]) => {
-      if (key !== 'stone' && key !== 'wood') {
-        newInventory[key] = val;
-      }
-    });
-    // 设置新的 stone 和 wood 数量
-    if (formData.stone > 0) newInventory['stone'] = formData.stone;
-    if (formData.wood > 0) newInventory['wood'] = formData.wood;
+    const keptItems = inventory.filter((id: string) => id !== 'stone' && id !== 'wood');
+    // 添加新的 stone 和 wood 数量
+    const newInventory = [
+      ...keptItems,
+      ...Array(formData.stone || 0).fill('stone'),
+      ...Array(formData.wood || 0).fill('wood'),
+    ];
 
     updateStats({
       day: formData.day,

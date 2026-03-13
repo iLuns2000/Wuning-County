@@ -23,19 +23,23 @@ import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
 // Weather System Helper
 const SEASON_LENGTH = 90;
 const SEASONS = ['春', '夏', '秋', '冬'] as const;
-// 数据迁移辅助函数：将旧格式 inventory (string[]) 转换为新格式 (Record<string, number>)
-const migrateInventory = (inventory: any): Record<string, number> => {
-  if (inventory && typeof inventory === 'object' && !Array.isArray(inventory)) {
-    return inventory as Record<string, number>;
-  }
+// 数据迁移辅助函数：将旧格式 inventory (Record<string, number>) 转换为新格式 (string[])
+const migrateInventory = (inventory: any): string[] => {
   if (Array.isArray(inventory)) {
-    const newInventory: Record<string, number> = {};
-    inventory.forEach((itemId: string) => {
-      newInventory[itemId] = (newInventory[itemId] || 0) + 1;
+    return inventory as string[];
+  }
+  if (inventory && typeof inventory === 'object') {
+    // Convert object format {itemId: count} to array format
+    const newInventory: string[] = [];
+    Object.entries(inventory).forEach(([itemId, count]) => {
+      const cnt = typeof count === 'number' ? count : 1;
+      for (let i = 0; i < cnt; i++) {
+        newInventory.push(itemId);
+      }
     });
     return newInventory;
   }
-  return {};
+  return [];
 };
 
 
@@ -1258,7 +1262,11 @@ export const useGameStore = create<GameStore>()(
 
       setPlayerProfile: (profile) => {
         set(state => ({
-          playerProfile: { ...(state.playerProfile || {}), ...profile }
+          playerProfile: { 
+            name: profile.name ?? state.playerProfile?.name ?? '无名', 
+            avatar: profile.avatar ?? state.playerProfile?.avatar ?? '',
+            nameChangeUsed: profile.nameChangeUsed ?? state.playerProfile?.nameChangeUsed
+          }
         }));
       },
 
@@ -3146,15 +3154,18 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
+        // Helper to count items in inventory array
+        const countItem = (itemId: string) => inventory.filter(i => i === itemId).length;
+
         // Check Wood (in inventory)
-        const woodCount = inventory.filter(id => id === 'wood').length;
+        const woodCount = countItem('wood');
         if (woodCount < cost.wood) {
           get().addLog(`木材不足，需要 ${cost.wood} 根。`);
           return;
         }
 
         // Check Stone (in inventory)
-        const stoneCount = inventory.filter(id => id === 'stone').length;
+        const stoneCount = countItem('stone');
         if (stoneCount < cost.stone) {
           get().addLog(`石料不足，需要 ${cost.stone} 块。`);
           return;
@@ -3162,7 +3173,7 @@ export const useGameStore = create<GameStore>()(
 
         // Check Construction Order (L11+) - Assumed item id 'construction_order'
         if (cost.constructionOrder && cost.constructionOrder > 0) {
-          const orderCount = inventory.filter(id => id === 'construction_order').length;
+          const orderCount = countItem('construction_order');
           if (orderCount < cost.constructionOrder) {
             get().addLog(`建材令不足，需要 ${cost.constructionOrder} 个。`);
             return;
@@ -3171,54 +3182,62 @@ export const useGameStore = create<GameStore>()(
 
         // Check Rare Stone (L16+) - Assumed item id 'rare_stone'
         if (cost.rareStone && cost.rareStone > 0) {
-          const rareStoneCount = inventory.filter(id => id === 'rare_stone').length;
+          const rareStoneCount = countItem('rare_stone');
           if (rareStoneCount < cost.rareStone) {
             get().addLog(`稀有石料不足，需要 ${cost.rareStone} 块。`);
             return;
           }
         }
 
-        // Deduct Resources
+        // Deduct Resources - create new inventory array
         let newInventory = [...inventory];
 
         // Remove Wood
-        let woodRemoved = 0;
-        for (let i = newInventory.length - 1; i >= 0; i--) {
-          if (newInventory[i] === 'wood' && woodRemoved < cost.wood) {
-            newInventory.splice(i, 1);
-            woodRemoved++;
-          }
+        if (cost.wood > 0) {
+          let removed = 0;
+          newInventory = newInventory.filter(item => {
+            if (item === 'wood' && removed < cost.wood) {
+              removed++;
+              return false;
+            }
+            return true;
+          });
         }
 
         // Remove Stone
-        let stoneRemoved = 0;
-        for (let i = newInventory.length - 1; i >= 0; i--) {
-          if (newInventory[i] === 'stone' && stoneRemoved < cost.stone) {
-            newInventory.splice(i, 1);
-            stoneRemoved++;
-          }
+        if (cost.stone > 0) {
+          let removed = 0;
+          newInventory = newInventory.filter(item => {
+            if (item === 'stone' && removed < cost.stone) {
+              removed++;
+              return false;
+            }
+            return true;
+          });
         }
 
         // Remove Construction Order
-        if (cost.constructionOrder) {
+        if (cost.constructionOrder && cost.constructionOrder > 0) {
           let removed = 0;
-          for (let i = newInventory.length - 1; i >= 0; i--) {
-            if (newInventory[i] === 'construction_order' && removed < cost.constructionOrder) {
-              newInventory.splice(i, 1);
+          newInventory = newInventory.filter(item => {
+            if (item === 'construction_order' && removed < cost.constructionOrder) {
               removed++;
+              return false;
             }
-          }
+            return true;
+          });
         }
 
         // Remove Rare Stone
-        if (cost.rareStone) {
+        if (cost.rareStone && cost.rareStone > 0) {
           let removed = 0;
-          for (let i = newInventory.length - 1; i >= 0; i--) {
-            if (newInventory[i] === 'rare_stone' && removed < cost.rareStone) {
-              newInventory.splice(i, 1);
+          newInventory = newInventory.filter(item => {
+            if (item === 'rare_stone' && removed < cost.rareStone) {
               removed++;
+              return false;
             }
-          }
+            return true;
+          });
         }
 
         const now = Date.now();
@@ -3328,26 +3347,31 @@ export const useGameStore = create<GameStore>()(
         if (config) {
           const cost = config.cost;
           const refundMoney = cost.money;
-          const refundItems: string[] = [];
-          for (let i = 0; i < cost.wood; i++) refundItems.push('wood');
-          for (let i = 0; i < cost.stone; i++) refundItems.push('stone');
-          if (cost.constructionOrder) {
-            for (let i = 0; i < cost.constructionOrder; i++) refundItems.push('construction_order');
+          // Refund resources to inventory array
+          let newInventory = [...state.inventory];
+          if (cost.wood > 0) {
+            newInventory = [...newInventory, ...Array(cost.wood).fill('wood')];
           }
-          if (cost.rareStone) {
-            for (let i = 0; i < cost.rareStone; i++) refundItems.push('rare_stone');
+          if (cost.stone > 0) {
+            newInventory = [...newInventory, ...Array(cost.stone).fill('stone')];
+          }
+          if (cost.constructionOrder && cost.constructionOrder > 0) {
+            newInventory = [...newInventory, ...Array(cost.constructionOrder).fill('construction_order')];
+          }
+          if (cost.rareStone && cost.rareStone > 0) {
+            newInventory = [...newInventory, ...Array(cost.rareStone).fill('rare_stone')];
           }
 
-          set(state => ({
+          set({
             playerStats: { ...state.playerStats, money: state.playerStats.money + refundMoney },
-            inventory: [...state.inventory, ...refundItems],
+            inventory: newInventory,
             officeState: {
               ...officeState,
               isUpgrading: false,
               upgradeStartTime: undefined,
               upgradeEndTime: undefined
             }
-          }));
+          });
           get().addLog('【官邸】已取消修缮，投入资源已全部返还。');
         } else {
           set({
