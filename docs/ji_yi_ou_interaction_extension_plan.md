@@ -91,6 +91,7 @@
 
 - 建议新增：`src/services/npcGiftInteractionEngine.ts`
 - 对外统一 API（这里特指项目内 TS 函数接口，非 HTTP 接口）：
+- 对外统一 API：
   - `getGiftCandidates(npcId, inventory)`
   - `resolveGiftCategory(npcId, item)`
   - `buildGiftOutcome(npcId, item, state)`

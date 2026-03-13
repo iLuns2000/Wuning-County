@@ -2854,5 +2854,50 @@ export const npcEvents: GameEvent[] = [
         effect: { relationChange: { si_li_cen: 2 }, health: -2 }
       }
     ]
+  },
+  // 静隐 - 讲故事
+  {
+    id: 'jingyin_story',
+    title: '讲故事',
+    description: '静隐眨巴着大眼睛看着你：“你是否要讲一个精彩绝伦、绝无仅有的故事？”',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '讲志怪故事',
+        message: '竟有如此怪事，果真奇闻！',
+        effect: { ability: 5, money: 500, relationChange: { jingyin: 10 }, health: -5 }
+      },
+      {
+        label: '讲人物故事',
+        message: '是个人物，编入人物列传！',
+        effect: { ability: 5, money: 250, relationChange: { jingyin: 10 }, health: -5 }
+      },
+      {
+        label: '不讲故事',
+        message: '也罢也罢。',
+        effect: { relationChange: { jingyin: -5 } }
+      }
+    ]
+  },
+  // 静隐 - 摸猫猫
+  {
+    id: 'jingyin_cat',
+    title: '摸猫猫',
+    description: '一只可爱的小猫咪走到你脚边，抬起头用水汪汪的大眼睛看着你，仿佛在邀请你摸摸。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '摸猫猫',
+        message: '喵~',
+        effect: { relationChange: { jingyin: 10 }, health: 10 }
+      },
+      {
+        label: '不摸',
+        message: '哼(￢︿̫̿￢☆)',
+        effect: { relationChange: { jingyin: -20 } }
+      }
+    ]
   }
 ];
