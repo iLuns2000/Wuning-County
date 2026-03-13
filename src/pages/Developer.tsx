@@ -52,15 +52,15 @@ export const Developer: React.FC = () => {
   };
 
   const handleSave = () => {
-    // Reconstruct inventory as string[] array
-    // 保留非 stone 和 wood 的物品
-    const keptItems = inventory.filter((id: string) => id !== 'stone' && id !== 'wood');
-    // 添加新的 stone 和 wood 数量
-    const newInventory = [
-      ...keptItems,
-      ...Array(formData.stone || 0).fill('stone'),
-      ...Array(formData.wood || 0).fill('wood'),
-    ];
+    // 保留非 stone 和 wood 的物品，更新 stone/wood 数量
+    const newInventory: Record<string, number> = {};
+    Object.entries(inventory).forEach(([id, count]) => {
+      if (id !== 'stone' && id !== 'wood' && count > 0) {
+        newInventory[id] = count;
+      }
+    });
+    if (formData.stone > 0) newInventory['stone'] = formData.stone;
+    if (formData.wood > 0) newInventory['wood'] = formData.wood;
 
     updateStats({
       day: formData.day,
@@ -328,7 +328,7 @@ export const Developer: React.FC = () => {
               </button>
             </div>
             <div className="text-xs text-muted-foreground">
-              当前持有物品数: {inventory.length}
+              当前持有物品种类: {Object.keys(inventory).filter(id => inventory[id] > 0).length}
             </div>
           </div>
 

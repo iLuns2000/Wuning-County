@@ -38,12 +38,12 @@ export async function preloadBackgroundImages(imagePaths: string[]): Promise<voi
  */
 export async function preloadGameBackgrounds(): Promise<void> {
   const criticalBackgrounds = [
-    '/images/row/home_bg.jpg',
-    '/images/vertical/home_bg.jpg',
-    '/images/row/day_bg.jpg',
-    '/images/vertical/day_bg.jpg',
-    '/images/row/nignt_bg.jpg',
-    '/images/vertical/nignt_bg.jpg',
+    '/images/row/home_bg.webp',
+    '/images/vertical/home_bg.webp',
+    '/images/row/day_bg.webp',
+    '/images/vertical/day_bg.webp',
+    '/images/row/nignt_bg.webp',
+    '/images/vertical/nignt_bg.webp',
   ];
 
   await preloadBackgroundImages(criticalBackgrounds);

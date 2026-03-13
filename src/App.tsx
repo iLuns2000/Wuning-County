@@ -29,6 +29,7 @@ import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
+import React, { useEffect, useState } from 'react';
 
 /* 古风字体类名工具 */
 export const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -37,12 +38,107 @@ export const cn = (...classes: (string | undefined | null | false)[]) => {
 
 const Router = HashRouter;
 
+/** 旧存档格式迁移提示弹窗（含进度条 + 完成自动关闭） */
+const InventoryMigrationNotice: React.FC = () => {
+  const [visible, setVisible] = useState(false);
+  const [done, setDone] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [info, setInfo] = useState({ totalItems: 0, uniqueItems: 0 });
+
+  useEffect(() => {
+    const migData = (window as any).__inventoryMigrated;
+    if (migData) {
+      (window as any).__inventoryMigrated = null;
+      setInfo(migData);
+      setVisible(true);
+      setProgress(0);
+      setDone(false);
+
+      // 模拟进度：0→95% 在 1.2s 内完成，之后跳到 100% 并显示完成态
+      const start = Date.now();
+      const duration = 1200;
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        const p = Math.min(95, Math.round((elapsed / duration) * 95));
+        setProgress(p);
+        if (elapsed < duration) {
+          requestAnimationFrame(tick);
+        } else {
+          // 跳到 100%，延迟 300ms 显示完成
+          setTimeout(() => {
+            setProgress(100);
+            setDone(true);
+            // 完成后 2s 自动关闭
+            setTimeout(() => setVisible(false), 2000);
+          }, 300);
+        }
+      };
+      requestAnimationFrame(tick);
+    }
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-80 rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+        {/* 图标 */}
+        <div className="text-3xl">{done ? '✅' : '📦'}</div>
+
+        {/* 标题 */}
+        <h2 className="text-lg font-bold text-foreground">
+          {done ? '数据格式更新完成！' : '正在更新数据格式'}
+        </h2>
+
+        {/* 说明文字 */}
+        {!done ? (
+          <p className="text-sm text-muted-foreground text-center leading-relaxed">
+            正在将行囊数据升级为压缩格式
+            <br />
+            <span className="font-semibold text-yellow-500">请勿退出，避免数据丢失</span>
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center leading-relaxed">
+            共迁移 <span className="font-semibold text-foreground">{info.totalItems}</span> 条记录
+            &nbsp;→&nbsp;
+            <span className="font-semibold text-foreground">{info.uniqueItems}</span> 种物品
+            <br />
+            <span className="text-green-500 font-semibold">存储空间大幅减少 ✓</span>
+          </p>
+        )}
+
+        {/* 进度条 */}
+        <div className="w-full space-y-1">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{done ? '迁移完成' : '迁移中...'}</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-200 ${done ? 'bg-green-500' : 'bg-primary'}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 完成后提示 */}
+        {done && (
+          <p className="text-xs text-muted-foreground animate-in fade-in duration-500">
+            窗口将自动关闭…
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   useTheme();
 
   return (
     <Router>
       <ScrollToTop />
+      <InventoryMigrationNotice />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />

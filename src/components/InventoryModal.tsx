@@ -31,29 +31,26 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({ onClose }) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const vibrate = useGameVibrate();
 
-  // Reset selected item if it's no longer in inventory (新格式)
+  // Reset selected item if it's no longer in inventory
   useEffect(() => {
     if (selectedItem && (!inventory[selectedItem.id] || inventory[selectedItem.id] === 0)) {
       setSelectedItem(null);
     }
   }, [inventory, selectedItem]);
 
-  // inventory 是 string[] 数组
-  // 使用 useMemo 缓存物品列表计算结果
+  // inventory 是 Record<string, number>，直接读取数量
   const { itemCounts, uniqueItems } = useMemo(() => {
     const counts: Record<string, number> = {};
     const itemList: Item[] = [];
-    
-    inventory.forEach((id) => {
-      if (id !== 'wood' && id !== 'stone') {
-        counts[id] = (counts[id] || 0) + 1;
-        if (!itemList.find(i => i.id === id)) {
-          const item = items.find(i => i.id === id);
-          if (item) itemList.push(item);
-        }
+
+    Object.entries(inventory).forEach(([id, count]) => {
+      if (count > 0 && id !== 'wood' && id !== 'stone') {
+        counts[id] = count;
+        const item = items.find(i => i.id === id);
+        if (item) itemList.push(item);
       }
     });
-    
+
     return { itemCounts: counts, uniqueItems: itemList };
   }, [inventory]);
 

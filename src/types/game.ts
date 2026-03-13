@@ -198,7 +198,7 @@ export interface GameState {
   isMoGuRenaming: boolean; // Whether the user is currently renaming at Mo Gu
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
-  inventory: string[]; // 物品ID数组
+  inventory: Record<string, number>; // 物品ID -> 数量（压缩格式）
   equippedApparel: Partial<Record<ApparelSlot, string>>;
   equippedAccessories: string[];
   flags: Record<string, any>;

@@ -23,23 +23,53 @@ import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
 // Weather System Helper
 const SEASON_LENGTH = 90;
 const SEASONS = ['春', '夏', '秋', '冬'] as const;
-// 数据迁移辅助函数：将旧格式 inventory (Record<string, number>) 转换为新格式 (string[])
-const migrateInventory = (inventory: any): string[] => {
+// 辅助函数：inventory Record 增加物品
+const invAdd = (inv: Record<string, number>, itemId: string, count = 1): Record<string, number> => {
+  return { ...inv, [itemId]: (inv[itemId] || 0) + count };
+};
+
+// 辅助函数：inventory Record 移除一个物品（减少1个数量）
+const invRemoveOne = (inv: Record<string, number>, itemId: string): Record<string, number> => {
+  const cur = inv[itemId] || 0;
+  if (cur <= 1) {
+    const next = { ...inv };
+    delete next[itemId];
+    return next;
+  }
+  return { ...inv, [itemId]: cur - 1 };
+};
+
+// 辅助函数：inventory Record 移除指定数量
+const invRemoveN = (inv: Record<string, number>, itemId: string, count: number): Record<string, number> => {
+  const cur = inv[itemId] || 0;
+  const next = Math.max(0, cur - count);
+  if (next === 0) {
+    const result = { ...inv };
+    delete result[itemId];
+    return result;
+  }
+  return { ...inv, [itemId]: next };
+};
+
+// 辅助函数：检查 inventory 中是否有某物品
+const invHas = (inv: Record<string, number>, itemId: string): boolean => (inv[itemId] || 0) > 0;
+
+// 数据迁移辅助函数：将旧格式 inventory (string[]) 转换为新格式 (Record<string, number>)
+// 返回 null 表示无需迁移（已是新格式）
+export const migrateInventoryToRecord = (inventory: any): { result: Record<string, number>; migrated: boolean } => {
   if (Array.isArray(inventory)) {
-    return inventory as string[];
+    // 旧格式：string[]，需要迁移
+    const record: Record<string, number> = {};
+    (inventory as string[]).forEach((id) => {
+      record[id] = (record[id] || 0) + 1;
+    });
+    return { result: record, migrated: true };
   }
   if (inventory && typeof inventory === 'object') {
-    // Convert object format {itemId: count} to array format
-    const newInventory: string[] = [];
-    Object.entries(inventory).forEach(([itemId, count]) => {
-      const cnt = typeof count === 'number' ? count : 1;
-      for (let i = 0; i < cnt; i++) {
-        newInventory.push(itemId);
-      }
-    });
-    return newInventory;
+    // 已是新格式
+    return { result: inventory as Record<string, number>, migrated: false };
   }
-  return [];
+  return { result: {}, migrated: false };
 };
 
 
@@ -524,7 +554,7 @@ export const useGameStore = create<GameStore>()(
       isVoiceLost: false,
       isMoGuRenaming: false,
       collectedScrolls: [],
-      inventory: [],
+      inventory: {},
       equippedApparel: {},
       equippedAccessories: [],
       flags: {},
@@ -699,7 +729,7 @@ export const useGameStore = create<GameStore>()(
 
         // Check for "Night Rain Jianghu" achievement
         if (state.weather === 'rain_heavy') {
-          if (!state.inventory.includes('cursed_sword')) {
+          if (!invHas(state.inventory, 'cursed_sword')) {
             effect.itemsAdd = effect.itemsAdd ? [...effect.itemsAdd, 'cursed_sword'] : ['cursed_sword'];
           }
         }
@@ -1027,7 +1057,7 @@ export const useGameStore = create<GameStore>()(
         }
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
-          inventory: [...state.inventory, itemId]
+          inventory: invAdd(state.inventory, itemId)
         }));
         const itemName = items.find(i => i.id === itemId)?.name || '物品';
         get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
@@ -1043,7 +1073,7 @@ export const useGameStore = create<GameStore>()(
           return;
         }
         // construction_order 是一个特殊的珍宝，可以重复购买
-        if (state.inventory.includes(treasureId) && treasureId !== 'construction_order') {
+        if (invHas(state.inventory, treasureId) && treasureId !== 'construction_order') {
           get().addLog('你已经拥有此珍宝了。');
           return;
         }
@@ -1053,7 +1083,7 @@ export const useGameStore = create<GameStore>()(
 
         set(state => ({
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
-          inventory: [...state.inventory, treasureId]
+          inventory: invAdd(state.inventory, treasureId)
         }));
 
         get().addLog(`【珍宝阁】挥金如土！花费 ${cost} 文购得了稀世珍宝【${treasure.name}】。`);
@@ -1131,8 +1161,7 @@ export const useGameStore = create<GameStore>()(
 
       useItem: (itemId) => {
         const state = get();
-        const itemIndex = state.inventory.indexOf(itemId);
-        if (itemIndex === -1) return;
+        if (!invHas(state.inventory, itemId)) return;
 
         const item = items.find(i => i.id === itemId);
         if (item && item.effect) {
@@ -1141,9 +1170,7 @@ export const useGameStore = create<GameStore>()(
           get().addLog(`使用了 ${item?.name || '物品'}，但是什么也没发生。`);
         }
 
-        const newInventory = [...state.inventory];
-        newInventory.splice(itemIndex, 1);
-        set({ inventory: newInventory });
+        set(state => ({ inventory: invRemoveOne(state.inventory, itemId) }));
       },
 
       equipApparel: (slot, itemId) => {
@@ -1153,7 +1180,7 @@ export const useGameStore = create<GameStore>()(
           get().addLog('此物不可用于该衣装部位。');
           return;
         }
-        if (!state.inventory.includes(itemId)) {
+        if (!invHas(state.inventory, itemId)) {
           get().addLog('行囊中没有此衣装。');
           return;
         }
@@ -1178,7 +1205,7 @@ export const useGameStore = create<GameStore>()(
           get().addLog('此物不可作为首饰佩戴。');
           return;
         }
-        if (!state.inventory.includes(itemId)) {
+        if (!invHas(state.inventory, itemId)) {
           get().addLog('行囊中没有此首饰。');
           return;
         }
@@ -1293,7 +1320,7 @@ export const useGameStore = create<GameStore>()(
           isMoGuRenaming: false,
           collectedScrolls: [],
           activePolicyId: undefined,
-          inventory: [],
+          inventory: {},
           equippedApparel: {},
           equippedAccessories: [],
           flags: {},
@@ -1572,7 +1599,7 @@ export const useGameStore = create<GameStore>()(
           return { success: false, message: '礼物不存在。' };
         }
 
-        if (!state.inventory.includes(itemId)) {
+        if (!invHas(state.inventory, itemId)) {
           return { success: false, message: '行囊中没有这份礼物。' };
         }
 
@@ -1881,7 +1908,7 @@ export const useGameStore = create<GameStore>()(
           let facilityMessage = '';
           // Resource logic moved to processResourceTick (real-time)
           let resourceMessage = '';
-          let nextInventory = [...state.inventory];
+          let nextInventory = { ...state.inventory };
 
           Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
             const facility = facilities.find(f => f.id === facilityId);
@@ -2301,7 +2328,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         if (state.timeSettings.isPaused) return;
 
-        let newInventory = [...state.inventory];
+        let newInventory = { ...state.inventory };
         let hasChanges = false;
 
         Object.entries(state.ownedFacilities).forEach(([facilityId, count]) => {
@@ -2309,7 +2336,7 @@ export const useGameStore = create<GameStore>()(
           if (facility && count > 0 && facility.type === 'resource' && facility.resourceType && facility.resourceAmount) {
             // Production per tick (every 2s)
             const amount = facility.resourceAmount * count;
-            for (let i = 0; i < amount; i++) newInventory.push(facility.resourceType!);
+            newInventory = invAdd(newInventory, facility.resourceType!, amount);
             hasChanges = true;
           }
         });
@@ -2687,16 +2714,15 @@ export const useGameStore = create<GameStore>()(
             newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture));
             newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood));
 
-            let newInventory = [...state.inventory];
+            let newInventory = { ...state.inventory };
             if (effect.itemsAdd) {
-              newInventory = [...newInventory, ...effect.itemsAdd];
+              for (const id of effect.itemsAdd) {
+                newInventory = invAdd(newInventory, id);
+              }
             }
             if (effect.itemsRemove) {
               for (const itemId of effect.itemsRemove) {
-                const index = newInventory.indexOf(itemId);
-                if (index !== -1) {
-                  newInventory.splice(index, 1);
-                }
+                newInventory = invRemoveOne(newInventory, itemId);
               }
             }
 
@@ -3097,6 +3123,11 @@ export const useGameStore = create<GameStore>()(
               (nextState as any)[key] = data[key];
             }
           }
+          // 迁移导入存档中可能的旧格式 inventory
+          if ((nextState as any).inventory !== undefined) {
+            const { result } = migrateInventoryToRecord((nextState as any).inventory);
+            (nextState as any).inventory = result;
+          }
 
           set(state => ({
             ...state,
@@ -3154,8 +3185,8 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        // Helper to count items in inventory array
-        const countItem = (itemId: string) => inventory.filter(i => i === itemId).length;
+        // Helper to count items in inventory record
+        const countItem = (itemId: string) => inventory[itemId] || 0;
 
         // Check Wood (in inventory)
         const woodCount = countItem('wood');
@@ -3189,56 +3220,12 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        // Deduct Resources - create new inventory array
-        let newInventory = [...inventory];
-
-        // Remove Wood
-        if (cost.wood > 0) {
-          let removed = 0;
-          newInventory = newInventory.filter(item => {
-            if (item === 'wood' && removed < cost.wood) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
-        }
-
-        // Remove Stone
-        if (cost.stone > 0) {
-          let removed = 0;
-          newInventory = newInventory.filter(item => {
-            if (item === 'stone' && removed < cost.stone) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
-        }
-
-        // Remove Construction Order
-        if (cost.constructionOrder && cost.constructionOrder > 0) {
-          let removed = 0;
-          newInventory = newInventory.filter(item => {
-            if (item === 'construction_order' && removed < cost.constructionOrder) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
-        }
-
-        // Remove Rare Stone
-        if (cost.rareStone && cost.rareStone > 0) {
-          let removed = 0;
-          newInventory = newInventory.filter(item => {
-            if (item === 'rare_stone' && removed < cost.rareStone) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
-        }
+        // Deduct Resources
+        let newInventory = { ...inventory };
+        if (cost.wood > 0) newInventory = invRemoveN(newInventory, 'wood', cost.wood);
+        if (cost.stone > 0) newInventory = invRemoveN(newInventory, 'stone', cost.stone);
+        if (cost.constructionOrder && cost.constructionOrder > 0) newInventory = invRemoveN(newInventory, 'construction_order', cost.constructionOrder);
+        if (cost.rareStone && cost.rareStone > 0) newInventory = invRemoveN(newInventory, 'rare_stone', cost.rareStone);
 
         const now = Date.now();
         const durationMs = nextConfig.durationSeconds * 1000;
@@ -3347,20 +3334,12 @@ export const useGameStore = create<GameStore>()(
         if (config) {
           const cost = config.cost;
           const refundMoney = cost.money;
-          // Refund resources to inventory array
-          let newInventory = [...state.inventory];
-          if (cost.wood > 0) {
-            newInventory = [...newInventory, ...Array(cost.wood).fill('wood')];
-          }
-          if (cost.stone > 0) {
-            newInventory = [...newInventory, ...Array(cost.stone).fill('stone')];
-          }
-          if (cost.constructionOrder && cost.constructionOrder > 0) {
-            newInventory = [...newInventory, ...Array(cost.constructionOrder).fill('construction_order')];
-          }
-          if (cost.rareStone && cost.rareStone > 0) {
-            newInventory = [...newInventory, ...Array(cost.rareStone).fill('rare_stone')];
-          }
+          // Refund resources to inventory
+          let newInventory = { ...state.inventory };
+          if (cost.wood > 0) newInventory = invAdd(newInventory, 'wood', cost.wood);
+          if (cost.stone > 0) newInventory = invAdd(newInventory, 'stone', cost.stone);
+          if (cost.constructionOrder && cost.constructionOrder > 0) newInventory = invAdd(newInventory, 'construction_order', cost.constructionOrder);
+          if (cost.rareStone && cost.rareStone > 0) newInventory = invAdd(newInventory, 'rare_stone', cost.rareStone);
 
           set({
             playerStats: { ...state.playerStats, money: state.playerStats.money + refundMoney },
@@ -3812,9 +3791,20 @@ export const useGameStore = create<GameStore>()(
       // 旧存档兼容：缺失字段回填默认值
       merge: (persistedState: unknown, currentState) => {
         const persisted = (persistedState || {}) as Partial<typeof currentState>;
+        // 迁移旧格式 inventory（string[] -> Record<string, number>）
+        const { result: migratedInventory, migrated } = migrateInventoryToRecord((persisted as any).inventory);
+        if (migrated) {
+          // 标记需要迁移，同时记录迁移的物品总条数供进度展示
+          const oldArr = (persisted as any).inventory as string[];
+          (window as any).__inventoryMigrated = {
+            totalItems: oldArr.length,
+            uniqueItems: Object.keys(migratedInventory).length,
+          };
+        }
         return {
           ...currentState,
           ...persisted,
+          inventory: migratedInventory,
           activeDebuffs: persisted.activeDebuffs ?? [],
           lastDebuffCheckDay: persisted.lastDebuffCheckDay ?? 0,
         };

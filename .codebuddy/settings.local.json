@@ -1,0 +1,30 @@
+{
+  "language": "简体中文",
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Read(~/.zshrc)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
+    ]
+  },
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "codebuddy:*"
+  },
+  "model": "gpt-5",
+  "cleanupPeriodDays": 30,
+  "includeCoAuthoredBy": false,
+  "statusLine": {
+    "type": "command",
+    "command": "~/.codebuddy/statusline.sh"
+  }
+}

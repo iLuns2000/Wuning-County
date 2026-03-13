@@ -13,22 +13,20 @@ const CONFIG = {
   targetDir: './images',
   // 是否保留原文件
   keepOriginal: true,
-  // JPG压缩质量（0-100，数值越小压缩率越高，默认70）
-  quality: 70,
+  // WebP压缩质量（0-100，数值越小压缩率越高，默认80）
+  quality: 80,
   // 最大宽度限制（超过则等比例缩放，0表示不限制）
   maxWidth: 1920,
   // 最大高度限制（超过则等比例缩放，0表示不限制）
   maxHeight: 1080,
-  // 是否启用渐进式JPG（加载更快，推荐true）
-  progressive: true,
-  // 是否压缩已存在的JPG文件（false则只转换格式不压缩原有JPG）
-  compressExistingJpg: true,
-  // 临时文件后缀（处理JPG时避免输入输出冲突）
+  // 是否压缩已存在的WebP文件（false则跳过已有webp）
+  compressExistingWebp: true,
+  // 临时文件后缀（处理同名文件时避免输入输出冲突）
   tempSuffix: '_temp_compress'
 };
 
 // 支持处理的图片格式
-const SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg'];
+const SUPPORTED_FORMATS = ['png', 'jpg', 'jpeg', 'webp'];
 
 /**
  * 计算文件大小（字节转MB/KB，便于日志展示）
@@ -88,7 +86,7 @@ async function processImage(filePath, targetFilePath) {
       }
     }
 
-    // 处理输入输出文件相同的情况（仅针对JPG文件）
+    // 处理输入输出文件相同的情况（针对已是webp的文件）
     let finalTargetPath = targetFilePath;
     let tempFilePath = '';
     if (filePath === targetFilePath) {
@@ -100,12 +98,11 @@ async function processImage(filePath, targetFilePath) {
       finalTargetPath = tempFilePath;
     }
 
-    // 转换为JPG并压缩
+    // 转换为WebP并压缩
     await sharpInstance
-      .jpeg({
+      .webp({
         quality: CONFIG.quality,
-        progressive: CONFIG.progressive,
-        mozjpeg: true
+        effort: 4
       })
       .toFile(finalTargetPath);
 
@@ -166,14 +163,14 @@ async function convertAndCompressImages(dirPath) {
       const ext = path.extname(file).toLowerCase().replace('.', '');
       if (!SUPPORTED_FORMATS.includes(ext)) continue;
 
-      // 目标文件路径（统一为jpg）
+      // 目标文件路径（统一为webp）
       const fileName = path.basename(file, path.extname(file));
-      const targetFilePath = path.join(dirPath, `${fileName}.jpg`);
+      const targetFilePath = path.join(dirPath, `${fileName}.webp`);
 
-      // 处理已有JPG的情况：是否需要重新压缩
-      if (ext === 'jpg') {
-        if (await pathExists(targetFilePath) && !CONFIG.compressExistingJpg) {
-          console.log(`ℹ️ 跳过已有JPG（未开启重压缩）：${file}`);
+      // 处理已有WebP的情况：是否需要重新压缩
+      if (ext === 'webp') {
+        if (await pathExists(targetFilePath) && !CONFIG.compressExistingWebp) {
+          console.log(`ℹ️ 跳过已有WebP（未开启重压缩）：${file}`);
           continue;
         }
       }
