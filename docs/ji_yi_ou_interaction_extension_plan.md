@@ -6,6 +6,12 @@
 
 但从后续迭代角度看，目前实现是“**季一藕专用、逻辑分散、主要靠硬编码**”的结构。若未来要扩展到更多 NPC、多套赠礼规则、概率权重、条件解锁与运营配置，会遇到维护成本上升问题。
 
+### 1.1 关于文档里“接口/API”的说明（重要）
+
+- 这里说的“接口”不是指后端 HTTP 接口，也不是要求你把项目改成联网服务。
+- 你的项目是本地前端单体应用没问题；文档中的“接口”指的是**前端代码内部的函数调用约定**（函数名、入参、出参）。
+- 例如：`giftItemToNpc(npcId, itemId)` 这种形式，属于 store/service 内部可复用函数，不涉及网络请求。
+
 ---
 
 ## 2. 目前已支持（对应你这次需求）
@@ -84,6 +90,7 @@
 ### A2. 新增规则引擎
 
 - 建议新增：`src/services/npcGiftInteractionEngine.ts`
+- 对外统一 API（这里特指项目内 TS 函数接口，非 HTTP 接口）：
 - 对外统一 API：
   - `getGiftCandidates(npcId, inventory)`
   - `resolveGiftCategory(npcId, item)`
