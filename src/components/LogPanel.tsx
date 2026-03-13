@@ -204,11 +204,11 @@ export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
     if (logs.length > prevLogsLength.current) {
       const newCount = logs.length - prevLogsLength.current;
       setNewLogCount(newCount);
-      // 只在日志容器内部滚动，不影响整个页面
+      // 滚动到顶部，因为最新的日志在最上面
       setTimeout(() => {
         const logContainer = document.querySelector('.log-container');
         if (logContainer) {
-          logContainer.scrollTop = logContainer.scrollHeight;
+          logContainer.scrollTop = 0;
         }
       }, 100);
       // 重置新日志计数

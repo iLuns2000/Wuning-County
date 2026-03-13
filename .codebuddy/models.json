@@ -1,0 +1,17 @@
+{
+  "models": [
+    {
+      "id": "MiniMax-M2.5",
+      "name": "MiniMax-M2.5",
+      "vendor": "MiniMax",
+      "apiKey": "sk-api-O3TslpNmIrxW2rnPeNbQyGjk_1QZ01A4QxlGTKuJZaaUqzb24pC81R77mKhFISqdT5iHexwTKjYnlgD0WWgdSDMjhB9bnoXqGF1yaFGcWa7FAbstXDqoEd8",
+      "maxInputTokens": 200000,
+      "maxOutputTokens": 8192,
+      "url": "https://api.minimaxi.com/v1",
+      "temperature": 0.7,
+      "supportsToolCall": true,
+      "supportsImages": true
+    }
+  ],
+  "availableModels": ["MiniMax-M2.5"]
+}
