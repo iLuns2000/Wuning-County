@@ -719,20 +719,6 @@ export const Game: React.FC = () => {
             externalThreat={externalThreat}
           />
           
-          {/* 财富排行榜入口 */}
-          <div className="max-w-md mx-auto px-2 py-2">
-            <button 
-              onClick={() => {
-                vibrate(VIBRATION_PATTERNS.LIGHT);
-                navigate('/leaderboard');
-              }}
-              className="w-full py-2 bg-amber-600/80 hover:bg-amber-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-            >
-              <Trophy size={16} />
-              财富排行榜
-            </button>
-          </div>
-          
           <DebuffPanel />
         </div>
 
@@ -963,6 +949,20 @@ export const Game: React.FC = () => {
             </button>
 
             <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/leaderboard');
+              }}
+              disabled={!!currentEvent}
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
+            >
+              <div className="p-2 text-amber-600 bg-amber-100 rounded-lg transition-transform dark:bg-amber-950/30 dark:text-amber-400 group-hover:scale-110">
+                <Trophy size={18} />
+              </div>
+              <span className="text-sm font-medium">财富榜</span>
+            </button>
+
+            <button
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowTreasure(true);
