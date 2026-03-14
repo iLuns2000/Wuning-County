@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers } from 'lucide-react';
+import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers, Cloud, CloudOff } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
+import { uploadCloudSave, downloadCloudSave, listCloudSaves, deleteCloudSave, getDeviceId, registerUser, addMoney } from '@/utils/cloudApi';
+import { CloudSave } from '@/utils/cloudApi';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -38,6 +40,113 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [downloadInfo, setDownloadInfo] = useState<{ url: string; filename: string } | null>(null);
   const hasSavePicker = typeof (window as any).showSaveFilePicker === 'function';
+  
+  // 云存档相关状态
+  const [showCloudSaves, setShowCloudSaves] = useState(false);
+  const [cloudSaves, setCloudSaves] = useState<CloudSave[]>([]);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const deviceId = getDeviceId();
+  const playerStats = useGameStore((state) => state.playerStats);
+  const playerName = useGameStore((state) => state.playerProfile)?.name || '';
+  const money = playerStats?.money || 0;
+
+  // 加载云存档列表
+  const loadCloudSaves = async () => {
+    setCloudLoading(true);
+    try {
+      const result = await listCloudSaves(deviceId);
+      if (result.success) {
+        setCloudSaves(result.saves);
+      }
+    } catch (e) {
+      console.error('加载云存档失败:', e);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  // 上传云存档
+  const handleCloudUpload = async () => {
+    setSyncing(true);
+    try {
+      // 先确保用户注册
+      await registerUser(deviceId, playerName || '玩家');
+      // 同步财富
+      await addMoney(deviceId, money);
+      // 上传存档
+      const gameState = useGameStore.getState();
+      const saveData = JSON.stringify({
+        playerStats: gameState.playerStats,
+        inventory: gameState.inventory,
+        day: gameState.day,
+        playerProfile: gameState.playerProfile,
+        role: gameState.role,
+      });
+      const result = await uploadCloudSave(deviceId, saveData);
+      if (result.success) {
+        addLog(`【系统】云存档上传成功！存档ID: ${result.save_id?.slice(0,8)}..., sync_id: ${result.sync_id?.slice(0,8)}...（一次性，请妥善保管，24小时后失效）`);
+        loadCloudSaves();
+      } else {
+        addLog(`【系统】云存档上传失败: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('上传失败:', e);
+      addLog('【系统】云存档上传失败');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // 下载云存档
+  const handleCloudDownload = async (saveId: string) => {
+    try {
+      const result = await downloadCloudSave(saveId);
+      if (result.success && result.save_data) {
+        const saveData = JSON.parse(result.save_data);
+        importSave(saveData);
+        addLog('【系统】云存档下载并导入成功！');
+        onClose();
+      } else {
+        addLog(`【系统】云存档下载失败: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('下载失败:', e);
+      addLog('【系统】云存档下载失败');
+    }
+  };
+
+  // 使用sync_id下载（一次性）
+  const handleSyncIdDownload = async (syncId: string) => {
+    try {
+      const result = await downloadCloudSave(undefined, syncId);
+      if (result.success && result.save_data) {
+        const saveData = JSON.parse(result.save_data);
+        importSave(saveData);
+        addLog('【系统】云存档下载并导入成功！（已使用一次性sync_id）');
+        onClose();
+      } else {
+        addLog(`【系统】云存档下载失败: ${result.error}`);
+      }
+    } catch (e) {
+      console.error('下载失败:', e);
+      addLog('【系统】云存档下载失败');
+    }
+  };
+
+  // 删除云存档
+  const handleDeleteCloudSave = async (saveId: string) => {
+    if (!confirm('确定要删除这个云存档吗？')) return;
+    try {
+      const result = await deleteCloudSave(saveId, deviceId);
+      if (result.success) {
+        addLog('【系统】云存档已删除');
+        loadCloudSaves();
+      }
+    } catch (e) {
+      console.error('删除失败:', e);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -249,10 +358,76 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
 
           <div className="p-4 rounded-lg border border-dashed bg-muted/30 border-border">
-            <h3 className="mb-2 font-semibold">存档管理</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">存档管理</h3>
+              <button 
+                onClick={() => {
+                  if (!showCloudSaves) loadCloudSaves();
+                  setShowCloudSaves(!showCloudSaves);
+                }}
+                className="text-sm text-amber-600 hover:text-amber-700 flex items-center gap-1"
+              >
+                <Cloud size={16} />
+                云存档 ({cloudSaves.length})
+              </button>
+            </div>
             <p className="mb-4 text-sm text-muted-foreground">
-              您可以导出当前进度为文件，或从文件导入进度。请注意，导入存档将覆盖当前游戏进度。
+              您可以导出当前进度为本地文件，或从本地/云端导入进度。请注意，导入存档将覆盖当前游戏进度。
             </p>
+            
+            {/* 云存档列表 */}
+            {showCloudSaves && (
+              <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="flex items-center gap-2 mb-2 text-amber-800">
+                  <Cloud size={16} />
+                  <span className="font-medium">云端存档</span>
+                  <span className="text-xs text-amber-600">(保留48小时)</span>
+                </div>
+                {cloudLoading ? (
+                  <div className="text-sm text-amber-600">加载中...</div>
+                ) : cloudSaves.length === 0 ? (
+                  <div className="text-sm text-amber-600 mb-2">暂无云存档</div>
+                ) : (
+                  <div className="space-y-2 mb-2 max-h-32 overflow-y-auto">
+                    {cloudSaves.map((save) => (
+                      <div key={save.save_id} className="flex items-center justify-between p-2 bg-white rounded text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate text-amber-900">ID: {save.save_id.slice(0, 12)}...</div>
+                          <div className="text-xs text-amber-600">过期: {new Date(save.expires_at).toLocaleString('zh-CN')}</div>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <button 
+                            onClick={() => handleCloudDownload(save.save_id)}
+                            className="px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700"
+                          >
+                            下载
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCloudSave(save.save_id)}
+                            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleCloudUpload}
+                    disabled={syncing}
+                    className="flex-1 py-2 text-sm rounded-lg transition-colors bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    <Cloud size={14} />
+                    {syncing ? '上传中...' : '上传到云端'}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-amber-600">
+                  ⚠️ 云存档保留48小时，sync_id只能使用一次，请及时下载
+                </p>
+              </div>
+            )}
             
             {showClipboard ? (
                 <div className="space-y-3">
@@ -279,16 +454,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2">
                         <button 
                             onClick={() => {
                               const info = exportSave();
                               setDownloadInfo(info);
                             }}
-                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
                         >
-                            <Download size={18} />
-                            <span>导出文件</span>
+                            <Download size={16} />
+                            <span className="whitespace-nowrap">导出文件</span>
                         </button>
                         <button 
                             onClick={async () => {
@@ -299,37 +474,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                             }}
                             disabled={!hasSavePicker}
                             title={hasSavePicker ? '' : '当前浏览器不支持保存对话框（建议使用 Chrome/Edge）'}
-                            className={`flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors ${hasSavePicker ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground'}`}
+                            className={`flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors text-sm ${hasSavePicker ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground'}`}
                         >
-                            <Download size={18} />
-                            <span>保存到指定位置</span>
+                            <Download size={16} />
+                            <span className="whitespace-nowrap">保存到指定位置</span>
                         </button>
                         <button 
                             onClick={() => {
                               onClose();
                               navigate('/save-view');
                             }}
-                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
                         >
-                            <Share2 size={18} />
-                            <span>查看存档JSON</span>
+                            <Share2 size={16} />
+                            <span className="whitespace-nowrap">查看存档</span>
                         </button>
                         <button 
                             onClick={async () => {
                               await shareSave();
                             }}
-                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
                         >
-                            <Share2 size={18} />
-                            <span>分享存档</span>
+                            <Share2 size={16} />
+                            <span className="whitespace-nowrap">分享存档</span>
                         </button>
                         
                         <button 
                             onClick={handleImportClick}
-                            className="flex flex-1 gap-2 justify-center items-center px-4 py-2 rounded-lg transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                            className="flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm"
                         >
-                            <Upload size={18} />
-                            <span>导入文件</span>
+                            <Upload size={16} />
+                            <span className="whitespace-nowrap">导入文件</span>
                         </button>
                     </div>
                     {downloadInfo && (
