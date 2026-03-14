@@ -701,17 +701,6 @@ export const Game: React.FC = () => {
               >
                 <Settings size={20} />
               </button>
-              <button 
-                onClick={() => {
-                  vibrate(VIBRATION_PATTERNS.LIGHT);
-                  navigate('/leaderboard');
-                }}
-                className="p-1 text-amber-400 hover:text-amber-300"
-                title="财富排行榜"
-              >
-                <Trophy size={20} />
-              </button>
-
             </div>
           </header>
 
@@ -729,6 +718,21 @@ export const Game: React.FC = () => {
             equippedAccessories={equippedAccessories}
             externalThreat={externalThreat}
           />
+          
+          {/* 财富排行榜入口 */}
+          <div className="max-w-md mx-auto px-2 py-2">
+            <button 
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/leaderboard');
+              }}
+              className="w-full py-2 bg-amber-600/80 hover:bg-amber-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            >
+              <Trophy size={16} />
+              财富排行榜
+            </button>
+          </div>
+          
           <DebuffPanel />
         </div>
 
