@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Crown, Trophy, Upload, Download, Trash2, RefreshCw, UserPlus, UserMinus } from 'lucide-react';
-import { getLeaderboard, registerUser, uploadCloudSave, listCloudSaves, deleteCloudSave, getDeviceId, getUserNickname, setUserNickname } from '@/utils/cloudApi';
-import { LeaderboardEntry, CloudSave } from '@/utils/cloudApi';
+import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus } from 'lucide-react';
+import { getLeaderboard, registerUser, getDeviceId, getUserNickname, setUserNickname, addMoney } from '@/utils/cloudApi';
+import { LeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
 
 export const Leaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saves, setSaves] = useState<CloudSave[]>([]);
-  const [savesLoading, setSavesLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [nickname, setNickname] = useState(getUserNickname());
-  const [nicknameInput, setNicknameInput] = useState(nickname);
   const [registering, setRegistering] = useState(false);
   
   // 从 gameStore 获取金钱数
@@ -37,44 +33,28 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  // 加载云存档列表
-  const loadCloudSaves = async () => {
-    setSavesLoading(true);
-    try {
-      const result = await listCloudSaves(deviceId);
-      if (result.success) {
-        setSaves(result.saves);
-      }
-    } catch (e) {
-      console.error('加载存档列表失败:', e);
-    } finally {
-      setSavesLoading(false);
-    }
-  };
+  // 加载排行榜
 
   useEffect(() => {
     loadLeaderboard();
-    loadCloudSaves();
   }, []);
 
   // 注册/更新用户并上榜
   const handleRegisterAndJoin = async () => {
-    if (!nicknameInput.trim()) {
-      alert('请输入昵称');
-      return;
-    }
+    // 直接使用游戏中的角色名称
+    const displayName = playerName || `玩家${deviceId.slice(-4)}`;
     
     setRegistering(true);
     try {
       // 先注册用户
-      await registerUser(deviceId, nicknameInput);
-      setUserNickname(nicknameInput);
-      setNickname(nicknameInput);
+      await registerUser(deviceId, displayName);
+      setUserNickname(displayName);
+      setNickname(displayName);
       
-      // 上传当前存档并同步财富
-      await handleUploadAndSync();
+      // 同步财富到排行榜
+      await addMoney(deviceId, money);
       
-      alert('恭喜上榜成功！\n每天会自动同步一次财富到排行榜。');
+      alert(`恭喜上榜成功！\n当前财富: {money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
       loadLeaderboard();
     } catch (e) {
       console.error('上榜失败:', e);
@@ -96,50 +76,6 @@ export const Leaderboard: React.FC = () => {
     loadLeaderboard();
   };
 
-  // 上传存档并同步财富
-  const handleUploadAndSync = async () => {
-    setUploading(true);
-    try {
-      const gameState = useGameStore.getState();
-      const saveData = JSON.stringify({
-        playerStats: gameState.playerStats,
-        inventory: gameState.inventory,
-        day: gameState.day,
-        playerProfile: gameState.playerProfile,
-        role: gameState.role,
-      });
-      
-      const result = await uploadCloudSave(deviceId, saveData);
-      
-      if (result.success) {
-        console.log('存档上传成功:', result);
-        loadCloudSaves();
-      } else {
-        console.error('上传失败:', result.error);
-      }
-    } catch (e) {
-      console.error('上传失败:', e);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // 删除存档
-  const handleDeleteSave = async (saveId: string) => {
-    if (!confirm('确定要删除这个存档吗？')) {
-      return;
-    }
-    
-    try {
-      const result = await deleteCloudSave(saveId, deviceId);
-      if (result.success) {
-        loadCloudSaves();
-      }
-    } catch (e) {
-      console.error('删除失败:', e);
-    }
-  };
-
   // 获取当前用户排名
   const currentUserRank = leaderboard.find((e) => e.user_id === deviceId);
   const isOnLeaderboard = !!currentUserRank;
@@ -158,7 +94,7 @@ export const Leaderboard: React.FC = () => {
         {/* 标题 */}
         <div className="text-center py-4">
           <h1 className="text-2xl font-bold text-amber-900 flex items-center justify-center gap-2">
-            <Crown className="w-8 h-8 text-amber-600" />
+            <Trophy className="w-8 h-8 text-amber-600" />
             财富排行榜
           </h1>
           <p className="text-amber-700 text-sm mt-1">实时展示武宁县富豪榜</p>
@@ -180,11 +116,18 @@ export const Leaderboard: React.FC = () => {
               </div>
               <div className="mt-3 flex gap-2 justify-center">
                 <button
-                  onClick={handleUploadAndSync}
-                  disabled={uploading}
-                  className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 flex items-center gap-1"
+                  onClick={async () => {
+                    try {
+                      await addMoney(deviceId, money);
+                      alert('财富已同步到排行榜！');
+                      loadLeaderboard();
+                    } catch (e) {
+                      alert('同步失败');
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-1"
                 >
-                  <RefreshCw className={`w-4 h-4 ${uploading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className="w-4 h-4" />
                   立即同步
                 </button>
                 <button
@@ -199,15 +142,8 @@ export const Leaderboard: React.FC = () => {
           ) : (
             <div className="text-center">
               <div className="text-amber-800 mb-3">加入排行榜，展示您的财富</div>
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={nicknameInput}
-                  onChange={(e) => setNicknameInput(e.target.value)}
-                  placeholder="请输入昵称"
-                  className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-center"
-                  maxLength={12}
-                />
+              <div className="text-lg text-amber-900 font-medium mb-2">
+                角色名: {playerName || `游客`}
               </div>
               <div className="text-sm text-amber-600 mb-3">
                 当前财富: {money.toLocaleString()} 文
@@ -272,55 +208,9 @@ export const Leaderboard: React.FC = () => {
           )}
         </div>
 
-        {/* 云存档管理 */}
-        <div className="bg-white rounded-lg shadow-md border border-amber-200 overflow-hidden">
-          <div className="bg-amber-100 px-4 py-2 border-b border-amber-200 flex items-center justify-between">
-            <h2 className="font-bold text-amber-900">云存档管理</h2>
-            <button
-              onClick={handleUploadAndSync}
-              disabled={uploading}
-              className="text-sm px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 flex items-center gap-1"
-            >
-              <Upload className="w-3 h-3" />
-              上传
-            </button>
-          </div>
-          
-          {savesLoading ? (
-            <div className="p-4 text-center text-amber-600">加载中...</div>
-          ) : saves.length === 0 ? (
-            <div className="p-4 text-center text-amber-600 text-sm">
-              暂无云存档
-            </div>
-          ) : (
-            <div className="divide-y divide-amber-100">
-              {saves.map((save) => (
-                <div key={save.save_id} className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-amber-900">
-                      存档 {save.save_id.slice(0, 8)}...
-                    </div>
-                    <div className="text-xs text-amber-600">
-                      过期: {new Date(save.expires_at).toLocaleString('zh-CN')}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteSave(save.save_id)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* 提示信息 */}
         <div className="text-center text-sm text-amber-600 p-4">
-          <p>📌 上榜后每天会自动同步一次财富</p>
-          <p>📌 云存档保留 48 小时，过期自动删除</p>
-          <p>📌 sync_id 只可下载一次，24小时后失效</p>
+          <p>📌 上榜后每天会自动同步一次财富到排行榜</p>
         </div>
       </div>
     </div>
