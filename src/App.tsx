@@ -8,6 +8,7 @@
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
+import React, { useState } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Home } from '@/pages/Home';
 import { Game } from '@/pages/Game';
@@ -25,12 +26,13 @@ import { GameManual } from '@/pages/GameManual';
 import { Leaderboard } from '@/pages/Leaderboard';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
+import { SplashScreen } from '@/components/SplashScreen';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 /* 古风字体类名工具 */
 export const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -136,10 +138,15 @@ const InventoryMigrationNotice: React.FC = () => {
 function App() {
   useTheme();
 
+  // 启动画面状态
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
-    <Router>
-      <ScrollToTop />
-      <InventoryMigrationNotice />
+    <>
+      {showSplash && <SplashScreen onReady={() => setShowSplash(false)} />}
+      <Router>
+        <ScrollToTop />
+        <InventoryMigrationNotice />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
@@ -171,6 +178,7 @@ function App() {
         </a>
       </div>
     </Router>
+    </>
   );
 }
 

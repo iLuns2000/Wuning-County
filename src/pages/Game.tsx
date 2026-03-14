@@ -23,7 +23,7 @@ import { SnackStreetModal } from '@/components/SnackStreetModal';
 import { TreasureModal } from '@/components/TreasureModal';
 import { CharityModal } from '@/components/CharityModal';
 import { AchievementPopup } from '@/components/AchievementPopup';
-import { Settings, Backpack, Compass, Leaf, Utensils, Trees, Shovel } from 'lucide-react';
+import { Settings, Backpack, Compass, Leaf, Utensils, Trees, Shovel, Trophy } from 'lucide-react';
 import { achievements as achievementData } from '@/data/achievements';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenModal } from '@/components/LeekGardenModal';
@@ -700,6 +700,16 @@ export const Game: React.FC = () => {
                 title="系统设置"
               >
                 <Settings size={20} />
+              </button>
+              <button 
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  navigate('/leaderboard');
+                }}
+                className="p-1 text-amber-400 hover:text-amber-300"
+                title="财富排行榜"
+              >
+                <Trophy size={20} />
               </button>
 
             </div>

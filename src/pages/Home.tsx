@@ -11,8 +11,8 @@
 import React from 'react';
 import { roles } from '@/data/roles';
 import { useGameStore } from '@/store/gameStore';
-import { useNavigate, Link } from 'react-router-dom';
-import { User, Briefcase, Sword, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Briefcase, Sword } from 'lucide-react';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useScreenOrientation } from '@/hooks/useScreenOrientation';
 import { getBackgroundImage, BACKGROUND_IMAGES } from '@/constants';
@@ -252,17 +252,6 @@ export const Home: React.FC = () => {
           <span className="animate-bounce">↓</span>
           选择你的身份开始游戏
         </span>
-      </div>
-      
-      {/* 财富排行榜入口 */}
-      <div className="absolute bottom-4 left-0 right-0 text-center z-50">
-        <Link 
-          to="/leaderboard" 
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600/80 hover:bg-amber-600 text-white rounded-full text-sm shadow-lg"
-        >
-          <Trophy size={16} />
-          财富排行榜
-        </Link>
       </div>
       
       {/* 全局动画样式 */}
