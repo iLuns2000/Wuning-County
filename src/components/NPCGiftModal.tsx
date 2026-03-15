@@ -9,7 +9,8 @@ import {
   getGiftCategoryLabel, 
   hasNPCGiftRule 
 } from '@/services/npcGiftInteractionEngine';
-import { Item, GiftCategory } from '@/types/game';
+import { Item } from '@/types/game';
+import { GiftCategory } from '@/data/npcGiftInteractionRules';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface NPCGiftModalProps {
@@ -143,7 +144,7 @@ export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcId, npcName, onCl
                       <div>
                         <div className="font-semibold text-foreground">{candidate.item.name}</div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          分类：{getJiYiOuGiftCategoryLabel(candidate.category)}
+                          分类：{getCategoryLabel(candidate.category)}
                         </div>
                       </div>
                       <div className="text-xs rounded-full bg-secondary px-2 py-1 text-muted-foreground">

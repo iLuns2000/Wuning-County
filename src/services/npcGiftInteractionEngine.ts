@@ -192,6 +192,13 @@ export function getNPCGiftDescription(npcId: string): string | undefined {
 }
 
 /**
+ * 检查 NPC 是否有赠礼规则
+ */
+export function hasNPCGiftRule(npcId: string): boolean {
+  return !!getNPCGiftRule(npcId);
+}
+
+/**
  * 获取分类标签
  */
 export function getGiftCategoryLabel(npcId: string, category: GiftCategory): string | undefined {
