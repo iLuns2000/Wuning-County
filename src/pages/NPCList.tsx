@@ -20,6 +20,8 @@ import { NPCGiftModal } from '@/components/NPCGiftModal';
 import { ProfileModal } from '@/components/ProfileModal';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { roles } from '@/data/roles';
+import { simulateJiYiOuArcheryDuel, incrementArcheryDuelCount } from '@/services/npcDuelEngine';
+import { resolveHunt } from '@/services/huntResolutionEngine';
 
 type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
@@ -44,7 +46,7 @@ export const NPCList: React.FC = () => {
     incrementGiftFailure,
     resetGiftFailure,
     interactWithNPC,
-    giftFoodToJiYiOu,
+    giftItemToNpc,
     currentEvent,
     triggerSpecificEvent,
     dismissEvent,
@@ -52,7 +54,8 @@ export const NPCList: React.FC = () => {
     setIsMoGuRenaming,
     playerProfile,
     setPlayerProfile,
-    role
+    role,
+    flags
   } = useGameStore();
 
   const [searchTerm, setSearchTerm] = useState(() => {
@@ -61,6 +64,7 @@ export const NPCList: React.FC = () => {
   const [sortType, setSortType] = useState<SortType>(() => {
     return (sessionStorage.getItem('npcSortType') as SortType) || 'default';
   });
+  const [giftNpcId, setGiftNpcId] = useState<string | null>(null);
   const [giftNpcName, setGiftNpcName] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -163,6 +167,19 @@ export const NPCList: React.FC = () => {
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
+    const eventId = currentEvent.id;
+
+    // 季一藕射箭切磋特殊处理
+    if (eventId === 'ji_yi_ou_archery_duel' && option.label === '接受挑战') {
+      handleJiYiOuArcheryDuel();
+      return;
+    }
+
+    // 季一藕狩猎特殊处理
+    if (eventId === 'ji_yi_ou_hunt' && option.label === '欣然前往') {
+      handleJiYiOuHunt();
+      return;
+    }
 
     if (option.effect) {
       let healthCost = 0;
@@ -192,14 +209,100 @@ export const NPCList: React.FC = () => {
   };
 
   const handleJiYiOuGiftConfirm = (itemId: string) => {
-    const result = giftFoodToJiYiOu(itemId);
+    // 使用通用赠礼函数
+    const result = giftItemToNpc('ji_yi_ou', itemId);
     if (!result.success) {
       if (result.message) addLog(result.message);
       return;
     }
 
     resetGiftFailure('ji_yi_ou');
+    setGiftNpcId(null);
     setGiftNpcName(null);
+  };
+
+  // 季一藕射箭切磋处理函数
+  const handleJiYiOuArcheryDuel = () => {
+    // 检查体力
+    if (playerStats.health < 10) {
+      addLog('体力不足，无法进行射箭切磋！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+    // 检查银两
+    if (playerStats.money < 10) {
+      addLog('银两不足，输了可要赔钱的！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+
+    // 计算切磋结果并获取新的计数
+    const { newCount, huntUnlocked } = incrementArcheryDuelCount({ playerStats, flags } as any);
+
+    // 计算切磋结果
+    const outcome = simulateJiYiOuArcheryDuel({ playerStats, flags } as any);
+    
+    // 构建flagsSet
+    const flagsSet: Record<string, any> = {
+      'ji_yi_ou_archery_duel_count': newCount
+    };
+    if (huntUnlocked) {
+      flagsSet['ji_yi_ou_hunt_unlocked'] = true;
+    }
+
+    // 应用效果
+    handleEventOption(
+      {
+        money: outcome.effect.money,
+        experience: outcome.effect.experience,
+        accuracy: outcome.effect.accuracy,
+        health: -10, // 每次切磋消耗10体力
+        flagsSet
+      },
+      outcome.logMessage
+    );
+
+    // 检查是否解锁狩猎
+    if (huntUnlocked) {
+      addLog('【系统】你与季一藕的射箭切磋已达10次，解锁了新功能：狩猎邀请！');
+    }
+
+    // 关闭事件弹窗
+    dismissEvent();
+  };
+
+  // 季一藕狩猎处理函数
+  const handleJiYiOuHunt = () => {
+    // 检查体力
+    if (playerStats.health < 20) {
+      addLog('狩猎需要不少体力，你还是先休息一下吧！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+
+    // 解析狩猎结果
+    const result = resolveHunt({ playerStats, flags } as any);
+    
+    // 应用效果
+    handleEventOption(
+      result.effect,
+      result.logMessage
+    );
+
+    // 如果获得成就，直接添加到成就列表
+    if (result.achievementId) {
+      const currentAchievements = useGameStore.getState().achievements;
+      if (!currentAchievements.includes(result.achievementId)) {
+        // 直接更新成就列表
+        useGameStore.setState(state => ({
+          achievements: [...state.achievements, result.achievementId!],
+          latestUnlockedAchievementId: result.achievementId
+        }));
+      }
+    }
+
+    // 关闭事件弹窗
+    dismissEvent();
   };
 
   const handleInteraction = (npcId: string, type: 'talk' | 'gift' | 'event', eventId?: string) => {
@@ -223,6 +326,7 @@ export const NPCList: React.FC = () => {
       if (result.message) addLog(result.message);
     } else {
       if (npcId === 'ji_yi_ou') {
+        setGiftNpcId(npcId);
         setGiftNpcName(npc.name);
         return;
       }
@@ -494,9 +598,18 @@ export const NPCList: React.FC = () => {
                         const event = npcEvents.find(e => e.id === eventId);
                         if (!event) return null;
 
+                        const state = useGameStore.getState();
+
+                        // 检查custom条件
                         if (event.triggerCondition?.custom) {
-                          const state = useGameStore.getState();
                           if (!event.triggerCondition.custom(state)) return null;
+                        }
+
+                        // 检查requiredItems条件
+                        if (event.triggerCondition?.requiredItems) {
+                          for (const [itemId, minCount] of Object.entries(event.triggerCondition.requiredItems)) {
+                            if ((state.inventory[itemId] || 0) < minCount) return null;
+                          }
                         }
 
                         return (
@@ -534,10 +647,11 @@ export const NPCList: React.FC = () => {
         />
       )}
 
-      {giftNpcName && (
+      {giftNpcId && giftNpcName && (
         <NPCGiftModal
+          npcId={giftNpcId}
           npcName={giftNpcName}
-          onClose={() => setGiftNpcName(null)}
+          onClose={() => { setGiftNpcId(null); setGiftNpcName(null); }}
           onConfirm={handleJiYiOuGiftConfirm}
         />
       )}

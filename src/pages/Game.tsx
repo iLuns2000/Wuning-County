@@ -780,16 +780,21 @@ export const Game: React.FC = () => {
               <span>休息整顿 ({dailyCounts.rest}/{MAX_DAILY_REST})</span>
             </button>
             
-            <button 
+            <button
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 maintainCountyDefense();
               }}
-              disabled={!!currentEvent || !!flags['defense_maintained_daily']}
+              disabled={!!currentEvent}
               className="flex gap-2 justify-center items-center p-4 text-rose-700 bg-rose-50 rounded-lg transition-colors hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 disabled:opacity-50"
             >
               <Shield size={20} />
-              <span>巡防维护（每日一次）</span>
+              <span>
+                巡防维护
+                {flags['defense_maintained_daily'] && dailyCounts.extraDefenseCount >= 2 ? '（已用完）' :
+                  flags['defense_maintained_daily'] ? `（还有${2 - dailyCounts.extraDefenseCount}次付费/100文）` :
+                  dailyCounts.extraDefenseCount >= 2 ? '（还有1次付费/100文）' : '（还有2次付费/100文）'}
+              </span>
             </button>
             
             {role === 'magistrate' && (

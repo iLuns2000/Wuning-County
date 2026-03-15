@@ -831,7 +831,7 @@ export const npcs: NPC[] = [
         "义诊虽累，但能帮到人，心里还是挺开心的。"
       ]
     },
-    interactionEventIds: ["ji_yi_ou_interact"]
+    interactionEventIds: ["ji_yi_ou_interact", "ji_yi_ou_archery_duel", "ji_yi_ou_hunt"]
   },
   {
     id: "guan_yu_zai_hua_gang",
@@ -1241,7 +1241,13 @@ export const npcs: NPC[] = [
       "low": [
         "想学？我教你。记住，心稳手准，无局不破。"
       ]
-    }
+    },
+    "interactionEventIds": [
+      "jingque_steal_skill",
+      "jingque_unlock_skill",
+      "jingque_dig_hole",
+      "jingque_feed_magpie"
+    ]
   },
   {
     "id": "jingyin",

@@ -8,6 +8,7 @@ export interface PlayerStats {
   ability: number;
   health: number;
   experience: number;
+  accuracy: number; // 准头属性，用于射箭等远程活动
   debt: number; // New field for bank loans
 }
 
@@ -146,6 +147,7 @@ export interface DailyActionCounts {
   explore: number; // Daily exploration count
   caveFilled: boolean; // Whether the cave has been filled today
   pigeonRace: number; // 赛鸽比赛次数（每日上限 1）
+  extraDefenseCount: number; // 额外巡防维护次数（每日上限2次，每次100文）
 }
 
 export interface NPCInteractionState {
@@ -260,6 +262,8 @@ export interface OfficeState {
   upgradeStartTime?: number; // timestamp
   upgradeEndTime?: number; // timestamp
   isUpgrading: boolean;
+  // 自动巡逻系统
+  autoPatrolDaysLeft?: number; // 剩余自动巡逻天数
 }
 
 export interface LeekOrder {
@@ -280,6 +284,7 @@ export interface Effect {
   ability?: number;
   health?: number;
   experience?: number;
+  accuracy?: number;
   // Flat county stats
   economy?: number;
   order?: number;
@@ -288,6 +293,12 @@ export interface Effect {
   
   itemsAdd?: string[];
   itemsRemove?: string[];
+  /** 概率获得物品，格式：[{ itemId: 'item_id', probability: 0.3, count?: 1 }] */
+  probabilisticItemsAdd?: Array<{ itemId: string; probability: number; count?: number }>;
+  /** 百分比减少资源，格式：[{ type: 'health'|'money', percent: 0.5 }] */
+  percentDeduct?: Array<{ type: 'health' | 'money'; percent: number }>;
+  /** 消耗所有指定物品并根据数量计算概率获得物品，格式：{ consumeItemId: '羽毛id', probabilityPerItem: 0.1, minProbability: 0.01, maxProbability: 0.1, rewardItemId: '奖励物品id', rewardItemCount?: 1 } */
+  consumeAllAndProbabilisticReward?: { consumeItemId: string; probabilityPerItem: number; minProbability: number; maxProbability: number; rewardItemId: string; rewardItemCount?: number };
   flagsSet?: Record<string, any>;
   flagsIncrement?: string[];
   relationChange?: Record<string, number>;
@@ -318,6 +329,8 @@ export interface GameEvent {
     probability?: number; // 0-1
     requiredRole?: RoleType;
     season?: string;
+    /** 需要的物品ID和数量 */
+    requiredItems?: Record<string, number>;
     custom?: (state: GameState) => boolean;
   };
   options: EventOption[];

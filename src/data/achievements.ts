@@ -581,5 +581,14 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 300,
     condition: (state) =>
       (state.pigeons || []).reduce((sum, p) => sum + p.raceCount, 0) >= 20
+  },
+  // 季一藕狩猎相关成就
+  {
+    id: 'dreaming_fugitive',
+    name: '喜欢做梦的逃兵',
+    description: '狩猎时遭遇黑熊，被追得落荒而逃',
+    rewardExp: 50,
+    isHidden: true,
+    condition: (state) => !!state.flags['ji_yi_ou_hunt_unlocked'] // 临时用 flag 判断，实际通过狩猎触发
   }
 ];

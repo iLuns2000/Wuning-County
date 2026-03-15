@@ -18,6 +18,8 @@ import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
 import { getJiYiOuGiftCategory, getJiYiOuGiftReward, rollJiYiOuLoreDrop } from '@/data/npcGiftRules';
+import { buildGiftOutcome } from '@/services/npcGiftInteractionEngine';
+import { hasNPCGiftRule } from '@/data/npcGiftInteractionRules';
 import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
 
 // Weather System Helper
@@ -426,6 +428,7 @@ interface GameStore extends GameState {
 
   // NPC Interaction Methods
   interactWithNPC: (npcId: string, type: 'gift' | 'chat' | 'action' | 'loan' | 'work') => { success: boolean; message: string };
+  giftItemToNpc: (npcId: string, itemId: string) => { success: boolean; message: string };
   giftFoodToJiYiOu: (itemId: string) => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
 
@@ -505,6 +508,9 @@ interface GameStore extends GameState {
   maintainCountyDefense: () => void;
   processResourceTick: () => void;
 
+  // 自动巡逻系统
+  buyAutoPatrol: () => { success: boolean; message: string };
+
   // 赛鸽系统
   buyPigeon: (name?: string) => void;
   renamePigeon: (id: string, name: string) => void;
@@ -547,9 +553,9 @@ export const useGameStore = create<GameStore>()(
         mobileToastSeconds: 1.5,
       },
       playerProfile: { name: '无名', avatar: '' },
-      playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, debt: 0 },
+      playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, accuracy: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
       isMoGuRenaming: false,
@@ -1314,7 +1320,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
           isMoGuRenaming: false,
@@ -1628,6 +1634,55 @@ export const useGameStore = create<GameStore>()(
           effect,
           `你把${item.name}递给季一藕，她眼睛一亮，连声道谢。${reward.rewardText}${loreText}`
         );
+
+        return { success: true, message: '' };
+      },
+
+      // 通用 NPC 赠礼函数
+      giftItemToNpc: (npcId, itemId) => {
+        const state = get();
+        const item = items.find(entry => entry.id === itemId);
+        const npc = npcs.find(n => n.id === npcId);
+
+        if (!item) {
+          return { success: false, message: '礼物不存在。' };
+        }
+
+        if (!npc) {
+          return { success: false, message: 'NPC 不存在。' };
+        }
+
+        if (!invHas(state.inventory, itemId)) {
+          return { success: false, message: '行囊中没有这份礼物。' };
+        }
+
+        // 检查是否有赠礼规则
+        if (!hasNPCGiftRule(npcId)) {
+          return { success: false, message: `暂无 ${npc.name} 的赠礼规则。` };
+        }
+
+        // 构建赠礼结果
+        const outcome = buildGiftOutcome(npcId, item, npc.name);
+        if (!outcome.success || !outcome.result) {
+          return { success: false, message: outcome.message };
+        }
+
+        // 执行 NPC 互动
+        const interactionResult = get().interactWithNPC(npcId, 'gift');
+        if (!interactionResult.success) {
+          return interactionResult;
+        }
+
+        // 应用效果
+        const result = outcome.result;
+        const rewardItems = result.effect.itemsAdd ? [...result.effect.itemsAdd] : undefined;
+        const effect: Effect = {
+          ...result.effect,
+          itemsAdd: rewardItems,
+          itemsRemove: [itemId]
+        };
+
+        get().handleEventOption(effect, result.message);
 
         return { success: true, message: '' };
       },
@@ -2116,6 +2171,34 @@ export const useGameStore = create<GameStore>()(
             warMessage = '【战火覆城】县城长期失修、民心离散，最终毁于战火。';
           }
 
+          // ── 自动巡逻每日效果 ────────────────────────────────────────
+          let patrolMessage = '';
+          const currentOfficeState = state.officeState || { level: 1, isUpgrading: false };
+          if ((currentOfficeState.autoPatrolDaysLeft || 0) > 0) {
+            const patrolDaysLeft = currentOfficeState.autoPatrolDaysLeft! - 1;
+            const orderGain = 3;
+            const defenseGain = 2;
+            const banditReduction = 3;
+
+            nextExternalThreat = {
+              ...nextExternalThreat,
+              defense: Math.min(100, nextExternalThreat.defense + defenseGain),
+              banditThreat: Math.max(0, nextExternalThreat.banditThreat - banditReduction),
+            };
+            newCountyStats.order = Math.min(100, newCountyStats.order + orderGain);
+
+            patrolMessage = `【自动巡逻】巡逻小队正在执勤，治安+${orderGain}，山贼威胁-${banditReduction}。`;
+
+            // 更新剩余天数
+            set(s => ({
+              officeState: {
+                ...(s.officeState || { level: 1, isUpgrading: false }),
+                autoPatrolDaysLeft: patrolDaysLeft > 0 ? patrolDaysLeft : undefined,
+              }
+            }));
+          }
+          // ─────────────────────────────────────────────────────────
+
           // Reset daily flags
           const newFlags = { ...state.flags };
           Object.keys(newFlags).forEach(key => {
@@ -2170,6 +2253,7 @@ export const useGameStore = create<GameStore>()(
           if (disasterMessage) logs.unshift(disasterMessage);
           if (threatMessage) logs.unshift(threatMessage);
           if (warMessage) logs.unshift(warMessage);
+          if (patrolMessage) logs.unshift(patrolMessage);
           // Debuff 日志（倒序插入，最新在最前）
           debuffResult.logs.slice().reverse().forEach(m => logs.unshift(m));
           // 
@@ -2187,7 +2271,7 @@ export const useGameStore = create<GameStore>()(
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
             ownedFacilities: newOwnedFacilities,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             currentEvent: null,
@@ -2541,6 +2625,7 @@ export const useGameStore = create<GameStore>()(
         let abilityChange = 0;
         let healthChange = 0;
         let experienceChange = 0;
+        let accuracyChange = 0;
 
         let economyChange = 0;
         let orderChange = 0;
@@ -2559,6 +2644,7 @@ export const useGameStore = create<GameStore>()(
             if (effect.playerStats.ability) abilityChange += effect.playerStats.ability;
             if (effect.playerStats.health) healthChange += effect.playerStats.health;
             if (effect.playerStats.experience) experienceChange += effect.playerStats.experience;
+            if (effect.playerStats.accuracy) accuracyChange += effect.playerStats.accuracy;
           }
 
           if (effect.countyStats) {
@@ -2573,6 +2659,8 @@ export const useGameStore = create<GameStore>()(
           if (effect.reputation) reputationChange += effect.reputation;
           if (effect.ability) abilityChange += effect.ability;
           if (effect.health) healthChange += effect.health;
+          if (effect.experience) experienceChange += effect.experience;
+          if (effect.accuracy) accuracyChange += effect.accuracy;
 
           if (effect.economy) economyChange += effect.economy;
           if (effect.order) orderChange += effect.order;
@@ -2656,6 +2744,7 @@ export const useGameStore = create<GameStore>()(
           if (reputationChange !== 0) statChanges.push(formatChange('声望', reputationChange));
           if (abilityChange !== 0) statChanges.push(formatChange('能力', abilityChange));
           if (experienceChange !== 0) statChanges.push(formatChange('阅历', experienceChange));
+          if (accuracyChange !== 0) statChanges.push(formatChange('准头', accuracyChange));
 
           if (economyChange !== 0) statChanges.push(formatChange('经济', economyChange));
           if (orderChange !== 0) statChanges.push(formatChange('治安', orderChange));
@@ -2665,6 +2754,23 @@ export const useGameStore = create<GameStore>()(
           if (effect.itemsAdd && effect.itemsAdd.length > 0) {
             const itemNames = effect.itemsAdd.map(id => items.find(i => i.id === id)?.name || id);
             statChanges.push(`获得 ${itemNames.join('、')}`);
+          }
+
+          // 显示概率获得物品的提示（有机会获得）
+          if (effect.probabilisticItemsAdd && effect.probabilisticItemsAdd.length > 0) {
+            const probItemNames = effect.probabilisticItemsAdd.map(p => {
+              const itemName = items.find(i => i.id === p.itemId)?.name || p.itemId;
+              return `${itemName}(${Math.round(p.probability * 100)}%)`;
+            });
+            // statChanges.push(`有机会获得 ${probItemNames.join('、')}`);
+          }
+
+          // 显示消耗所有物品并根据数量计算概率的提示
+          if (effect.consumeAllAndProbabilisticReward) {
+            const { consumeItemId, probabilityPerItem, minProbability, maxProbability, rewardItemId } = effect.consumeAllAndProbabilisticReward;
+            const consumeItemName = items.find(i => i.id === consumeItemId)?.name || consumeItemId;
+            const rewardItemName = items.find(i => i.id === rewardItemId)?.name || rewardItemId;
+            // statChanges.push(`消耗${consumeItemName}计算概率，有机会获得 ${rewardItemName}(${Math.round(minProbability * 100)}%-${Math.round(maxProbability * 100)}%)`);
           }
 
           if (effect.relationChange) {
@@ -2686,6 +2792,9 @@ export const useGameStore = create<GameStore>()(
 
         if (fullMessage) get().addLog(fullMessage);
 
+        // 用于收集消耗物品的日志
+        const consumeResultLogs: string[] = [];
+
         if (effect) {
           set(state => {
             const newPlayerStats = { ...state.playerStats };
@@ -2694,6 +2803,7 @@ export const useGameStore = create<GameStore>()(
             newPlayerStats.ability = (newPlayerStats.ability || 0) + abilityChange;
             newPlayerStats.health = (newPlayerStats.health || 0) + healthChange;
             newPlayerStats.experience = (newPlayerStats.experience || 0) + experienceChange;
+            newPlayerStats.accuracy = (newPlayerStats.accuracy || 0) + accuracyChange;
 
             const newCountyStats = { ...state.countyStats };
             newCountyStats.economy = (newCountyStats.economy || 0) + economyChange;
@@ -2714,6 +2824,21 @@ export const useGameStore = create<GameStore>()(
             newCountyStats.culture = Math.min(100, Math.max(0, newCountyStats.culture));
             newCountyStats.livelihood = Math.min(100, Math.max(0, newCountyStats.livelihood));
 
+            // 处理百分比扣除
+            if (effect.percentDeduct) {
+              for (const pd of effect.percentDeduct) {
+                if (pd.type === 'money') {
+                  const deductAmount = Math.floor((newPlayerStats.money || 0) * pd.percent);
+                  newPlayerStats.money = (newPlayerStats.money || 0) - deductAmount;
+                  statChanges.push(`银两-${Math.round(pd.percent * 100)}%`);
+                } else if (pd.type === 'health') {
+                  const deductAmount = Math.floor((newPlayerStats.health || 0) * pd.percent);
+                  newPlayerStats.health = (newPlayerStats.health || 0) - deductAmount;
+                  statChanges.push(`体力-${Math.round(pd.percent * 100)}%`);
+                }
+              }
+            }
+
             let newInventory = { ...state.inventory };
             if (effect.itemsAdd) {
               for (const id of effect.itemsAdd) {
@@ -2723,6 +2848,45 @@ export const useGameStore = create<GameStore>()(
             if (effect.itemsRemove) {
               for (const itemId of effect.itemsRemove) {
                 newInventory = invRemoveOne(newInventory, itemId);
+              }
+            }
+            // 处理概率获得物品
+            if (effect.probabilisticItemsAdd) {
+              for (const probItem of effect.probabilisticItemsAdd) {
+                if (Math.random() < probItem.probability) {
+                  const count = probItem.count || 1;
+                  for (let i = 0; i < count; i++) {
+                    newInventory = invAdd(newInventory, probItem.itemId);
+                  }
+                  const itemName = items.find(i => i.id === probItem.itemId)?.name || probItem.itemId;
+                  consumeResultLogs.push(`获得 ${itemName}！`);
+                }
+              }
+            }
+            // 处理消耗所有物品并根据数量计算概率获得奖励
+            if (effect.consumeAllAndProbabilisticReward) {
+              const { consumeItemId, probabilityPerItem, minProbability, maxProbability, rewardItemId, rewardItemCount } = effect.consumeAllAndProbabilisticReward;
+              const consumeCount = newInventory[consumeItemId] || 0;
+              const consumeItemName = items.find(i => i.id === consumeItemId)?.name || consumeItemId;
+              if (consumeCount > 0) {
+                // 消耗所有该物品
+                for (let i = 0; i < consumeCount; i++) {
+                  newInventory = invRemoveOne(newInventory, consumeItemId);
+                }
+                let consumeResultLog = `消耗${consumeCount}个${consumeItemName}，`;
+                // 计算概率：每个羽毛增加指定概率，封顶maxProbability
+                const probability = Math.min(maxProbability, minProbability + consumeCount * probabilityPerItem);
+                if (Math.random() < probability) {
+                  const count = rewardItemCount || 1;
+                  for (let i = 0; i < count; i++) {
+                    newInventory = invAdd(newInventory, rewardItemId);
+                  }
+                  const rewardItemName = items.find(i => i.id === rewardItemId)?.name || rewardItemId;
+                  consumeResultLog += `成功获得 ${rewardItemName}！`;
+                } else {
+                  consumeResultLog += '很遗憾，未能获得奖励。';
+                }
+                consumeResultLogs.push(consumeResultLog);
               }
             }
 
@@ -2779,6 +2943,9 @@ export const useGameStore = create<GameStore>()(
             });
           }
 
+          // 输出消耗物品并可能获得奖励的日志
+          consumeResultLogs.forEach(log => get().addLog(log));
+
           // Check for next event in queue
           const currentState = get();
           if (currentState.eventQueue && currentState.eventQueue.length > 0) {
@@ -2818,6 +2985,12 @@ export const useGameStore = create<GameStore>()(
           if (cond.minDay && state.day < cond.minDay) return false;
           // 预过滤季节事件
           if (cond.season && cond.season !== SEASONS[seasonIndex]) return false;
+          // 检查所需物品
+          if (cond.requiredItems) {
+            for (const [itemId, minCount] of Object.entries(cond.requiredItems)) {
+              if ((state.inventory[itemId] || 0) < minCount) return false;
+            }
+          }
           if (cond.custom && !cond.custom(state)) return false;
 
           return true;
@@ -2899,7 +3072,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],
@@ -3406,12 +3579,23 @@ export const useGameStore = create<GameStore>()(
 
       maintainCountyDefense: () => {
         const state = get();
-        if (state.flags['defense_maintained_daily']) {
-          get().addLog('【边防】今日已完成巡防维护。');
+        const extraDefenseCount = state.dailyCounts.extraDefenseCount || 0;
+        const isFreeDone = !!state.flags['defense_maintained_daily'];
+
+        // 决定使用免费还是付费
+        let useFree = false;
+        let useExtra = false;
+
+        if (!isFreeDone) {
+          useFree = true;
+        } else if (extraDefenseCount < 2) {
+          useExtra = true;
+        } else {
+          get().addLog('【边防】今日巡防次数已用完（免费1次+付费2次）。');
           return;
         }
 
-        const cost = 30;
+        const cost = useFree ? 30 : 100;
         if (state.playerStats.money < cost) {
           get().addLog(`【边防】巡防维护需要 ${cost} 文。`);
           return;
@@ -3421,24 +3605,71 @@ export const useGameStore = create<GameStore>()(
         const defenseGain = 8;
         const threatReduction = 6;
 
-        set(prev => ({
-          playerStats: {
-            ...prev.playerStats,
-            money: prev.playerStats.money - cost,
-          },
-          externalThreat: {
-            ...current,
-            defense: Math.min(100, current.defense + defenseGain),
-            banditThreat: Math.max(0, current.banditThreat - threatReduction),
-            warRisk: Math.max(0, current.warRisk - threatReduction),
-          },
-          flags: {
-            ...prev.flags,
-            defense_maintained_daily: true,
-          }
-        }));
+        set(prev => {
+          const newFlags = { ...prev.flags };
+          const newDailyCounts = { ...prev.dailyCounts };
 
-        get().addLog('【边防】你组织了巡防队与乡勇，边防戒备得到加强。');
+          if (useFree) {
+            newFlags.defense_maintained_daily = true;
+          }
+          if (useExtra) {
+            newDailyCounts.extraDefenseCount = (prev.dailyCounts.extraDefenseCount || 0) + 1;
+          }
+
+          return {
+            playerStats: {
+              ...prev.playerStats,
+              money: prev.playerStats.money - cost,
+            },
+            externalThreat: {
+              ...current,
+              defense: Math.min(100, current.defense + defenseGain),
+              banditThreat: Math.max(0, current.banditThreat - threatReduction),
+              warRisk: Math.max(0, current.warRisk - threatReduction),
+            },
+            flags: newFlags,
+            dailyCounts: newDailyCounts,
+          };
+        });
+
+        const typeText = useFree ? '免费' : '付费';
+        get().addLog(`【边防】你组织了巡防队与乡勇（${typeText}），边防戒备得到加强。`);
+      },
+
+      // 自动巡逻系统
+      buyAutoPatrol: () => {
+        const state = get();
+        const officeState = state.officeState || { level: 1, isUpgrading: false };
+
+        // 检查官邸等级
+        if (officeState.level < 5) {
+          return { success: false, message: '自动巡逻小队需要官邸达到LV.5才能雇佣。' };
+        }
+
+        // 检查是否已有进行中的巡逻
+        if ((officeState.autoPatrolDaysLeft || 0) > 0) {
+          return { success: false, message: `当前已有自动巡逻小队进行中，剩余 ${officeState.autoPatrolDaysLeft} 天。` };
+        }
+
+        const cost = 10000;
+        if (state.playerStats.money < cost) {
+          return { success: false, message: `雇佣自动巡逻小队需要 ${cost} 文，资金不足。` };
+        }
+
+        // 扣除费用并激活巡逻
+        set({
+          playerStats: {
+            ...state.playerStats,
+            money: state.playerStats.money - cost,
+          },
+          officeState: {
+            ...officeState,
+            autoPatrolDaysLeft: 20,
+          },
+        });
+
+        get().addLog(`【自动巡逻】你雇佣了一支自动巡逻小队，花费 ${cost} 文，将自动巡逻 20 天。`);
+        return { success: true, message: `自动巡逻小队已出发，将在未来20天内自动维护治安。` };
       },
 
       dismissRaidAlert: () => {

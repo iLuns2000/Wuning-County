@@ -3,59 +3,76 @@ import { Gift, Package, X } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { getJiYiOuGiftCategory, getJiYiOuGiftCategoryLabel } from '@/data/npcGiftRules';
-import { Item } from '@/types/game';
+import { 
+  getGiftCandidates, 
+  getNPCGiftDescription, 
+  getGiftCategoryLabel, 
+  hasNPCGiftRule 
+} from '@/services/npcGiftInteractionEngine';
+import { Item, GiftCategory } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface NPCGiftModalProps {
+  npcId: string;
   npcName: string;
   onClose: () => void;
   onConfirm: (itemId: string) => void;
 }
 
-type GiftCandidate = {
-  item: Item;
-  count: number;
-  category: NonNullable<ReturnType<typeof getJiYiOuGiftCategory>>;
-};
-
-const categoryOrder: Record<NonNullable<ReturnType<typeof getJiYiOuGiftCategory>>, number> = {
-  tanghulu: 0,
-  xiaolongbao: 1,
-  pastry: 2,
-  dried_snack: 3
-};
-
-export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcName, onClose, onConfirm }) => {
+export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcId, npcName, onClose, onConfirm }) => {
   const { inventory } = useGameStore();
   const vibrate = useGameVibrate();
   const [selectedItemId, setSelectedItemId] = useState<string>('');
 
+  // 获取赠礼描述
+  const giftDescription = getNPCGiftDescription(npcId) || '选择一件礼物赠予对方。';
+
   const giftCandidates = useMemo(() => {
-    // inventory 是 Record<string, number>，直接遍历
-    const candidates = Object.entries(inventory)
-      .filter(([_, count]) => count > 0)
-      .map(([itemId, count]) => {
-        const item = items.find(entry => entry.id === itemId);
-        if (!item) return null;
+    // 优先使用通用配置
+    if (hasNPCGiftRule(npcId)) {
+      return getGiftCandidates(npcId, inventory, items);
+    }
+    
+    // 兼容旧的季一藕逻辑
+    if (npcId === 'ji_yi_ou') {
+      const candidates = Object.entries(inventory)
+        .filter(([_, count]) => count > 0)
+        .map(([itemId, count]) => {
+          const item = items.find(entry => entry.id === itemId);
+          if (!item) return null;
 
-        const category = getJiYiOuGiftCategory(item);
-        if (!category) return null;
+          const category = getJiYiOuGiftCategory(item);
+          if (!category) return null;
 
-        return {
-          item,
-          count,
-          category
-        } as GiftCandidate;
-      })
-      .filter((entry): entry is GiftCandidate => !!entry)
-      .sort((a, b) => {
-        const byCategory = categoryOrder[a.category] - categoryOrder[b.category];
-        if (byCategory !== 0) return byCategory;
-        return a.item.name.localeCompare(b.item.name, 'zh-CN');
-      });
+          return {
+            item,
+            count,
+            category: category as GiftCategory,
+            categoryLabel: getJiYiOuGiftCategoryLabel(category)
+          };
+        })
+        .filter((entry): entry is { item: Item; count: number; category: GiftCategory; categoryLabel: string } => !!entry)
+        .sort((a, b) => {
+          return a.item.name.localeCompare(b.item.name, 'zh-CN');
+        });
 
-    return candidates;
-  }, [inventory]);
+      return candidates;
+    }
+    
+    return [];
+  }, [inventory, npcId]);
+
+  // 获取分类标签的辅助函数
+  const getCategoryLabel = (category: GiftCategory): string => {
+    if (hasNPCGiftRule(npcId)) {
+      return getGiftCategoryLabel(npcId, category) || category;
+    }
+    // 兼容旧的季一藕逻辑
+    if (npcId === 'ji_yi_ou') {
+      return getJiYiOuGiftCategoryLabel(category as any) || category;
+    }
+    return category;
+  };
 
   useEffect(() => {
     if (giftCandidates.length === 0) {
@@ -95,7 +112,7 @@ export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcName, onClose, on
         </div>
 
         <div className="px-5 pt-4 pb-2 text-sm text-muted-foreground">
-          带着美食上门，她会随机分享八卦日常或医学常识。
+          {giftDescription}
         </div>
 
         <div className="px-5 pb-5 max-h-[55vh] overflow-y-auto">

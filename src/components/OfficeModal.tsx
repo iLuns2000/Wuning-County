@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, ArrowUpCircle, Hammer, Timer, Zap } from 'lucide-react';
+import { X, Building2, ArrowUpCircle, Hammer, Timer, Zap, Shield, Users } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths } from '@/data/countyDevelopmentPaths';
@@ -10,9 +10,9 @@ interface OfficeModalProps {
 }
 
 export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
-  const { 
-    playerStats, 
-    officeState, 
+  const {
+    playerStats,
+    officeState,
     inventory,
     startUpgradeOffice,
     speedUpUpgrade,
@@ -20,7 +20,8 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
     checkUpgradeStatus,
     cancelUpgradeOffice,
     countyDevelopment,
-    setCountyDevelopmentPath
+    setCountyDevelopmentPath,
+    buyAutoPatrol
   } = useGameStore();
   
   // Safety check for legacy saves
@@ -133,6 +134,64 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
                 {availablePaths.length > 0 && countyDevelopment.currentPath !== 'none' && (
                     <div className="text-xs text-muted-foreground">
                         切换路线将花费 500 文（首次选择免费）。
+                    </div>
+                )}
+            </div>
+
+            {/* 自动巡逻小队 */}
+            <div className="bg-card p-4 rounded-lg border border-border shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-base flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-blue-500" />
+                        自动巡逻小队
+                    </h3>
+                </div>
+                {currentLevel >= 5 ? (
+                    <div className="space-y-3">
+                        {(currentOfficeState.autoPatrolDaysLeft || 0) > 0 ? (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Users className="w-5 h-5 text-blue-600" />
+                                    <span className="font-semibold text-blue-900 dark:text-blue-100">巡逻进行中</span>
+                                </div>
+                                <div className="text-sm text-blue-700 dark:text-blue-300">
+                                    剩余天数：<span className="font-bold">{currentOfficeState.autoPatrolDaysLeft}</span> 天
+                                </div>
+                                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                    效果：每日治安+3，山贼威胁-3
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="text-sm text-muted-foreground">
+                                    雇佣一支自动巡逻小队，在20天内自动维护治安。
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">雇佣费用</span>
+                                    <span className={playerStats.money >= 10000 ? 'text-green-600' : 'text-red-500'}>
+                                        10000 文
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        vibrate(VIBRATION_PATTERNS.HEAVY);
+                                        const result = buyAutoPatrol();
+                                        if (!result.success) {
+                                            alert(result.message);
+                                        }
+                                    }}
+                                    disabled={playerStats.money < 10000}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    雇佣巡逻小队
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="text-sm text-muted-foreground opacity-50">
+                        官邸达到 LV.5 后可解锁自动巡逻小队
                     </div>
                 )}
             </div>

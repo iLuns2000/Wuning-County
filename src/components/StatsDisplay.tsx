@@ -6,7 +6,8 @@ import React, { useState, useEffect } from 'react';
 import { PlayerStats, CountyStats, PlayerProfile, WeatherType, ApparelSlot, ExternalThreatState } from '@/types/game';
 import { 
   Coins, Trophy, Zap, Heart, TrendingUp, Shield, BookOpen, Users, User, 
-  Edit2, Star, Award, Lightbulb, CloudSun, Building2, Flame, Wind, ThermometerSun 
+  Edit2, Star, Award, Lightbulb, CloudSun, Building2, Flame, Wind, ThermometerSun, 
+  Crosshair 
 } from 'lucide-react';
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
@@ -278,6 +279,13 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
             color="text-indigo-400"
             icon={<Star size={14} className="text-indigo-500" />}
             label="阅历"
+          />
+          <AnimatedNumber 
+            value={playerStats.accuracy || 0} 
+            prevValue={prevStats.accuracy}
+            color="text-orange-400"
+            icon={<Crosshair size={14} className="text-orange-500" />}
+            label="准头"
           />
         </div>
         

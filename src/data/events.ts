@@ -2899,5 +2899,164 @@ export const npcEvents: GameEvent[] = [
         effect: { relationChange: { jingyin: -20 } }
       }
     ]
+  },
+  {
+    id: 'jingque_steal_skill',
+    title: '学习偷盗',
+    description: '你找到惊鹊，表明想学习偷盗之术。惊鹊笑道："想学？我教你。记住，心稳手准，无局不破。"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '学习偷盗 (银两-1000, 体力-10)',
+        message: '手要轻，心要静，来去不留痕。你按照惊鹊的教导练习，技艺有所提升。',
+        effect: { ability: 6, money: -1000, health: -10, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.3, count: 1 }] }
+      },
+      {
+        label: '离开',
+        message: '惊鹊点点头："随时想学，可以来找我。"',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'jingque_unlock_skill',
+    title: '学习开锁',
+    description: '你找到惊鹊，希望能学习开锁之术。惊鹊点头道："听锁芯动静，找准力道，自然能开。"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '学习开锁 (银两-100, 体力-50)',
+        message: '你仔细聆听锁芯的动静，领悟了开锁的诀窍。',
+        effect: { ability: 5, money: -100, health: -50, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.05, count: 1 }] }
+      },
+      {
+        label: '离开',
+        message: '惊鹊摆摆手："开锁需要耐心，急不得。"',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'jingque_dig_hole',
+    title: '挖洞',
+    description: '挖洞要静、要准、要稳。别贪快，不露声响，才是正道。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '一个人挖 (体力-50, 银两-5000)',
+        message: '你独自前往城外僻静处挖洞，土层渐深时，指尖忽然触到一片柔软光滑的黑色羽毛，上面还泛着淡淡的青蓝光泽 —— 这分明是惊鹊留下的。',
+        effect: { health: -50, money: -5000, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.5, count: 1 }] }
+      },
+      {
+        label: '和惊鹊一起挖 (体力-100%, 银两-20%)',
+        message: '你跟着惊鹊在城内僻静巷弄的墙角挖洞，指尖刚触到松软的土层，便听他低喝一声"不好"——土层突然塌陷，你们竟直直挖穿了一户人家的地窖地板，陶罐碎裂的脆响瞬间打破寂静，屋内传来主人的呵斥声。',
+        effect: { percentDeduct: [{ type: 'health', percent: 1 }, { type: 'money', percent: 0.2 }], probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.01, count: 1 }] }
+      },
+      {
+        label: '离开',
+        message: '惊鹊看了你一眼："想好了再来。"',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'jingque_feed_magpie',
+    title: '喂鹊',
+    description: '想起那片墨黑泛青的羽毛，便将它放在掌心，又取出备好的谷物，静静等候。没过多久，几声清脆的鹊鸣传来，一只通身墨黑、翅尖泛青的喜鹊循着羽毛的气息飞来，在你肩头盘旋两圈，便落在你掌心的羽毛旁，好奇地啄了啄。',
+    type: 'npc',
+    triggerCondition: {
+      probability: 0,
+      requiredItems: { startled_magpie_feather: 1 }
+    },
+    options: [
+      {
+        label: '好吃爱吃 (消耗所有羽毛)',
+        message: '叽叽喳喳的欢鸣清脆悦耳，显然吃得格外尽兴！',
+        effect: {
+          money: 1000000,
+          consumeAllAndProbabilisticReward: {
+            consumeItemId: 'startled_magpie_feather',
+            probabilityPerItem: 0.01,
+            minProbability: 0.01,
+            maxProbability: 0.1,
+            rewardItemId: 'random_treasure_bag',
+            rewardItemCount: 1
+          }
+        }
+      },
+      {
+        label: '凑合 (消耗所有羽毛)',
+        message: '不慌不忙，偶尔停下梳理两下羽毛，没有过多欢喜，也没有抵触，吃得平平淡淡。',
+        effect: {
+          money: 10000,
+          probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 1, count: 1 }]
+        }
+      },
+      {
+        label: 'emmm难评',
+        message: '时不时瞥一眼谷物，满脸不悦，再也不肯上前。',
+        effect: { money: 10000 }
+      }
+    ]
+  },
+  // ─────────────────────────────────────────────────────────
+  // 季一藕射箭切磋事件
+  {
+    id: 'ji_yi_ou_archery_duel',
+    title: '射箭切磋',
+    description: '关山箭馆内，季一藕手持长弓，笑着看向你：“久闻大名，可敢与我比试一番？”',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => {
+        // 体力不足时不可进行
+        if ((state.playerStats.health || 0) < 10) return false;
+        // 银两不足时不可进行（输了要赔钱）
+        if ((state.playerStats.money || 0) < 10) return false;
+        return true;
+      }
+    },
+    options: [
+      {
+        label: '接受挑战',
+        message: '', // 消息将由游戏逻辑动态生成
+        effect: {} // 效果将由游戏逻辑动态生成
+      },
+      {
+        label: '稍后再战',
+        message: '你摆摆手：“下次吧。”季一藕笑着点头收弓。'
+      }
+    ]
+  },
+  // 季一藕狩猎邀请事件
+  {
+    id: 'ji_yi_ou_hunt',
+    title: '狩猎邀请',
+    description: '季一藕收起长弓，眼中闪过一丝兴奋：“切磋了这么多次，我想邀请你去郊外的林子里狩猎，敢不敢跟我一起去？”',
+    type: 'npc',
+    triggerCondition: { 
+      probability: 0,
+      custom: (state) => {
+        // 需要解锁狩猎（累计10次射箭）
+        if (!state.flags['ji_yi_ou_hunt_unlocked']) return false;
+        // 体力不足时不可进行
+        if ((state.playerStats.health || 0) < 20) return false;
+        return true;
+      }
+    },
+    options: [
+      {
+        label: '欣然前往',
+        message: '', // 消息将由游戏逻辑动态生成
+        effect: {} // 效果将由游戏逻辑动态生成
+      },
+      {
+        label: '下次吧',
+        message: '你摆摆手：“下次吧。”季一藕有些失望地收起了弓箭。'
+      }
+    ]
   }
 ];
