@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug, Truck } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -611,6 +611,56 @@ export const Game: React.FC = () => {
     }
   };
 
+  // 商人专属行动：商会巡防
+  const handleMerchantPatrol = () => {
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+    if (playerStats.money < 80) {
+      addLog('资金不足，无法组织商会巡防！');
+      return;
+    }
+    if (playerStats.health < 10) {
+      addLog('体力不足，无法巡防！');
+      return;
+    }
+
+    // 消耗：金钱 80 + 体力 10
+    // 效果：治安 +3、经济 +1、声望 -1
+    handleEventOption({
+      money: -80,
+      health: -10,
+      reputation: -1,
+      countyStats: { order: 3, economy: 1 }
+    }, '你组织商会进行巡防，维护了市场秩序。虽然被质疑"商人干政"，但县城治安确实有所改善。');
+  };
+
+  // 少侠专属行动：护送商队
+  const handleEscortMerchant = () => {
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+    if (playerStats.health < 20) {
+      addLog('体力不足，无法护送商队！');
+      return;
+    }
+
+    // 按能力判定成功率
+    const successRate = Math.min(0.9, 0.5 + (playerStats.ability / 100));
+    const isSuccess = Math.random() < successRate;
+
+    if (isSuccess) {
+      // 成功：经济 +3、治安 +1、金钱 +30、体力 -20
+      handleEventOption({
+        health: -20,
+        money: 30,
+        countyStats: { economy: 3, order: 1 }
+      }, '你成功护送商队到达目的地，商队老板对你感激不尽，县城经济也有所提升！');
+    } else {
+      // 失败：仅获得金钱 +10 且体力照扣
+      handleEventOption({
+        health: -20,
+        money: 10
+      }, '途中遭遇山贼伏击，虽然你奋力击退敌人，但商队损失惨重，只获得少许辛苦费。');
+    }
+  };
+
   const currentRoleConfig = roles.find(r => r.id === role);
   const canEditProfileName = isMoGuRenaming || (!Boolean(playerProfile?.nameChangeUsed) && (playerProfile?.name || '').trim() === (currentRoleConfig?.name || '').trim());
   
@@ -830,6 +880,36 @@ export const Game: React.FC = () => {
                    </div>
                  </button>
                </div>
+            )}
+
+            {/* 商人专属行动：商会巡防 */}
+            {role === 'merchant' && (
+              <button
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  handleMerchantPatrol();
+                }}
+                disabled={!!currentEvent || playerStats.money < 80 || playerStats.health < 10}
+                className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-950/50 disabled:opacity-50"
+              >
+                <Shield size={20} />
+                <span>商会巡防 (-80钱 -10体力)</span>
+              </button>
+            )}
+
+            {/* 少侠专属行动：护送商队 */}
+            {role === 'hero' && (
+              <button
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  handleEscortMerchant();
+                }}
+                disabled={!!currentEvent || playerStats.health < 20}
+                className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-green-50 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-300 dark:hover:bg-green-950/50 disabled:opacity-50"
+              >
+                <Truck size={20} />
+                <span>护送商队 (-20体力)</span>
+              </button>
             )}
 
             <div className="flex flex-col col-span-2 gap-1">
