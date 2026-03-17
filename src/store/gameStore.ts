@@ -13,6 +13,7 @@ import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
 import { items } from '@/data/items';
+import { snacks } from '@/data/snacks';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
@@ -1098,7 +1099,8 @@ export const useGameStore = create<GameStore>()(
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
           inventory: invAdd(state.inventory, itemId)
         }));
-        const itemName = items.find(i => i.id === itemId)?.name || '物品';
+        // 优先从 items 查找，否则从 snacks 查找
+        const itemName = items.find(i => i.id === itemId)?.name || snacks.find(s => s.id === itemId)?.name || '物品';
         get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
       },
 
@@ -1202,7 +1204,8 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         if (!invHas(state.inventory, itemId)) return;
 
-        const item = items.find(i => i.id === itemId);
+        // 优先从 items 查找，否则从 snacks 查找
+        const item = items.find(i => i.id === itemId) || snacks.find(s => s.id === itemId);
         if (item && item.effect) {
           get().handleEventOption(item.effect, `使用了 ${item.name}`);
         } else {

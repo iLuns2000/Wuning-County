@@ -186,8 +186,15 @@ export const snacks: Item[] = [
   { 
     id: 'nodel_musiyunxian', 
     name: '韭菜线面', 
-    description: '用韭菜园的香韭制作的线面。韭菜割了一茬又一茬，如果不及时吃完就会无限繁殖', 
-    type: 'consumable', 
-    effect: { health: 3 } 
+    description: '用韭菜园的香韭制作的线面。韭菜割了一茬又一茬，如果不及时吃完就会无限繁殖',
+    type: 'consumable',
+    effect: { health: 3 }
+  },
+  {
+    id: 'snack_mogu_niangjitang',
+    name: '蘑菇奶油汤',
+    description: '奶油浓郁，蘑菇鲜香，醇厚的汤底令人回味无穷，与墨骨大人无关联。',
+    type: 'consumable',
+    effect: { health: 5, culture: 1 }
   }
 ];
