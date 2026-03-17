@@ -1,6 +1,8 @@
 export type RoleType = 'magistrate' | 'merchant' | 'hero';
-
 export type WeatherType = 'sunny' | 'cloudy' | 'rain_light' | 'rain_heavy' | 'snow_light' | 'snow_heavy';
+
+// 重新导出 GiftCategory 类型（定义在 npcGiftInteractionRules.ts 中）
+export type { GiftCategory } from '@/data/npcGiftInteractionRules';
 
 export interface PlayerStats {
   money: number;
@@ -245,6 +247,9 @@ export interface GameState {
   // 战火警报
   raidAlert?: boolean; // 当日发生山贼夜袭时为 true，展示警报动画后清除
 
+  // 季一藕医馆动物互动系统
+  clinicAnimals?: ClinicAnimalState;
+
   // Debuff 系统
   activeDebuffs: ActiveDebuff[];
   lastDebuffCheckDay: number;
@@ -409,6 +414,31 @@ export interface LeekPlot {
   quality?: number;
   ready?: boolean;
   fertility?: number; // 0-100
+}
+
+// ── 季一藕医馆动物互动系统 ────────────────────────────────
+
+export interface ClinicAnimalState {
+  /** 今日喂小啾次数 */
+  birdFeedToday: number;
+  /** 小啾好感（喂食累计） */
+  birdFavor: number;
+  /** 逗鸟/教学累计（用于"咕咕嘎"） */
+  birdTeaseOrTeachCount: number;
+  /** 每句学习进度: phrase -> count (需要 ≥10 次才学会) */
+  birdLearnProgress: Record<string, number>;
+  /** 已学会语录（FIFO，上限 20） */
+  birdLearnedPhrases: string[];
+  /** 教脏话被抓次数 */
+  swearTeachCaughtCount: number;
+  /** 历史学狗叫总次数 */
+  dogBarkPracticeTotal: number;
+  /** 今日学狗叫次数（称号后上限 2） */
+  dogBarkToday: number;
+  /** 动物互动封禁到哪一天 */
+  animalInteractionBannedUntilDay: number;
+  /** 医馆禁入到哪一天（"一意孤行"） */
+  clinicEntryBannedUntilDay: number;
 }
 
 // ── Debuff 系统 ──────────────────────────────────────────

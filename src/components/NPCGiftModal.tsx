@@ -3,12 +3,12 @@ import { Gift, Package, X } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { getJiYiOuGiftCategory, getJiYiOuGiftCategoryLabel } from '@/data/npcGiftRules';
-import { 
-  getGiftCandidates, 
-  getNPCGiftDescription, 
-  getGiftCategoryLabel, 
-  hasNPCGiftRule 
+import {
+  getGiftCandidates,
+  getNPCGiftDescription,
+  getGiftCategoryLabel,
 } from '@/services/npcGiftInteractionEngine';
+import { hasNPCGiftRule } from '@/data/npcGiftInteractionRules';
 import { Item, GiftCategory } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
@@ -143,7 +143,7 @@ export const NPCGiftModal: React.FC<NPCGiftModalProps> = ({ npcId, npcName, onCl
                       <div>
                         <div className="font-semibold text-foreground">{candidate.item.name}</div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          分类：{getJiYiOuGiftCategoryLabel(candidate.category)}
+                          分类：{candidate.categoryLabel}
                         </div>
                       </div>
                       <div className="text-xs rounded-full bg-secondary px-2 py-1 text-muted-foreground">

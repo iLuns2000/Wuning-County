@@ -4,7 +4,7 @@
       "id": "MiniMax-M2.5",
       "name": "MiniMax-M2.5",
       "vendor": "MiniMax",
-      "apiKey": "sk-api-O3TslpNmIrxW2rnPeNbQyGjk_1QZ01A4QxlGTKuJZaaUqzb24pC81R77mKhFISqdT5iHexwTKjYnlgD0WWgdSDMjhB9bnoXqGF1yaFGcWa7FAbstXDqoEd8",
+      "apiKey": "sk-cp--kdbFZP8p8WM7ItNQVuW1WWKux1KGGp_tQHSLi02fwFNnrjRrnT1DVKydqneNVZ8eQ-_75fhiJH9CadXNZy3JDAZ_iFGolnUrArm9On1u9f6dEXPiX75LKg",
       "maxInputTokens": 200000,
       "maxOutputTokens": 8192,
       "url": "https://api.minimaxi.com/v1",
