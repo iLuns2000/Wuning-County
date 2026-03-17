@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal } from 'lucide-react';
-import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney } from '@/utils/cloudApi';
+import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, setMoney, removeFromLeaderboard } from '@/utils/cloudApi';
 import { LeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
@@ -52,10 +52,10 @@ export const Leaderboard: React.FC = () => {
       await registerUser(deviceId, displayName);
       setUserNickname(displayName);
       
-      // 同步财富到排行榜
-      await addMoney(deviceId, money);
+      // 同步财富到排行榜 (设置为当前财富，替换而非累加)
+      await setMoney(deviceId, money);
       
-      alert(`恭喜上榜成功！\n当前财富: {money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
+      alert(`恭喜上榜成功！\n当前财富: ${money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
       loadLeaderboard();
     } catch (e) {
       console.error('上榜失败:', e);
@@ -71,10 +71,14 @@ export const Leaderboard: React.FC = () => {
       return;
     }
     
-    // 下榜操作：将财富设为 0 (这样就不会在排行榜显示了)
-    // 实际实现：通过不更新排行榜来实现
-    alert('已下榜。如需重新上榜，请再次点击"我要上榜"。');
-    loadLeaderboard();
+    try {
+      await removeFromLeaderboard(deviceId);
+      alert('已下榜。如需重新上榜，请再次点击"我要上榜"。');
+      loadLeaderboard();
+    } catch (e) {
+      console.error('下榜失败:', e);
+      alert('下榜失败，请稍后重试');
+    }
   };
 
   // 获取当前用户排名
@@ -127,8 +131,9 @@ export const Leaderboard: React.FC = () => {
                     onClick={async () => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       try {
-                        await addMoney(deviceId, money);
-                        alert('财富已同步到排行榜！');
+                        // 使用 setMoney 替换财富，而非累加
+                        await setMoney(deviceId, money);
+                        alert(`财富已同步！\n当前财富: ${money.toLocaleString()} 文`);
                         loadLeaderboard();
                       } catch (e) {
                         alert('同步失败');

@@ -150,6 +150,22 @@ export async function addMoney(userId: string, amount: number): Promise<{ succes
   });
 }
 
+// 设置金钱 (替换而非累加)
+export async function setMoney(userId: string, money: number): Promise<{ success: boolean; money?: number; error?: string }> {
+  return request('/money/set', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, money }),
+  });
+}
+
+// 从排行榜移除 (下榜)
+export async function removeFromLeaderboard(userId: string): Promise<{ success: boolean; error?: string }> {
+  return request('/money/remove', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
 // 赠送金钱 (上榜时同步财富)
 export async function syncMoney(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; error?: string }> {
   return request('/money/give', {
