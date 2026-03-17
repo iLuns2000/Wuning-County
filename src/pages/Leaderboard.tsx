@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal } from 'lucide-react';
-import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, setMoney, removeFromLeaderboard } from '@/utils/cloudApi';
+import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, setMoney, removeFromLeaderboard, deleteUser } from '@/utils/cloudApi';
 import { LeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
@@ -10,6 +10,8 @@ export const Leaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasUserJoined, setHasUserJoined] = useState(false); // 用户是否曾上榜
   
   const vibrate = useGameVibrate();
   
@@ -19,14 +21,19 @@ export const Leaderboard: React.FC = () => {
   const playerName = useGameStore((state) => state.playerProfile)?.name || '';
   
   const deviceId = getDeviceId();
+  const PAGE_SIZE = 50; // 每页50人
 
   // 加载排行榜
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      const result = await getLeaderboard(20);
+      // 获取前50名
+      const result = await getLeaderboard(PAGE_SIZE);
       if (result.success) {
         setLeaderboard(result.leaderboard);
+        // 检查当前用户是否在榜上
+        const isOnBoard = result.leaderboard.some(e => e.user_id === deviceId);
+        setHasUserJoined(isOnBoard);
       }
     } catch (e) {
       console.error('加载排行榜失败:', e);
@@ -56,6 +63,7 @@ export const Leaderboard: React.FC = () => {
       await setMoney(deviceId, money);
       
       alert(`恭喜上榜成功！\n当前财富: ${money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
+      setHasUserJoined(true);
       loadLeaderboard();
     } catch (e) {
       console.error('上榜失败:', e);
@@ -65,15 +73,17 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  // 下榜
+  // 下榜 - 删除用户数据
   const handleLeaveLeaderboard = async () => {
-    if (!confirm('确定要下榜吗？下榜后将不再自动同步财富到排行榜。')) {
+    if (!confirm('确定要下榜吗？下榜后将删除您的所有数据。')) {
       return;
     }
     
     try {
-      await removeFromLeaderboard(deviceId);
-      alert('已下榜。如需重新上榜，请再次点击"我要上榜"。');
+      // 删除用户数据
+      await deleteUser(deviceId);
+      setHasUserJoined(false);
+      alert('已下榜，数据已删除。如需重新上榜，请再次点击"重新上榜"。');
       loadLeaderboard();
     } catch (e) {
       console.error('下榜失败:', e);
@@ -83,7 +93,7 @@ export const Leaderboard: React.FC = () => {
 
   // 获取当前用户排名
   const currentUserRank = leaderboard.find((e) => e.user_id === deviceId);
-  const isOnLeaderboard = !!currentUserRank;
+  const isOnLeaderboard = hasUserJoined || !!currentUserRank;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 p-4">
@@ -174,7 +184,7 @@ export const Leaderboard: React.FC = () => {
                   className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
                 >
                   <UserPlus className="w-5 h-5" />
-                  {registering ? '提交中...' : '我要上榜'}
+                  {registering ? '提交中...' : (hasUserJoined ? '重新上榜' : '我要上榜')}
                 </button>
               </div>
             )}
@@ -186,7 +196,7 @@ export const Leaderboard: React.FC = () => {
           <div className="bg-indigo-600 px-4 py-3">
             <h2 className="font-bold text-white flex items-center gap-2">
               <Medal className="w-4 h-4" />
-              富豪排行 TOP {leaderboard.length + 1}
+              富豪排行 TOP {leaderboard.length + 1} (每页50人)
             </h2>
           </div>
           
@@ -217,7 +227,7 @@ export const Leaderboard: React.FC = () => {
                 </div>
               </div>
               {/* 真实排行榜 - 从第2名开始 */}
-              {leaderboard.slice(0, 19).map((entry) => (
+              {leaderboard.map((entry) => (
                 <div
                   key={entry.user_id}
                   className={`flex items-center px-4 py-3 hover:bg-indigo-50/50 transition-colors ${

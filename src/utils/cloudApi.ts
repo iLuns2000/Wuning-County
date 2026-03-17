@@ -166,6 +166,14 @@ export async function removeFromLeaderboard(userId: string): Promise<{ success: 
   });
 }
 
+// 删除用户
+export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  return request('/user/delete', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
 // 赠送金钱 (上榜时同步财富)
 export async function syncMoney(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; error?: string }> {
   return request('/money/give', {
