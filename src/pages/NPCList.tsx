@@ -22,6 +22,7 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { roles } from '@/data/roles';
 import { simulateJiYiOuArcheryDuel, incrementArcheryDuelCount } from '@/services/npcDuelEngine';
 import { resolveHunt } from '@/services/huntResolutionEngine';
+import { ClinicAnimalModal } from '@/components/ClinicAnimalModal';
 
 type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
@@ -68,6 +69,7 @@ export const NPCList: React.FC = () => {
   const [giftNpcName, setGiftNpcName] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showClinicAnimalModal, setShowClinicAnimalModal] = useState(false);
 
   // 当搜索词变化时，保存到sessionStorage
   useEffect(() => {
@@ -594,6 +596,21 @@ export const NPCList: React.FC = () => {
                         <span>送礼</span>
                       </button>
 
+                      {/* 季一藕专属：医馆动物互动 */}
+                      {npc.id === 'ji_yi_ou' && (
+                        <button
+                          onClick={() => {
+                            setShowClinicAnimalModal(true);
+                            vibrate(VIBRATION_PATTERNS.MEDIUM);
+                          }}
+                          className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 min-w-[80px]"
+                          title="西林医馆 - 与小啾、小狗互动"
+                        >
+                          <span className="text-base">🏥</span>
+                          <span>医馆</span>
+                        </button>
+                      )}
+
                       {npc.interactionEventIds?.map(eventId => {
                         const event = npcEvents.find(e => e.id === eventId);
                         if (!event) return null;
@@ -654,6 +671,10 @@ export const NPCList: React.FC = () => {
           onClose={() => { setGiftNpcId(null); setGiftNpcName(null); }}
           onConfirm={handleJiYiOuGiftConfirm}
         />
+      )}
+
+      {showClinicAnimalModal && (
+        <ClinicAnimalModal onClose={() => setShowClinicAnimalModal(false)} />
       )}
 
       <ProfileModal 

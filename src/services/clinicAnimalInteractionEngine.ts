@@ -400,22 +400,27 @@ export function interactDog(
   const actionConfig = {
     pet: {
       line: '你轻轻抚摸小狗的头，它舒服地闭上眼睛。',
-      reward: BIRD_TEASE_REWARD
+      cost: { health: -5 },
+      reward: { experience: 5, relationChange: { ji_yi_ou: 1 } }
     },
     feed: {
       line: '你给小狗喂了医馆特制的小零食，它高兴地摇尾巴。',
-      reward: { experience: 10, health: 5, relationChange: { ji_yi_ou: 2 } }
+      cost: { money: -10 },
+      reward: { experience: 10, relationChange: { ji_yi_ou: 2 } }
     }
   };
 
   const config = actionConfig[actionId];
-  const rewardEffect = { ...config.reward };
+  const costEffect: Effect = config.cost || {};
+  const rewardEffect: Effect = config.reward || {};
   const commonDrop = buildCommonDropEffect();
 
   const combinedEffect: Effect = {
+    ...costEffect,
     ...rewardEffect,
     experience: (rewardEffect.experience || 0) + (commonDrop.experience || 0),
-    health: (rewardEffect.health || 0) + (commonDrop.health || 0),
+    health: (rewardEffect.health || 0) + (commonDrop.health || 0) + (costEffect.health || 0),
+    money: (costEffect.money || 0) + (rewardEffect.money || 0),
     probabilisticItemsAdd: commonDrop.probabilisticItemsAdd
   };
 

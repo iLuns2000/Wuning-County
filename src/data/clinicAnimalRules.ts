@@ -30,9 +30,7 @@ export const BIRD_VALID_PHRASES = [
 
 /** 脏话关键词库（用于检测） */
 export const SWEAR_WORDS = [
-  '笨蛋', '傻瓜', '蠢货', '白痴', '神经病',
-  '讨厌', '烦人', '滚开', '去死', '讨厌鬼',
-  '臭', '脏', '丑', '笨', '傻'
+  '笨蛋', '傻瓜', '蠢货', '白痴', '傻子', '笨蛋', '滚开', '去死', '臭', '丑'
 ];
 
 /** 喂食类型 */
@@ -42,11 +40,12 @@ export type BirdFoodType = 'nut' | 'fruit';
 export const BIRD_FEED_REWARDS: Record<BirdFoodType, Effect> = {
   nut: {
     experience: 10,
+    money: -10,
     relationChange: { ji_yi_ou: 2 }
   },
   fruit: {
     experience: 15,
-    health: 5,
+    money: -10,
     relationChange: { ji_yi_ou: 3 }
   }
 };
@@ -54,6 +53,7 @@ export const BIRD_FEED_REWARDS: Record<BirdFoodType, Effect> = {
 /** 逗鸟奖励 */
 export const BIRD_TEASE_REWARD: Effect = {
   experience: 5,
+  health: -5,
   relationChange: { ji_yi_ou: 1 }
 };
 
@@ -79,6 +79,9 @@ export const DOG_ACTIONS: DogAction[] = [
     id: 'pet',
     label: '抚摸',
     description: '轻轻抚摸小狗的头',
+    cost: {
+      health: 5
+    },
     reward: {
       experience: 5,
       relationChange: { ji_yi_ou: 1 }
@@ -88,9 +91,11 @@ export const DOG_ACTIONS: DogAction[] = [
     id: 'feed',
     label: '喂零食',
     description: '给小狗喂些医馆特制的小零食',
+    cost: {
+      money: -10
+    },
     reward: {
       experience: 10,
-      health: 5,
       relationChange: { ji_yi_ou: 2 }
     }
   },
@@ -105,7 +110,7 @@ export const DOG_ACTIONS: DogAction[] = [
 ];
 
 /** 学狗叫的能力要求 */
-export const DOG_BARK_ABILITY_REQUIREMENT = 1000;
+export const DOG_BARK_ABILITY_REQUIREMENT = 80;
 
 /** 学狗叫前 4 次的惩罚 */
 export const DOG_BARK_EARLY_PENALTY: Effect = {
