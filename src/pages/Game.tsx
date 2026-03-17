@@ -1043,7 +1043,7 @@ export const Game: React.FC = () => {
               <span className="text-sm font-medium">产业置办</span>
             </button>
 
-            {/* <button 
+            <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 navigate('/leaderboard');
@@ -1055,7 +1055,7 @@ export const Game: React.FC = () => {
                 <Trophy size={18} />
               </div>
               <span className="text-sm font-medium">财富榜</span>
-            </button> */}
+            </button>
 
             <button
               onClick={() => {
