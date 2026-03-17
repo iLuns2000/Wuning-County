@@ -186,7 +186,7 @@ export const Leaderboard: React.FC = () => {
           <div className="bg-indigo-600 px-4 py-3">
             <h2 className="font-bold text-white flex items-center gap-2">
               <Medal className="w-4 h-4" />
-              富豪排行 TOP {leaderboard.length}
+              富豪排行 TOP {leaderboard.length + 1}
             </h2>
           </div>
           
@@ -201,7 +201,23 @@ export const Leaderboard: React.FC = () => {
             </div>
           ) : (
             <div className="divide-y divide-indigo-50">
-              {leaderboard.map((entry) => (
+              {/* 固定第一名：小四(无宁县首富) */}
+              <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-yellow-400 text-yellow-900">
+                  1
+                </div>
+                <div className="ml-3 flex-1">
+                  <div className="font-medium text-indigo-900">
+                    小四<span className="text-yellow-600 text-sm ml-1">(无宁县首富)</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-indigo-800">*************</div>
+                  <div className="text-xs text-indigo-500">文</div>
+                </div>
+              </div>
+              {/* 真实排行榜 - 从第2名开始 */}
+              {leaderboard.slice(0, 19).map((entry) => (
                 <div
                   key={entry.user_id}
                   className={`flex items-center px-4 py-3 hover:bg-indigo-50/50 transition-colors ${
@@ -209,12 +225,11 @@ export const Leaderboard: React.FC = () => {
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    entry.rank === 1 ? 'bg-yellow-400 text-yellow-900' :
                     entry.rank === 2 ? 'bg-gray-300 text-gray-700' :
                     entry.rank === 3 ? 'bg-amber-600 text-white' :
                     'bg-indigo-100 text-indigo-700'
                   }`}>
-                    {entry.rank}
+                    {entry.rank + 1}
                   </div>
                   <div className="ml-3 flex-1">
                     <div className="font-medium text-indigo-900">
