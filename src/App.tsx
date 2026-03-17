@@ -24,6 +24,7 @@ import { SaveViewer } from '@/pages/SaveViewer';
 import { PigeonRace } from '@/pages/PigeonRace';
 import { GameManual } from '@/pages/GameManual';
 import { Leaderboard } from '@/pages/Leaderboard';
+import { BugReport } from '@/pages/BugReport';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -162,6 +163,7 @@ function App() {
         <Route path="/pigeon-race" element={<PigeonRace />} />
         <Route path="/manual" element={<GameManual />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/bug-report" element={<BugReport />} />
       </Routes>
       <NewYearCountdownBanner />
       <FireworksSplash />

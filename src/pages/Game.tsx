@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -690,6 +690,16 @@ export const Game: React.FC = () => {
                 title="游戏说明"
               >
                 <BookOpen size={20} />
+              </button>
+              <button 
+                onClick={() => {
+                  vibrate(VIBRATION_PATTERNS.LIGHT);
+                  navigate('/bug-report');
+                }}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                title="反馈建议"
+              >
+                <Bug size={20} />
               </button>
               <button 
                 onClick={() => {
