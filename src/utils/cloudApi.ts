@@ -1,7 +1,7 @@
 // 云存档 API 服务
 // 对接后端: http://localhost:3000
 
-const API_BASE = 'http://106.54.50.15:3000/api';
+const API_BASE = 'http://106.54.50.15:80/api';
 
 // 通用请求函数
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
