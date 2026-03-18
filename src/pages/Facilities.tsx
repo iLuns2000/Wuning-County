@@ -142,6 +142,7 @@ const GamblingHouse: React.FC = () => {
   const fortuneLevel = fortuneLevelFromStore || 'normal';
   const [betAmount, setBetAmount] = useState<string>('10');
   const [lastResult, setLastResult] = useState<{ dice: number[], sum: number, win: boolean, msg?: string } | null>(null);
+  const [gambleCount, setGambleCount] = useState(0); // 当日连续赌博次数
   const vibrate = useGameVibrate();
 
   const handleGamble = (choice: 'big' | 'small') => {
@@ -156,50 +157,83 @@ const GamblingHouse: React.FC = () => {
       return;
     }
 
-    let winChance = 0.35;
-    if (fortuneLevel === 'great_blessing') winChance += 0.15;
-    else if (fortuneLevel === 'blessing') winChance += 0.08;
-    else if (fortuneLevel === 'bad_luck') winChance -= 0.05;
-    else if (fortuneLevel === 'terrible_luck') winChance -= 0.10;
+    // 赌注超过10000必输
+    if (amount > 10000) {
+      const rand6 = () => Math.floor(Math.random() * 6) + 1;
+      let d1 = rand6(), d2 = rand6(), d3 = rand6(), sum = d1 + d2 + d3;
+      const isLeopard = d1 === d2 && d2 === d3;
 
-    const abilityBonus = Math.min(0.05, (playerStats.ability / 100) * 0.05);
-    winChance += abilityBonus;
-    if (amount > 100) {
-      const penalty = Math.floor((amount - 100) / 100) * 0.01;
-      winChance -= penalty;
+      let msg = isLeopard
+        ? `豹子！${d1}点数相同，庄家通杀！`
+        : `开${sum}点，你输了...贪婪惹祸，庄家杀熟！`;
+
+      handleEventOption({ money: -amount }, msg);
+      setLastResult({ dice: [d1, d2, d3], sum, win: false, msg });
+      setGambleCount(prev => prev + 1);
+      return;
     }
-    winChance = Math.max(0.1, Math.min(0.9, winChance));
-    Math.random() < winChance;
+
+    let winChance = 0.35;
+
+    // 连续超过20次，赢率固定为0.05
+    if (gambleCount >= 20) {
+      winChance = 0.05;
+    } else {
+      // 运势加成
+      if (fortuneLevel === 'great_blessing') winChance += 0.15;
+      else if (fortuneLevel === 'blessing') winChance += 0.08;
+      else if (fortuneLevel === 'bad_luck') winChance -= 0.05;
+      else if (fortuneLevel === 'terrible_luck') winChance -= 0.10;
+
+      // 能力加成
+      const abilityBonus = Math.min(0.05, (playerStats.ability / 100) * 0.05);
+      winChance += abilityBonus;
+
+      // 大赌注惩罚
+      if (amount > 100) {
+        const penalty = Math.floor((amount - 100) / 100) * 0.01;
+        winChance -= penalty;
+      }
+    }
+
+    winChance = Math.max(0.05, Math.min(0.9, winChance));
+
+    // 根据赢率决定输赢
+    const isWinRoll = Math.random() < winChance;
 
     const rand6 = () => Math.floor(Math.random() * 6) + 1;
     let d1 = rand6(), d2 = rand6(), d3 = rand6(), sum = d1 + d2 + d3;
-
-    // 如需要确保结果符合预期（调试用），这里简化处理
-    // 实际概率已通过 winChance 控制
 
     let resultType: 'big' | 'small' | 'leopard';
     if (sum >= 11) resultType = 'big';
     else resultType = 'small';
 
-    const win = (choice === resultType);
     const isLeopard = d1 === d2 && d2 === d3;
 
     let msg = '';
     let moneyChange = 0;
-    
+    let actualWin = false;
+
     if (isLeopard) {
       msg = `豹子！${d1}点数相同，庄家通杀！`;
       moneyChange = -amount;
-    } else if (win) {
+      actualWin = false;
+    } else if (isWinRoll) {
+      // 赢：按照预期结果生成骰子
       msg = `开${sum}点，你赢了！`;
       moneyChange = amount;
+      actualWin = true;
     } else {
+      // 输：骰子结果与预期相反
+      resultType = resultType === 'big' ? 'small' : 'big';
       msg = `开${sum}点，你输了...`;
       moneyChange = -amount;
+      actualWin = false;
     }
 
     handleEventOption({ money: moneyChange }, msg);
-    setLastResult({ dice: [d1, d2, d3], sum, win: win && !isLeopard, msg });
+    setLastResult({ dice: [d1, d2, d3], sum, win: actualWin, msg });
+    setGambleCount(prev => prev + 1);
   };
 
   return (
@@ -226,9 +260,16 @@ const GamblingHouse: React.FC = () => {
         {/* 运势显示 */}
         {fortuneLevel !== 'normal' && (
           <div className={`text-xs px-2 py-1 rounded ${fortuneLevel.includes('luck') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-            今日运势: {fortuneLevel === 'great_blessing' ? '大吉 +15%' : 
-                      fortuneLevel === 'blessing' ? '吉 +8%' : 
-                      fortuneLevel === 'bad_luck' ? '凶 -5%' : '大凶 -10%'}
+            今日运势: {fortuneLevel === 'great_blessing' ? '大吉 +15%' :
+                     fortuneLevel === 'blessing' ? '吉 +8%' :
+                     fortuneLevel === 'bad_luck' ? '凶 -5%' : '大凶 -10%'}
+          </div>
+        )}
+
+        {/* 赌博次数提示 */}
+        {gambleCount > 0 && (
+          <div className={`text-xs px-2 py-1 rounded ${gambleCount >= 20 ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
+            今日已赌: {gambleCount}次 {gambleCount >= 20 && '(运气透支，赢率降至5%)'}
           </div>
         )}
 

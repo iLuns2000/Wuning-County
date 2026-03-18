@@ -2300,10 +2300,27 @@ export const useGameStore = create<GameStore>()(
             newPlayerStats.debt += interest;
           }
 
-          // Tax Mechanism: 10% tax if money > 1,000,000
+          // Tax Mechanism: Progressive property tax
           let taxMessage = '';
-          if (newPlayerStats.money > 1000000) {
-            const tax = Math.floor(newPlayerStats.money * 0.1);
+          let taxRate = 0;
+          if (newPlayerStats.money > 6000000) {
+            taxRate = 0.5;
+            const tax = Math.floor(newPlayerStats.money * taxRate);
+            newPlayerStats.money -= tax;
+            taxMessage = `【税收】由于家产过盛（超过600万文），官府强制征收了 50% 的财产税，扣除 ${tax} 文。`;
+          } else if (newPlayerStats.money > 3000000) {
+            taxRate = 0.3;
+            const tax = Math.floor(newPlayerStats.money * taxRate);
+            newPlayerStats.money -= tax;
+            taxMessage = `【税收】由于家产丰厚（超过300万文），官府强制征收了 30% 的财产税，扣除 ${tax} 文。`;
+          } else if (newPlayerStats.money > 2000000) {
+            taxRate = 0.2;
+            const tax = Math.floor(newPlayerStats.money * taxRate);
+            newPlayerStats.money -= tax;
+            taxMessage = `【税收】由于家产殷实（超过200万文），官府强制征收了 20% 的财产税，扣除 ${tax} 文。`;
+          } else if (newPlayerStats.money > 1000000) {
+            taxRate = 0.1;
+            const tax = Math.floor(newPlayerStats.money * taxRate);
             newPlayerStats.money -= tax;
             taxMessage = `【税收】由于家产丰厚（超过100万文），官府强制征收了 10% 的财产税，扣除 ${tax} 文。`;
           }
