@@ -130,11 +130,11 @@ type RelationPenalty = {
 };
 
 const npcFactions = [
-  { id: 'yamen', members: ['lou_xianling', 'qi_jiu'] },
+  { id: 'yamen', members: ['lou_xianling', 'qi_jiu', 'xiao_zhou'] },
   { id: 'medical', members: ['song_songsheng', 'san_yue', 'mingyue_qingfeng', 'xiao_he'] },
   { id: 'craft', members: ['wuyan', 'guan_yuhe', 'baizhou', 'luhua'] },
   { id: 'commerce', members: ['yun_xi_npc', 'feng_ge', 'ye_xiao'] },
-  { id: 'neighbors', members: ['lao_li', 'lao_zhang'] },
+  { id: 'neighbors', members: ['lao_li', 'lao_zhang', 'vimi'] },
   { id: 'tea', members: ['cha_du', 'qian_xiaolu', 'ying_yue', 'wan_lai_qiu'] }
 ];
 

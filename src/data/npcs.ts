@@ -1339,5 +1339,74 @@ export const npcs: NPC[] = [
         "面馆还有事，我先去看火了……"
       ]
     }
+  },
+  {
+    id: "xu_xiaoxi",
+    name: "诩小溪",
+    title: "江湖人士",
+    identityCode: "9210310888",
+    description: "江湖少侠",
+    background: "本是官宦之女，遭人陷害，家变逃之，入师门数年学有所成，本下山游玩，后知父母冤屈决心复仇，无意救了仇人之女，将计就计潜入府中拿到关键证据，最终证明了父亲的清白，念其子女无辜，于心不忍，遂求赦免，皇帝不允，劫法场救之安顿好。之后，最后为了躲避追查，来到了无宁县这个据说是世外桃源的地方。",
+    danqing: "普通人装扮",
+    dailyLife: "女扮男装四处溜达，偶尔打抱不平除恶扶弱，偶尔与文人谈诗论曲，风花雪月，最爱去酒馆喝茶聊闲话，目前正经职业是乐器老师但是爱帮县衙忙，逮个贼玩玩。",
+    hiddenTreasure: "长命锁吊坠",
+    chatDialogues: {
+      high: [
+        "我又创作了一首新曲，来听听",
+        "无宁县有了大家，在这生活真好，比世外桃源还好",
+        "今日无事，一起逛街去"
+      ],
+      medium: [
+        "今日又抓到了贼人",
+        "官府又给多少赏银？",
+        "姑娘棋下的真好"
+      ],
+      low: [
+        "好厉害的武功",
+        "我们来比武吧",
+        "我们来下棋吧"
+      ]
+    },
+    interactionEventIds: [
+      "xu_xiaoxi_listen_music",
+      "xu_xiaoxi_wudao",
+      "xu_xiaoxi_chess"
+    ]
+  },
+  {
+    id: "xiao_zhou",
+    name: "小舟",
+    title: "士",
+    identityCode: "9210311129",
+    description: "勾销房-守当官",
+    background: "慕司12年来的无宁县，因有文档管理经验和较出色的数据敏感度，招入县中作文书管理工作，负责处理文书的销除、归档及销毁事务，辅助文书管理的工作",
+    danqing: "伏于案前挠头作文书记录，相貌平平，平时不爱说话，习惯静静坐着，社恐",
+    dailyLife: "闲逛，摸鱼",
+    chatDialogues: {
+      high: ["又来了？我饿了，快去给我炒两菜"],
+      medium: ["你来了？一起坐会儿"],
+      low: ["咋来了？怎有空找我这闲人"]
+    },
+    interactionEventIds: ["xiaozhou_cook", "xiaozhou_slack_off"]
+  },
+  {
+    id: "vimi",
+    name: "Vimi",
+    title: "农",
+    identityCode: "9210310056",
+    description: "百谷园园主",
+    background: "从京城来的隐世人士",
+    danqing: "轻便农民装",
+    dailyLife: "种植各种时令蔬菜，无宁县菜市供应商",
+    hiddenTreasure: "来自天南地北的稀奇玉石",
+    chatDialogues: {
+      high: ["园主！我免费给你锄地吧！"],
+      medium: ["你种的菜长太好啦，看来菜市又要上一批好菜啦。"],
+      low: [
+        "哎呀，园主又去地里呢，真是勤快呀。",
+        "诶，最近天气不好，地里的菜长的不好（心碎）。"
+      ]
+    },
+    interactionEventIds: ["vimi_hoeing", "vimi_weeding"]
   }
 ];

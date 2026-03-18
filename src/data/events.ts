@@ -2976,7 +2976,7 @@ export const npcEvents: GameEvent[] = [
         label: '好吃爱吃 (消耗所有羽毛)',
         message: '叽叽喳喳的欢鸣清脆悦耳，显然吃得格外尽兴！',
         effect: {
-          money: 1000000,
+          money: 20000,
           consumeAllAndProbabilisticReward: {
             consumeItemId: 'startled_magpie_feather',
             probabilityPerItem: 0.01,
@@ -3056,6 +3056,191 @@ export const npcEvents: GameEvent[] = [
       {
         label: '下次吧',
         message: '你摆摆手：“下次吧。”季一藕有些失望地收起了弓箭。'
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_listen_music',
+    title: '邀请听曲',
+    description: '诩小溪轻抚琴弦，微微一笑："今日有兴，是否能请这位朋友共赏此曲？"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '诩小溪的琴声如泉水叮咚，又如行云流水。一曲终了，她笑道："认识你真开心。"',
+        effect: { money: 10, health: 10, relationChange: { xu_xiaoxi: 5 } }
+      },
+      {
+        label: '拒绝',
+        message: '诩小溪轻叹一声："知音难寻啊。"',
+        effect: { relationChange: { xu_xiaoxi: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_wudao',
+    title: '比武挑战',
+    description: '诩小溪摆开架式："哪位英雄好汉愿意上来比划比划？"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '挑战',
+        message: '',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_chess',
+    title: '邀请下棋',
+    description: '诩小溪面前摆着一盘棋，她轻声道："哪位有缘人能破解这盘棋！"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '挑战',
+        message: '',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: "xiaozhou_cook",
+    title: "去给小舟炒两菜",
+    description: "小舟摸着肚子，一脸期待地看着你。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "行，这就给您做个仰望星空",
+        message: "嘶，你这手艺，去罗马都得被拉去埋了种菜",
+        effect: { relationChange: { xiao_zhou: -5 } }
+      },
+      {
+        label: "要我给你炒菜？起来！去给爷炒两菜！",
+        message: "别光吃酒，巴豆炒黄豆多吃点",
+        effect: { health: -5 }
+      },
+      {
+        label: "行，正好我刚学了个新菜，你尝尝",
+        message: "手艺不错，大厨牛逼，做菜累了吧，我给你按按肩，在西林医馆治肩肌劳损学了一手",
+        effect: {
+          relationChange: { xiao_zhou: 5 },
+          health: 15
+        }
+      }
+    ]
+  },
+  {
+    id: "xiaozhou_slack_off",
+    title: "一起翘班摸鱼",
+    description: "你和小舟躲在勾销房的角落里，气氛非常快活。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "你这个月的活是不是明天要交了？",
+        message: "“我去，你不早说！”，小舟连滚带爬回去了干活了，靠着一支笔一盏灯一个夜晚还了主簿大人一个奇迹，之后小舟为了感谢你给你整了两道硬菜下酒",
+        effect: {
+          relationChange: { xiao_zhou: 5 },
+          health: 10
+        }
+      },
+      {
+        label: "去西林医馆按肩",
+        message: "去按肩？那可以工伤报销了",
+        effect: {
+          money: 100,
+          health: 15
+        }
+      },
+      {
+        label: "你身后的是主簿大人吗？",
+        message: "主簿大人吃了没哇，哈哈（尴尬笑），今天的阳光真猛烈啊~哈哈（持续尴尬笑）\n随后你和小舟一并被抓去擦县衙门前的柱子了，获得了锻炼！",
+        effect: {
+          ability: 5,
+          health: 5
+        }
+      }
+    ]
+  },
+  {
+    id: "vimi_hoeing",
+    title: "锄地",
+    description: "百谷园的地需要翻整了，来帮园主一把？",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "日常努力锄地",
+        message: "嘭嘭嘭~碰上石头了，真是烦人！",
+        effect: {
+          ability: 5,
+          money: 300,
+          relationChange: { vimi: 10 },
+          health: -10
+        }
+      },
+      {
+        label: "雨后锄地",
+        message: "刚刚下过雨，这地就是好挖呀（开心）",
+        effect: {
+          ability: 5,
+          money: 180,
+          relationChange: { vimi: 6 },
+          health: -5
+        }
+      },
+      {
+        label: "晴天傍晚锄地",
+        message: "什么时候下雨啊，这地硬邦邦的，太累人了。",
+        effect: {
+          ability: 10,
+          money: 350,
+          relationChange: { vimi: 10 },
+          health: -10
+        }
+      }
+    ]
+  },
+  {
+    id: "vimi_weeding",
+    title: "除草",
+    description: "菜园里的草长得太快了，快来帮忙拔草。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "努力拔草中",
+        message: "喂喂喂，你可别把我菜当草拔了。",
+        effect: {
+          ability: 2,
+          money: 50,
+          relationChange: { vimi: -5 },
+          health: -5
+        }
+      },
+      {
+        label: "拔呀拔呀拔呀",
+        message: "这草长太快了，拔的累死了",
+        effect: {
+          ability: 5,
+          money: 300,
+          relationChange: { vimi: 10 },
+          health: -5
+        }
+      },
+      {
+        label: "打除草剂中",
+        message: "你！你！你！你已被我拉进黑名单。",
+        effect: {
+          ability: -20,
+          money: -200,
+          relationChange: { vimi: -50 },
+          health: -5
+        }
       }
     ]
   }

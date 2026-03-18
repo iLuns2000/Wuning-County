@@ -96,29 +96,29 @@ export const Leaderboard: React.FC = () => {
   const isOnLeaderboard = hasUserJoined || !!currentUserRank;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 p-4">
+    <div className="p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50">
       {/* 头部 */}
-      <div className="max-w-md mx-auto mb-4">
+      <div className="mx-auto mb-4 max-w-md">
         <Link to="/" className="inline-flex items-center text-indigo-700 hover:text-indigo-500">
-          <ArrowLeft className="w-5 h-5 mr-1" />
+          <ArrowLeft className="mr-1 w-5 h-5" />
           返回首页
         </Link>
       </div>
 
-      <div className="max-w-md mx-auto space-y-4">
+      <div className="mx-auto space-y-4 max-w-md">
         {/* 标题 */}
-        <div className="text-center py-4">
-          <h1 className="text-2xl font-bold text-indigo-900 flex items-center justify-center gap-2">
+        <div className="py-4 text-center">
+          <h1 className="flex gap-2 justify-center items-center text-2xl font-bold text-indigo-900">
             <Medal className="w-8 h-8 text-indigo-600" />
             富豪榜
           </h1>
-          <p className="text-indigo-700 text-sm mt-1">武宁县富甲天下排行</p>
+          <p className="mt-1 text-sm text-indigo-700">无宁县富甲天下排行</p>
         </div>
 
         {/* 上榜状态 - 官府风格卡片 */}
-        <div className="bg-white rounded-lg shadow-lg border border-indigo-100 overflow-hidden">
-          <div className="bg-indigo-50 px-4 py-3 border-b border-indigo-100">
-            <h2 className="font-bold text-indigo-900 flex items-center gap-2">
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
+          <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100">
+            <h2 className="flex gap-2 items-center font-bold text-indigo-900">
               <Trophy className="w-4 h-4 text-indigo-600" />
               我的榜帖
             </h2>
@@ -126,14 +126,14 @@ export const Leaderboard: React.FC = () => {
           <div className="p-4">
             {isOnLeaderboard ? (
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-green-600 mb-3">
+                <div className="flex gap-2 justify-center items-center mb-3 text-green-600">
                   <Trophy className="w-6 h-6" />
                   <span className="font-bold">榜上有名</span>
                 </div>
-                <div className="text-indigo-900 mb-2">
-                  当前财富: <span className="font-bold text-xl text-indigo-700">{currentUserRank?.money.toLocaleString()}</span> 文
+                <div className="mb-2 text-indigo-900">
+                  当前财富: <span className="text-xl font-bold text-indigo-700">{currentUserRank?.money.toLocaleString()}</span> 文
                 </div>
-                <div className="text-indigo-600 text-sm mb-4">
+                <div className="mb-4 text-sm text-indigo-600">
                   排名: 第 <span className="font-bold">{currentUserRank?.rank}</span> 名
                 </div>
                 <div className="flex gap-2 justify-center">
@@ -149,7 +149,7 @@ export const Leaderboard: React.FC = () => {
                         alert('同步失败');
                       }
                     }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1 transition-colors"
+                    className="flex gap-1 items-center px-4 py-2 text-white bg-indigo-600 rounded-lg transition-colors hover:bg-indigo-700"
                   >
                     <RefreshCw className="w-4 h-4" />
                     同步财富
@@ -159,7 +159,7 @@ export const Leaderboard: React.FC = () => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       handleLeaveLeaderboard();
                     }}
-                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 flex items-center gap-1 transition-colors"
+                    className="flex gap-1 items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200"
                   >
                     <UserMinus className="w-4 h-4" />
                     下榜
@@ -168,11 +168,11 @@ export const Leaderboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-indigo-800 mb-4">登榜展示您的万贯家财</div>
-                <div className="text-lg text-indigo-900 font-medium mb-2">
+                <div className="mb-4 text-indigo-800">登榜展示您的万贯家财</div>
+                <div className="mb-2 text-lg font-medium text-indigo-900">
                   角色名: {playerName || `游客`}
                 </div>
-                <div className="text-sm text-indigo-600 mb-4">
+                <div className="mb-4 text-sm text-indigo-600">
                   当前财富: {money.toLocaleString()} 文
                 </div>
                 <button
@@ -181,7 +181,7 @@ export const Leaderboard: React.FC = () => {
                     handleRegisterAndJoin();
                   }}
                   disabled={registering}
-                  className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                  className="flex gap-2 justify-center items-center px-4 py-3 w-full text-white bg-indigo-600 rounded-lg transition-colors hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <UserPlus className="w-5 h-5" />
                   {registering ? '提交中...' : (hasUserJoined ? '重新上榜' : '我要上榜')}
@@ -192,9 +192,9 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 排行榜列表 - 官府风格 */}
-        <div className="bg-white rounded-lg shadow-lg border border-indigo-100 overflow-hidden">
-          <div className="bg-indigo-600 px-4 py-3">
-            <h2 className="font-bold text-white flex items-center gap-2">
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
+          <div className="px-4 py-3 bg-indigo-600">
+            <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
               富豪排行 TOP {leaderboard.length + 1} (每页50人)
             </h2>
@@ -202,7 +202,7 @@ export const Leaderboard: React.FC = () => {
           
           {loading ? (
             <div className="p-8 text-center text-indigo-500">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <RefreshCw className="mx-auto mb-2 w-6 h-6 animate-spin" />
               官府正在整理榜文...
             </div>
           ) : leaderboard.length === 0 ? (
@@ -241,10 +241,10 @@ export const Leaderboard: React.FC = () => {
                   }`}>
                     {entry.rank + 1}
                   </div>
-                  <div className="ml-3 flex-1">
+                  <div className="flex-1 ml-3">
                     <div className="font-medium text-indigo-900">
                       {entry.nickname || '匿名商贾'}
-                      {entry.user_id === deviceId && <span className="text-indigo-500 text-sm ml-1">(您)</span>}
+                      {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500">(您)</span>}
                     </div>
                   </div>
                   <div className="text-right">
@@ -258,7 +258,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 提示信息 */}
-        <div className="text-center text-sm text-indigo-500 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+        <div className="p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100">
           <p>📌 上榜后每日自动同步财富至官府榜文</p>
         </div>
       </div>

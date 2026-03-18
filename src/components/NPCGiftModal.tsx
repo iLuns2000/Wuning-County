@@ -8,8 +8,8 @@ import {
   getNPCGiftDescription,
   getGiftCategoryLabel,
 } from '@/services/npcGiftInteractionEngine';
-import { hasNPCGiftRule } from '@/data/npcGiftInteractionRules';
-import { Item, GiftCategory } from '@/types/game';
+import { hasNPCGiftRule, GiftCategory } from '@/data/npcGiftInteractionRules';
+import { Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface NPCGiftModalProps {

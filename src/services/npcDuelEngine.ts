@@ -9,6 +9,27 @@ import { GameState, PlayerStats } from '@/types/game';
 const JI_YI_OU_ARCHERY_BASE = 60;
 
 /**
+ * 模拟一次 NPC 射箭对战
+ */
+export interface DuelOutcome {
+  playerWon: boolean;
+  isDraw?: boolean;
+  playerScore: number;
+  npcScore: number;
+  effect: {
+    money: number;
+    experience?: number;
+    accuracy?: number;
+    health?: number;
+    relationChange?: Record<string, number>;
+  };
+  logMessage: string;
+  winMessage?: string;
+  loseMessage?: string;
+  drawMessage?: string;
+}
+
+/**
  * 计算玩家射箭胜率
  * 综合考虑：能力、准头、阅历
  * @param player 玩家属性
@@ -19,8 +40,6 @@ export function calcArcheryWinRate(
   player: PlayerStats, 
   npcLevel: number = JI_YI_OU_ARCHERY_BASE
 ): number {
-  // 玩家综合水平计算
-  // 综合 = 0.35 * 能力 + 0.25 * 准头 + 0.2 * 阅历/100 + 0.2 * 关系/100
   const experienceFactor = Math.min(1, (player.experience || 0) / 100);
   
   const playerScore = (
@@ -29,31 +48,13 @@ export function calcArcheryWinRate(
     0.2 * experienceFactor * 100
   );
   
-  // 胜率 = 玩家得分 / (玩家得分 + NPC得分)
-  // 添加基础随机性 (±10%)
   const randomFactor = (Math.random() - 0.5) * 0.2;
   
   let winRate = playerScore / (playerScore + npcLevel);
   
-  // clamp 到 5% - 95% 范围
   winRate = Math.max(0.05, Math.min(0.95, winRate + randomFactor));
   
   return winRate;
-}
-
-/**
- * 模拟一次 NPC 射箭对战
- */
-export interface DuelOutcome {
-  playerWon: boolean;
-  playerScore: number;
-  npcScore: number;
-  effect: {
-    money: number;
-    experience: number;
-    accuracy: number;
-  };
-  logMessage: string;
 }
 
 /**
@@ -65,14 +66,12 @@ export function simulateJiYiOuArcheryDuel(state: GameState): DuelOutcome {
   const random = Math.random();
   const playerWon = random < winRate;
   
-  // 计算得分
   const playerScore = Math.floor(50 + Math.random() * 50 + (player.accuracy || 0) * 0.3);
   const npcScore = Math.floor(50 + Math.random() * 50);
   
   if (playerWon) {
-    // 季一藕赢了：玩家获得金钱和阅历
     return {
-      playerWon: false,
+      playerWon: true,
       playerScore,
       npcScore,
       effect: {
@@ -80,12 +79,11 @@ export function simulateJiYiOuArcheryDuel(state: GameState): DuelOutcome {
         experience: 10,
         accuracy: 0
       },
-      logMessage: `切磋结束，季一藕略胜一筹！你获得银两+20，阅历+10。`
+      logMessage: `切磋结束，你赢了季一藕！获得银两+20，阅历+10。`
     };
   } else {
-    // 玩家赢了：季一藕获得金钱，玩家获得准头
     return {
-      playerWon: true,
+      playerWon: false,
       playerScore,
       npcScore,
       effect: {
@@ -93,7 +91,7 @@ export function simulateJiYiOuArcheryDuel(state: GameState): DuelOutcome {
         experience: 0,
         accuracy: 20
       },
-      logMessage: `切磋结束，你赢了季一藕！虽输了10文钱，但准头+20！`
+      logMessage: `切磋结束，季一藕略胜一筹！虽输了10文钱，但准头+20！`
     };
   }
 }
@@ -120,4 +118,78 @@ export function incrementArcheryDuelCount(state: GameState): {
     newCount,
     huntUnlocked
   };
+}
+
+/**
+ * 诩小溪比武对战结果 - 50%概率
+ */
+export function simulateXuXiaoxiWudaoDuel(state: GameState): DuelOutcome {
+  const random = Math.random();
+  const playerWon = random < 0.5;
+  
+  const playerScore = Math.floor(50 + Math.random() * 50);
+  const npcScore = Math.floor(50 + Math.random() * 50);
+  
+  if (playerWon) {
+    return {
+      playerWon: true,
+      playerScore,
+      npcScore,
+      effect: {
+        money: 10,
+        health: 5
+      },
+      winMessage: '诩小溪抱拳道："（姑娘/公子）好功夫，今日战的痛快！"',
+      logMessage: '比武胜利！金钱+10，健康+5，好感度+5'
+    };
+  } else {
+    return {
+      playerWon: false,
+      playerScore,
+      npcScore,
+      effect: {
+        money: 0,
+        health: 0
+      },
+      loseMessage: '诩小溪淡淡道："继续练吧，你的功夫还不到家，下次希望看见你的进步。"',
+      logMessage: '比武认输。好感度+2'
+    };
+  }
+}
+
+/**
+ * 诩小溪下棋对战结果 - 50%概率
+ */
+export function simulateXuXiaoxiChessDuel(state: GameState): DuelOutcome {
+  const random = Math.random();
+  const playerWon = random < 0.5;
+  
+  const playerScore = Math.floor(50 + Math.random() * 50);
+  const npcScore = Math.floor(50 + Math.random() * 50);
+  
+  if (playerWon) {
+    return {
+      playerWon: true,
+      playerScore,
+      npcScore,
+      effect: {
+        money: 10,
+        health: 5
+      },
+      winMessage: '诩小溪鼓掌笑道："恭喜你赢了，看吧，很多事情看起来难，其实只要你去做也能解决，难的是勇于挑战的决心！"',
+      logMessage: '下棋胜利！金钱+10，健康+5，好感度+5'
+    };
+  } else {
+    return {
+      playerWon: false,
+      playerScore,
+      npcScore,
+      effect: {
+        money: 5,
+        health: 0
+      },
+      loseMessage: '诩小溪安慰道："没关系，下次继续努力，你很有天赋。"',
+      logMessage: '下棋认输。金钱+5，好感度+2'
+    };
+  }
 }

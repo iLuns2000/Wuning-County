@@ -1,8 +1,6 @@
 export type RoleType = 'magistrate' | 'merchant' | 'hero';
-export type WeatherType = 'sunny' | 'cloudy' | 'rain_light' | 'rain_heavy' | 'snow_light' | 'snow_heavy';
 
-// 重新导出 GiftCategory 类型（定义在 npcGiftInteractionRules.ts 中）
-export type { GiftCategory } from '@/data/npcGiftInteractionRules';
+export type WeatherType = 'sunny' | 'cloudy' | 'rain_light' | 'rain_heavy' | 'snow_light' | 'snow_heavy';
 
 export interface PlayerStats {
   money: number;
@@ -10,8 +8,8 @@ export interface PlayerStats {
   ability: number;
   health: number;
   experience: number;
-  accuracy: number; // 准头属性，用于射箭等远程活动
-  debt: number; // New field for bank loans
+  debt: number;
+  accuracy: number;
 }
 
 export interface Talent {
@@ -144,12 +142,12 @@ export interface PigeonRaceRecord {
 export interface DailyActionCounts {
   work: number;
   rest: number;
-  chatTotal: number; // Total chats today across all NPCs
-  fortune: number; // Daily fortune telling count
-  explore: number; // Daily exploration count
-  caveFilled: boolean; // Whether the cave has been filled today
-  pigeonRace: number; // 赛鸽比赛次数（每日上限 1）
-  extraDefenseCount: number; // 额外巡防维护次数（每日上限2次，每次100文）
+  chatTotal: number;
+  fortune: number;
+  explore: number;
+  caveFilled: boolean;
+  pigeonRace: number;
+  extraDefenseCount: number;
 }
 
 export interface NPCInteractionState {
@@ -202,7 +200,7 @@ export interface GameState {
   isMoGuRenaming: boolean; // Whether the user is currently renaming at Mo Gu
   collectedScrolls: Scroll[];
   activePolicyId?: string; // Currently active policy
-  inventory: Record<string, number>; // 物品ID -> 数量（压缩格式）
+  inventory: Record<string, number>; // itemId -> count, 优化存储
   equippedApparel: Partial<Record<ApparelSlot, string>>;
   equippedAccessories: string[];
   flags: Record<string, any>;
@@ -247,12 +245,12 @@ export interface GameState {
   // 战火警报
   raidAlert?: boolean; // 当日发生山贼夜袭时为 true，展示警报动画后清除
 
-  // 季一藕医馆动物互动系统
-  clinicAnimals?: ClinicAnimalState;
-
   // Debuff 系统
   activeDebuffs: ActiveDebuff[];
   lastDebuffCheckDay: number;
+
+  // 医馆动物
+  clinicAnimals: ClinicAnimalState;
 }
 
 export interface DisasterState {
@@ -264,11 +262,10 @@ export interface DisasterState {
 
 export interface OfficeState {
   level: number;
-  upgradeStartTime?: number; // timestamp
-  upgradeEndTime?: number; // timestamp
+  upgradeStartTime?: number;
+  upgradeEndTime?: number;
   isUpgrading: boolean;
-  // 自动巡逻系统
-  autoPatrolDaysLeft?: number; // 剩余自动巡逻天数
+  autoPatrolDaysLeft?: number;
 }
 
 export interface LeekOrder {
@@ -283,14 +280,11 @@ export interface LeekOrder {
 export interface Effect {
   playerStats?: Partial<PlayerStats>;
   countyStats?: Partial<CountyStats>;
-  // Flat player stats
   money?: number;
   reputation?: number;
   ability?: number;
   health?: number;
   experience?: number;
-  accuracy?: number;
-  // Flat county stats
   economy?: number;
   order?: number;
   culture?: number;
@@ -298,15 +292,20 @@ export interface Effect {
   
   itemsAdd?: string[];
   itemsRemove?: string[];
-  /** 概率获得物品，格式：[{ itemId: 'item_id', probability: 0.3, count?: 1 }] */
-  probabilisticItemsAdd?: Array<{ itemId: string; probability: number; count?: number }>;
-  /** 百分比减少资源，格式：[{ type: 'health'|'money', percent: 0.5 }] */
-  percentDeduct?: Array<{ type: 'health' | 'money'; percent: number }>;
-  /** 消耗所有指定物品并根据数量计算概率获得物品，格式：{ consumeItemId: '羽毛id', probabilityPerItem: 0.1, minProbability: 0.01, maxProbability: 0.1, rewardItemId: '奖励物品id', rewardItemCount?: 1 } */
-  consumeAllAndProbabilisticReward?: { consumeItemId: string; probabilityPerItem: number; minProbability: number; maxProbability: number; rewardItemId: string; rewardItemCount?: number };
   flagsSet?: Record<string, any>;
   flagsIncrement?: string[];
   relationChange?: Record<string, number>;
+  probabilisticItemsAdd?: Array<{ itemId: string; weight?: number; probability: number; count?: number }>;
+  consumeAllAndProbabilisticReward?: {
+    consumeItemId: string;
+    probabilityPerItem: number;
+    minProbability: number;
+    maxProbability: number;
+    rewardItemId: string;
+    rewardItemCount: number;
+  };
+  accuracy?: number;
+  percentDeduct?: Array<{ type: 'money' | 'health'; percent: number }>;
 }
 
 export interface EventOption {
@@ -331,12 +330,11 @@ export interface GameEvent {
     minMoney?: number;
     minAbility?: number;
     minDay?: number;
-    probability?: number; // 0-1
+    probability?: number;
     requiredRole?: RoleType;
     season?: string;
-    /** 需要的物品ID和数量 */
-    requiredItems?: Record<string, number>;
     custom?: (state: GameState) => boolean;
+    requiredItems?: Record<string, number>;
   };
   options: EventOption[];
 }
@@ -414,31 +412,6 @@ export interface LeekPlot {
   quality?: number;
   ready?: boolean;
   fertility?: number; // 0-100
-}
-
-// ── 季一藕医馆动物互动系统 ────────────────────────────────
-
-export interface ClinicAnimalState {
-  /** 今日喂小啾次数 */
-  birdFeedToday: number;
-  /** 小啾好感（喂食累计） */
-  birdFavor: number;
-  /** 逗鸟/教学累计（用于"咕咕嘎"） */
-  birdTeaseOrTeachCount: number;
-  /** 每句学习进度: phrase -> count (需要 ≥10 次才学会) */
-  birdLearnProgress: Record<string, number>;
-  /** 已学会语录（FIFO，上限 20） */
-  birdLearnedPhrases: string[];
-  /** 教脏话被抓次数 */
-  swearTeachCaughtCount: number;
-  /** 历史学狗叫总次数 */
-  dogBarkPracticeTotal: number;
-  /** 今日学狗叫次数（称号后上限 2） */
-  dogBarkToday: number;
-  /** 动物互动封禁到哪一天 */
-  animalInteractionBannedUntilDay: number;
-  /** 医馆禁入到哪一天（"一意孤行"） */
-  clinicEntryBannedUntilDay: number;
 }
 
 // ── Debuff 系统 ──────────────────────────────────────────
@@ -531,16 +504,23 @@ export interface DebuffConfig {
 
 /** 运行中的 Debuff 实例（存入 GameState） */
 export interface ActiveDebuff {
-  /** 对应 DebuffConfig.id */
   configId: string;
-  /** 触发于第几天 */
   triggeredDay: number;
-  /** 剩余天数（-1 = 无限直到手动解除） */
   remainingDays: number;
-  /** 当前叠层数（从 1 开始） */
   stacks: number;
-  /** 是否已应用即时效果 */
   immediateApplied: boolean;
-  /** 触发来源描述（用于日志） */
   source?: string;
+}
+
+export interface ClinicAnimalState {
+  birdFeedToday: number;
+  birdFavor: number;
+  birdTeaseOrTeachCount: number;
+  birdLearnProgress: Record<string, number>;
+  birdLearnedPhrases: string[];
+  swearTeachCaughtCount: number;
+  dogBarkPracticeTotal: number;
+  dogBarkToday: number;
+  animalInteractionBannedUntilDay: number;
+  clinicEntryBannedUntilDay: number;
 }
