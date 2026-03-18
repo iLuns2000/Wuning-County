@@ -13,6 +13,7 @@ import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
 import { items } from '@/data/items';
+import { snacks } from '@/data/snacks';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
@@ -21,6 +22,23 @@ import { getJiYiOuGiftCategory, getJiYiOuGiftReward, rollJiYiOuLoreDrop } from '
 import { buildGiftOutcome } from '@/services/npcGiftInteractionEngine';
 import { hasNPCGiftRule } from '@/data/npcGiftInteractionRules';
 import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
+import {
+  feedBird,
+  teaseBird,
+  teachBirdPhrase,
+  interactDog,
+  practiceDogBark,
+  playBirdPhrase,
+  canEnterClinic,
+  canInteractAnimals,
+  canTeachBird,
+  canPracticeDogBark,
+  getClinicAnimalSummary,
+  getBirdLearnedPhrases,
+  ClinicAnimalActionResult
+} from '@/services/clinicAnimalInteractionEngine';
+import { getDefaultClinicAnimalState } from '@/data/clinicAnimalRules';
+import { BirdFoodType } from '@/data/clinicAnimalRules';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -112,11 +130,11 @@ type RelationPenalty = {
 };
 
 const npcFactions = [
-  { id: 'yamen', members: ['lou_xianling', 'qi_jiu'] },
+  { id: 'yamen', members: ['lou_xianling', 'qi_jiu', 'xiao_zhou'] },
   { id: 'medical', members: ['song_songsheng', 'san_yue', 'mingyue_qingfeng', 'xiao_he'] },
   { id: 'craft', members: ['wuyan', 'guan_yuhe', 'baizhou', 'luhua'] },
   { id: 'commerce', members: ['yun_xi_npc', 'feng_ge', 'ye_xiao'] },
-  { id: 'neighbors', members: ['lao_li', 'lao_zhang'] },
+  { id: 'neighbors', members: ['lao_li', 'lao_zhang', 'vimi'] },
   { id: 'tea', members: ['cha_du', 'qian_xiaolu', 'ying_yue', 'wan_lai_qiu'] }
 ];
 
@@ -432,6 +450,19 @@ interface GameStore extends GameState {
   giftFoodToJiYiOu: (itemId: string) => { success: boolean; message: string };
   checkVoiceStatus: () => boolean;
 
+  // 季一藕医馆动物互动 Methods
+  feedClinicBird: (foodType: BirdFoodType) => { success: boolean; message: string };
+  teaseClinicBird: () => { success: boolean; message: string };
+  teachClinicBirdPhrase: (phrase: string) => { success: boolean; message: string };
+  interactClinicDog: (actionId: 'pet' | 'feed') => { success: boolean; message: string };
+  practiceClinicDogBark: (hasPatients: boolean) => { success: boolean; message: string };
+  playClinicBirdPhrase: () => { success: boolean; message: string };
+  getClinicAnimalStatus: () => ReturnType<typeof getClinicAnimalSummary>;
+  canEnterClinic: () => { allowed: boolean; reason?: string };
+  canInteractClinicAnimals: () => { allowed: boolean; reason?: string };
+  canTeachClinicBird: () => { allowed: boolean; reason?: string };
+  canPracticeClinicDogBark: (hasPatients: boolean) => { allowed: boolean; reason?: string };
+
   // Profile Methods
   setPlayerProfile: (profile: Partial<PlayerProfile>) => void;
   setIsMoGuRenaming: (value: boolean) => void;
@@ -601,6 +632,9 @@ export const useGameStore = create<GameStore>()(
       // Debuff 系统初始状态
       activeDebuffs: [],
       lastDebuffCheckDay: 0,
+
+      // 季一藕医馆动物互动初始状态
+      clinicAnimals: getDefaultClinicAnimalState(),
 
       markInteraction: () => {
         const state = get();
@@ -1065,7 +1099,8 @@ export const useGameStore = create<GameStore>()(
           playerStats: { ...state.playerStats, money: state.playerStats.money - cost },
           inventory: invAdd(state.inventory, itemId)
         }));
-        const itemName = items.find(i => i.id === itemId)?.name || '物品';
+        // 优先从 items 查找，否则从 snacks 查找
+        const itemName = items.find(i => i.id === itemId)?.name || snacks.find(s => s.id === itemId)?.name || '物品';
         get().addLog(`【市集】花费 ${cost} 文购买了 ${itemName}。`);
       },
 
@@ -1169,7 +1204,8 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         if (!invHas(state.inventory, itemId)) return;
 
-        const item = items.find(i => i.id === itemId);
+        // 优先从 items 查找，否则从 snacks 查找
+        const item = items.find(i => i.id === itemId) || snacks.find(s => s.id === itemId);
         if (item && item.effect) {
           get().handleEventOption(item.effect, `使用了 ${item.name}`);
         } else {
@@ -1636,6 +1672,217 @@ export const useGameStore = create<GameStore>()(
         );
 
         return { success: true, message: '' };
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // 季一藕医馆动物互动 Actions
+      // ─────────────────────────────────────────────────────────
+
+      // 门禁检查
+      canEnterClinic: () => {
+        const state = get();
+        return canEnterClinic(state);
+      },
+
+      canInteractClinicAnimals: () => {
+        const state = get();
+        return canInteractAnimals(state);
+      },
+
+      canTeachClinicBird: () => {
+        const state = get();
+        return canTeachBird(state);
+      },
+
+      canPracticeClinicDogBark: (hasPatients: boolean) => {
+        const state = get();
+        return canPracticeDogBark(state, hasPatients);
+      },
+
+      getClinicAnimalStatus: () => {
+        const state = get();
+        return getClinicAnimalSummary(state);
+      },
+
+      // 喂小啾
+      feedClinicBird: (foodType: BirdFoodType) => {
+        const state = get();
+        const clinicCheck = canInteractAnimals(state);
+        if (!clinicCheck.allowed) {
+          return { success: false, message: clinicCheck.reason || '无法与动物互动' };
+        }
+
+        const result = feedBird(state, foodType);
+        if (result.success && result.effect) {
+          get().handleEventOption(result.effect, result.message);
+
+          // 更新状态
+          if (result.statePatch) {
+            set(prev => ({
+              clinicAnimals: {
+                ...getDefaultClinicAnimalState(),
+                ...(prev.clinicAnimals || {}),
+                ...result.statePatch
+              }
+            }));
+          }
+        }
+
+        return { success: result.success, message: result.message };
+      },
+
+      // 逗鸟
+      teaseClinicBird: () => {
+        const state = get();
+        const clinicCheck = canInteractAnimals(state);
+        if (!clinicCheck.allowed) {
+          return { success: false, message: clinicCheck.reason || '无法与动物互动' };
+        }
+
+        const result = teaseBird(state);
+        if (result.success && result.effect) {
+          get().handleEventOption(result.effect, result.message);
+
+          // 更新状态
+          if (result.statePatch) {
+            set(prev => ({
+              clinicAnimals: {
+                ...getDefaultClinicAnimalState(),
+                ...(prev.clinicAnimals || {}),
+                ...result.statePatch
+              }
+            }));
+          }
+
+          // 解锁称号
+          if (result.unlockedTitle) {
+            const titleId = result.unlockedTitle === '咕咕嘎' ? 'title_gugu_ga' : 
+                           result.unlockedTitle === '汪汪汪，谁家的小狗' ? 'title_wang_wang_wang' :
+                           result.unlockedTitle === '一意孤行' ? 'title_yi_yi_gu_xing' : null;
+            if (titleId && !state.achievements.includes(titleId)) {
+              set(prev => ({
+                achievements: [...prev.achievements, titleId],
+                latestUnlockedAchievementId: titleId
+              }));
+            }
+          }
+        }
+
+        return { success: result.success, message: result.message };
+      },
+
+      // 教小啾说话
+      teachClinicBirdPhrase: (phrase: string) => {
+        const state = get();
+
+        // 先检查能否进入医馆
+        const clinicCheck = canEnterClinic(state);
+        if (!clinicCheck.allowed) {
+          return { success: false, message: clinicCheck.reason || '无法进入医馆' };
+        }
+
+        const animalCheck = canInteractAnimals(state);
+        if (!animalCheck.allowed) {
+          return { success: false, message: animalCheck.reason || '无法与动物互动' };
+        }
+
+        const teachCheck = canTeachBird(state);
+        if (!teachCheck.allowed) {
+          return { success: false, message: teachCheck.reason || '无法教小啾说话' };
+        }
+
+        const result = teachBirdPhrase(state, phrase);
+        if (result.success && result.effect) {
+          get().handleEventOption(result.effect, result.message);
+
+          // 更新状态
+          if (result.statePatch) {
+            set(prev => ({
+              clinicAnimals: {
+                ...getDefaultClinicAnimalState(),
+                ...(prev.clinicAnimals || {}),
+                ...result.statePatch
+              }
+            }));
+          }
+
+          // 解锁称号
+          if (result.unlockedTitle) {
+            const titleId = result.unlockedTitle === '咕咕嘎' ? 'title_gugu_ga' :
+                           result.unlockedTitle === '一意孤行' ? 'title_yi_yi_gu_xing' : null;
+            if (titleId && !state.achievements.includes(titleId)) {
+              set(prev => ({
+                achievements: [...prev.achievements, titleId],
+                latestUnlockedAchievementId: titleId
+              }));
+            }
+          }
+        }
+
+        return { success: result.success, message: result.message };
+      },
+
+      // 互动小狗（抚摸/喂食）
+      interactClinicDog: (actionId: 'pet' | 'feed') => {
+        const state = get();
+        const clinicCheck = canInteractAnimals(state);
+        if (!clinicCheck.allowed) {
+          return { success: false, message: clinicCheck.reason || '无法与动物互动' };
+        }
+
+        const result = interactDog(state, actionId);
+        if (result.success && result.effect) {
+          get().handleEventOption(result.effect, result.message);
+        }
+
+        return { success: result.success, message: result.message };
+      },
+
+      // 学狗叫
+      practiceClinicDogBark: (hasPatients: boolean) => {
+        const state = get();
+
+        // 先检查能否进入医馆
+        const clinicCheck = canEnterClinic(state);
+        if (!clinicCheck.allowed) {
+          return { success: false, message: clinicCheck.reason || '无法进入医馆' };
+        }
+
+        const result = practiceDogBark(state, hasPatients);
+        if (result.success && result.effect) {
+          get().handleEventOption(result.effect, result.message);
+
+          // 更新状态
+          if (result.statePatch) {
+            set(prev => ({
+              clinicAnimals: {
+                ...getDefaultClinicAnimalState(),
+                ...(prev.clinicAnimals || {}),
+                ...result.statePatch
+              }
+            }));
+          }
+
+          // 解锁称号
+          if (result.unlockedTitle) {
+            const titleId = 'title_wang_wang_wang';
+            if (!state.achievements.includes(titleId)) {
+              set(prev => ({
+                achievements: [...prev.achievements, titleId],
+                latestUnlockedAchievementId: titleId
+              }));
+            }
+          }
+        }
+
+        return { success: result.success, message: result.message };
+      },
+
+      // 播放小啾语录
+      playClinicBirdPhrase: () => {
+        const state = get();
+        const result = playBirdPhrase(state);
+        return { success: result.success, message: result.message };
       },
 
       // 通用 NPC 赠礼函数
@@ -2274,6 +2521,12 @@ export const useGameStore = create<GameStore>()(
             dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
+            // 季一藕医馆动物互动每日重置
+            clinicAnimals: {
+              ...(state.clinicAnimals || getDefaultClinicAnimalState()),
+              birdFeedToday: 0,
+              dogBarkToday: 0
+            },
             currentEvent: null,
             isVoiceLost: isVoiceLost,
             playerStats: { ...newPlayerStats, experience: (newPlayerStats.experience || 0) + 10 },

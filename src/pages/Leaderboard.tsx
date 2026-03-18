@@ -1,32 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal } from 'lucide-react';
-import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney } from '@/utils/cloudApi';
-import { LeaderboardEntry } from '@/utils/cloudApi';
+import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal, Heart } from 'lucide-react';
+import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, setMoney, removeFromLeaderboard, deleteUser, getFavorabilityLeaderboard, setFavorability, getUserFavorabilityInfo } from '@/utils/cloudApi';
+import { LeaderboardEntry, FavorabilityLeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
+type LeaderboardType = 'money' | 'favorability';
+
 export const Leaderboard: React.FC = () => {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboard, setLeaderboard] = useState<(LeaderboardEntry | FavorabilityLeaderboardEntry)[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasUserJoined, setHasUserJoined] = useState(false);
+  const [leaderboardType, setLeaderboardType] = useState<LeaderboardType>('money');
   
   const vibrate = useGameVibrate();
   
-  // 从 gameStore 获取金钱数
+  // 从 gameStore 获取金钱数和好感度
   const playerStats = useGameStore((state) => state.playerStats);
   const money = playerStats?.money || 0;
   const playerName = useGameStore((state) => state.playerProfile)?.name || '';
+  const npcRelations = useGameStore((state) => state.npcRelations) || {};
+  
+  // 楼县令好感度（单个NPC）
+  const countyMagistrateFavorability = npcRelations['楼县令'] || 0;
   
   const deviceId = getDeviceId();
+  const PAGE_SIZE = 50;
 
   // 加载排行榜
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = async (type: LeaderboardType) => {
     setLoading(true);
     try {
-      const result = await getLeaderboard(20);
-      if (result.success) {
-        setLeaderboard(result.leaderboard);
+      let result;
+      if (type === 'money') {
+        result = await getLeaderboard(PAGE_SIZE);
+        if (result.success) {
+          setLeaderboard(result.leaderboard);
+          const isOnBoard = result.leaderboard.some((e: LeaderboardEntry) => e.user_id === deviceId);
+          setHasUserJoined(isOnBoard);
+        }
+      } else {
+        result = await getFavorabilityLeaderboard(PAGE_SIZE);
+        if (result.success) {
+          setLeaderboard(result.leaderboard);
+          const isOnBoard = result.leaderboard.some((e: FavorabilityLeaderboardEntry) => e.user_id === deviceId);
+          setHasUserJoined(isOnBoard);
+        }
       }
     } catch (e) {
       console.error('加载排行榜失败:', e);
@@ -35,28 +57,29 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  // 加载排行榜
+  // 切换排行榜类型
+  const handleTypeChange = (type: LeaderboardType) => {
+    setLeaderboardType(type);
+    loadLeaderboard(type);
+  };
 
   useEffect(() => {
-    loadLeaderboard();
+    loadLeaderboard(leaderboardType);
   }, []);
 
-  // 注册/更新用户并上榜
-  const handleRegisterAndJoin = async () => {
-    // 直接使用游戏中的角色名称
+  // 注册/更新用户并上榜（财富榜）
+  const handleRegisterAndJoinMoney = async () => {
     const displayName = playerName || `玩家${deviceId.slice(-4)}`;
     
     setRegistering(true);
     try {
-      // 先注册用户
       await registerUser(deviceId, displayName);
       setUserNickname(displayName);
+      await setMoney(deviceId, money);
       
-      // 同步财富到排行榜
-      await addMoney(deviceId, money);
-      
-      alert(`恭喜上榜成功！\n当前财富: {money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
-      loadLeaderboard();
+      alert(`恭喜上榜成功！\n当前财富: ${money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
+      setHasUserJoined(true);
+      loadLeaderboard('money');
     } catch (e) {
       console.error('上榜失败:', e);
       alert('上榜失败，请稍后重试');
@@ -65,61 +88,144 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  // 下榜
+  // 注册/更新用户并上榜（好感度榜）
+  const handleRegisterAndJoinFavorability = async () => {
+    const displayName = playerName || `玩家${deviceId.slice(-4)}`;
+    
+    setRegistering(true);
+    try {
+      await registerUser(deviceId, displayName);
+      setUserNickname(displayName);
+      await setFavorability(deviceId, countyMagistrateFavorability);
+      
+      alert(`恭喜上榜成功！\n当前楼县令好感度: ${countyMagistrateFavorability}\n每天会自动同步一次好感度到排行榜。`);
+      setHasUserJoined(true);
+      loadLeaderboard('favorability');
+    } catch (e) {
+      console.error('上榜失败:', e);
+      alert('上榜失败，请稍后重试');
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  // 下榜 - 删除用户数据
   const handleLeaveLeaderboard = async () => {
-    if (!confirm('确定要下榜吗？下榜后将不再自动同步财富到排行榜。')) {
+    if (!confirm('确定要下榜吗？下榜后将删除您的所有数据。')) {
       return;
     }
     
-    // 下榜操作：将财富设为 0 (这样就不会在排行榜显示了)
-    // 实际实现：通过不更新排行榜来实现
-    alert('已下榜。如需重新上榜，请再次点击"我要上榜"。');
-    loadLeaderboard();
+    try {
+      await deleteUser(deviceId);
+      setHasUserJoined(false);
+      alert('已下榜，数据已删除。如需重新上榜，请再次点击"重新上榜"。');
+      loadLeaderboard(leaderboardType);
+    } catch (e) {
+      console.error('下榜失败:', e);
+      alert('下榜失败，请稍后重试');
+    }
   };
 
   // 获取当前用户排名
   const currentUserRank = leaderboard.find((e) => e.user_id === deviceId);
-  const isOnLeaderboard = !!currentUserRank;
+  const isOnLeaderboard = hasUserJoined || !!currentUserRank;
+
+  // 获取当前类型的数值
+  const currentValue = leaderboardType === 'money' 
+    ? money 
+    : countyMagistrateFavorability;
+  
+  const currentDisplayValue = leaderboardType === 'money'
+    ? (currentUserRank as LeaderboardEntry)?.money?.toLocaleString() || '0'
+    : (currentUserRank as FavorabilityLeaderboardEntry)?.favorability?.toLocaleString() || '0';
+
+  const valueLabel = leaderboardType === 'money' ? '财富' : '县令好感度';
+  const unit = leaderboardType === 'money' ? '文' : '点';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 p-4">
+    <div className="p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50">
       {/* 头部 */}
-      <div className="max-w-md mx-auto mb-4">
+      <div className="mx-auto mb-4 max-w-md">
         <Link to="/" className="inline-flex items-center text-indigo-700 hover:text-indigo-500">
-          <ArrowLeft className="w-5 h-5 mr-1" />
+          <ArrowLeft className="mr-1 w-5 h-5" />
           返回首页
         </Link>
       </div>
 
-      <div className="max-w-md mx-auto space-y-4">
-        {/* 标题 */}
-        <div className="text-center py-4">
-          <h1 className="text-2xl font-bold text-indigo-900 flex items-center justify-center gap-2">
-            <Medal className="w-8 h-8 text-indigo-600" />
-            富豪榜
-          </h1>
-          <p className="text-indigo-700 text-sm mt-1">武宁县富甲天下排行</p>
+      <div className="mx-auto space-y-4 max-w-md">
+        {/* 排行榜类型切换 */}
+        <div className="flex gap-2 bg-white rounded-lg p-2 shadow-md">
+          <button
+            onClick={() => handleTypeChange('money')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              leaderboardType === 'money'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Trophy className="inline-block w-4 h-4 mr-1" />
+            财富榜
+          </button>
+          <button
+            onClick={() => handleTypeChange('favorability')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              leaderboardType === 'favorability'
+                ? 'bg-pink-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Heart className="inline-block w-4 h-4 mr-1" />
+            县令好感榜
+          </button>
         </div>
 
-        {/* 上榜状态 - 官府风格卡片 */}
-        <div className="bg-white rounded-lg shadow-lg border border-indigo-100 overflow-hidden">
-          <div className="bg-indigo-50 px-4 py-3 border-b border-indigo-100">
-            <h2 className="font-bold text-indigo-900 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-indigo-600" />
+        {/* 标题 */}
+        <div className="py-4 text-center">
+          <h1 className="flex gap-2 justify-center items-center text-2xl font-bold text-indigo-900">
+            {leaderboardType === 'money' ? (
+              <>
+                <Medal className="w-8 h-8 text-indigo-600" />
+                富豪榜
+              </>
+            ) : (
+              <>
+                <Heart className="w-8 h-8 text-pink-600" />
+                人气榜
+              </>
+            )}
+          </h1>
+          <p className="mt-1 text-sm text-indigo-700">
+            {leaderboardType === 'money' ? '无宁县富甲天下排行' : '无宁县人脉通达排行'}
+          </p>
+        </div>
+
+        {/* 上榜状态 */}
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
+          <div className={`px-4 py-3 border-b ${leaderboardType === 'money' ? 'bg-indigo-50' : 'bg-pink-50'}`}>
+            <h2 className={`flex gap-2 items-center font-bold ${leaderboardType === 'money' ? 'text-indigo-900' : 'text-pink-900'}`}>
+              {leaderboardType === 'money' ? (
+                <Trophy className="w-4 h-4 text-indigo-600" />
+              ) : (
+                <Heart className="w-4 h-4 text-pink-600" />
+              )}
               我的榜帖
             </h2>
           </div>
           <div className="p-4">
             {isOnLeaderboard ? (
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-green-600 mb-3">
-                  <Trophy className="w-6 h-6" />
+                <div className={`flex gap-2 justify-center items-center mb-3 ${leaderboardType === 'money' ? 'text-green-600' : 'text-pink-600'}`}>
+                  {leaderboardType === 'money' ? (
+                    <Trophy className="w-6 h-6" />
+                  ) : (
+                    <Heart className="w-6 h-6" />
+                  )}
                   <span className="font-bold">榜上有名</span>
                 </div>
-                <div className="text-indigo-900 mb-2">
-                  当前财富: <span className="font-bold text-xl text-indigo-700">{currentUserRank?.money.toLocaleString()}</span> 文
+                <div className="mb-2 text-indigo-900">
+                  当前{valueLabel}: <span className="text-xl font-bold text-indigo-700">{currentDisplayValue}</span> {unit}
                 </div>
-                <div className="text-indigo-600 text-sm mb-4">
+                <div className="mb-4 text-sm text-indigo-600">
                   排名: 第 <span className="font-bold">{currentUserRank?.rank}</span> 名
                 </div>
                 <div className="flex gap-2 justify-center">
@@ -127,24 +233,33 @@ export const Leaderboard: React.FC = () => {
                     onClick={async () => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       try {
-                        await addMoney(deviceId, money);
-                        alert('财富已同步到排行榜！');
-                        loadLeaderboard();
+                        if (leaderboardType === 'money') {
+                          await setMoney(deviceId, money);
+                          alert(`财富已同步！\n当前财富: ${money.toLocaleString()} 文`);
+                        } else {
+                          await setFavorability(deviceId, countyMagistrateFavorability);
+                          alert(`楼县令好感度已同步！\n当前好感度: ${countyMagistrateFavorability}`);
+                        }
+                        loadLeaderboard(leaderboardType);
                       } catch (e) {
                         alert('同步失败');
                       }
                     }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1 transition-colors"
+                    className={`flex gap-1 items-center px-4 py-2 text-white rounded-lg transition-colors ${
+                      leaderboardType === 'money' 
+                        ? 'bg-indigo-600 hover:bg-indigo-700' 
+                        : 'bg-pink-600 hover:bg-pink-700'
+                    }`}
                   >
                     <RefreshCw className="w-4 h-4" />
-                    同步财富
+                    同步{valueLabel}
                   </button>
                   <button
                     onClick={() => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       handleLeaveLeaderboard();
                     }}
-                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 flex items-center gap-1 transition-colors"
+                    className="flex gap-1 items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200"
                   >
                     <UserMinus className="w-4 h-4" />
                     下榜
@@ -153,49 +268,93 @@ export const Leaderboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-indigo-800 mb-4">登榜展示您的万贯家财</div>
-                <div className="text-lg text-indigo-900 font-medium mb-2">
+                <div className="mb-4 text-indigo-800">
+                  {leaderboardType === 'money' ? '登榜展示您的万贯家财' : '登榜展示您的人脉关系'}
+                </div>
+                <div className="mb-2 text-lg font-medium text-indigo-900">
                   角色名: {playerName || `游客`}
                 </div>
-                <div className="text-sm text-indigo-600 mb-4">
-                  当前财富: {money.toLocaleString()} 文
+                <div className="mb-4 text-sm text-indigo-600">
+                  当前{valueLabel}: {currentValue.toLocaleString()} {unit}
                 </div>
                 <button
                   onClick={() => {
                     vibrate(VIBRATION_PATTERNS.HEAVY);
-                    handleRegisterAndJoin();
+                    if (leaderboardType === 'money') {
+                      handleRegisterAndJoinMoney();
+                    } else {
+                      handleRegisterAndJoinFavorability();
+                    }
                   }}
                   disabled={registering}
-                  className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+                  className={`flex gap-2 justify-center items-center px-4 py-3 w-full text-white rounded-lg transition-colors disabled:opacity-50 ${
+                    leaderboardType === 'money'
+                      ? 'bg-indigo-600 hover:bg-indigo-700'
+                      : 'bg-pink-600 hover:bg-pink-700'
+                  }`}
                 >
                   <UserPlus className="w-5 h-5" />
-                  {registering ? '提交中...' : '我要上榜'}
+                  {registering ? '提交中...' : (hasUserJoined ? '重新上榜' : '我要上榜')}
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* 排行榜列表 - 官府风格 */}
-        <div className="bg-white rounded-lg shadow-lg border border-indigo-100 overflow-hidden">
-          <div className="bg-indigo-600 px-4 py-3">
-            <h2 className="font-bold text-white flex items-center gap-2">
+        {/* 排行榜列表 */}
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
+          <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600' : 'bg-pink-600'}`}>
+            <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
-              富豪排行 TOP {leaderboard.length}
+              {leaderboardType === 'money' ? '富豪排行' : '人气排行'} TOP {leaderboard.length + 1} (每页50人)
             </h2>
           </div>
           
           {loading ? (
             <div className="p-8 text-center text-indigo-500">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <RefreshCw className="mx-auto mb-2 w-6 h-6 animate-spin" />
               官府正在整理榜文...
             </div>
           ) : leaderboard.length === 0 ? (
             <div className="p-8 text-center text-indigo-500">
-              暂无上榜商贾
+              {leaderboardType === 'money' ? '暂无上榜商贾' : '暂无上榜人物'}
             </div>
           ) : (
             <div className="divide-y divide-indigo-50">
+              {/* 固定第一名：县令（好感榜）/ 小四（财富榜） */}
+              {leaderboardType === 'money' ? (
+                <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-yellow-400 text-yellow-900">
+                    1
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <div className="font-medium text-indigo-900">
+                      小四<span className="text-yellow-600 text-sm ml-1">(无宁县首富)</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-indigo-800">*************</div>
+                    <div className="text-xs text-indigo-500">文</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-pink-400 text-pink-900">
+                    1
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <div className="font-medium text-pink-900">
+                      县令<span className="text-pink-600 text-sm ml-1">(德高望重)</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-pink-800">*************</div>
+                    <div className="text-xs text-pink-500">好感度</div>
+                  </div>
+                </div>
+              )}
+              
+              {/* 真实排行榜 - 从第2名开始 */}
               {leaderboard.map((entry) => (
                 <div
                   key={entry.user_id}
@@ -204,22 +363,26 @@ export const Leaderboard: React.FC = () => {
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    entry.rank === 1 ? 'bg-yellow-400 text-yellow-900' :
                     entry.rank === 2 ? 'bg-gray-300 text-gray-700' :
                     entry.rank === 3 ? 'bg-amber-600 text-white' :
                     'bg-indigo-100 text-indigo-700'
                   }`}>
-                    {entry.rank}
+                    {entry.rank + 1}
                   </div>
-                  <div className="ml-3 flex-1">
+                  <div className="flex-1 ml-3">
                     <div className="font-medium text-indigo-900">
-                      {entry.nickname || '匿名商贾'}
-                      {entry.user_id === deviceId && <span className="text-indigo-500 text-sm ml-1">(您)</span>}
+                      {entry.nickname || (leaderboardType === 'money' ? '匿名商贾' : '匿名人士')}
+                      {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500">(您)</span>}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-indigo-800">{entry.money.toLocaleString()}</div>
-                    <div className="text-xs text-indigo-500">文</div>
+                    <div className="font-bold text-indigo-800">
+                      {leaderboardType === 'money' 
+                        ? (entry as LeaderboardEntry).money?.toLocaleString()
+                        : (entry as FavorabilityLeaderboardEntry).favorability?.toLocaleString()
+                      }
+                    </div>
+                    <div className="text-xs text-indigo-500">{leaderboardType === 'money' ? '文' : '好感度'}</div>
                   </div>
                 </div>
               ))}
@@ -228,8 +391,12 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 提示信息 */}
-        <div className="text-center text-sm text-indigo-500 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-          <p>📌 上榜后每日自动同步财富至官府榜文</p>
+        <div className="p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100">
+          <p>
+            📌 {leaderboardType === 'money' 
+              ? '上榜后每日自动同步财富至官府榜文' 
+              : '上榜后每日自动同步好感度至官府榜文'}
+          </p>
         </div>
       </div>
     </div>

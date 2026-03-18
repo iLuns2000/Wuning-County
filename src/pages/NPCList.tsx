@@ -2,8 +2,8 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-03-11
- * @FilePath: \textgame\src\pages\NPCList.tsx
+ * @LastEditTime: 2026-03-18 13:02:13
+ * @FilePath: \Wuning-County\src\pages\NPCList.tsx
  * @Description: NPC列表页 - 古风UI优化版
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
@@ -20,8 +20,9 @@ import { NPCGiftModal } from '@/components/NPCGiftModal';
 import { ProfileModal } from '@/components/ProfileModal';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { roles } from '@/data/roles';
-import { simulateJiYiOuArcheryDuel, incrementArcheryDuelCount } from '@/services/npcDuelEngine';
+import { simulateJiYiOuArcheryDuel, incrementArcheryDuelCount, simulateXuXiaoxiWudaoDuel, simulateXuXiaoxiChessDuel } from '@/services/npcDuelEngine';
 import { resolveHunt } from '@/services/huntResolutionEngine';
+import { ClinicAnimalModal } from '@/components/ClinicAnimalModal';
 
 type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
@@ -68,6 +69,7 @@ export const NPCList: React.FC = () => {
   const [giftNpcName, setGiftNpcName] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showClinicAnimalModal, setShowClinicAnimalModal] = useState(false);
 
   // 当搜索词变化时，保存到sessionStorage
   useEffect(() => {
@@ -178,6 +180,18 @@ export const NPCList: React.FC = () => {
     // 季一藕狩猎特殊处理
     if (eventId === 'ji_yi_ou_hunt' && option.label === '欣然前往') {
       handleJiYiOuHunt();
+      return;
+    }
+
+    // 诩小溪比武挑战特殊处理
+    if (eventId === 'xu_xiaoxi_wudao' && option.label === '挑战') {
+      handleXuXiaoxiWudao();
+      return;
+    }
+
+    // 诩小溪下棋挑战特殊处理
+    if (eventId === 'xu_xiaoxi_chess' && option.label === '挑战') {
+      handleXuXiaoxiChess();
       return;
     }
 
@@ -305,6 +319,64 @@ export const NPCList: React.FC = () => {
     dismissEvent();
   };
 
+  // 诩小溪比武挑战处理函数
+  const handleXuXiaoxiWudao = () => {
+    // 检查体力
+    if (playerStats.health < 5) {
+      addLog('体力不足，无法进行比武切磋！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+    // 检查银两
+    if (playerStats.money < 10) {
+      addLog('银两不足，输了可要赔钱的！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+
+    const outcome = simulateXuXiaoxiWudaoDuel({ playerStats, flags } as any);
+    
+    const relationChange = outcome.playerWon ? 5 : 2;
+    const effect = { 
+      money: outcome.effect.money || 0, 
+      health: outcome.effect.health || 0,
+      relationChange: { xu_xiaoxi: relationChange }
+    };
+    
+    const displayMessage = outcome.playerWon ? outcome.winMessage : outcome.loseMessage;
+    handleEventOption(effect, displayMessage || outcome.logMessage);
+    dismissEvent();
+  };
+
+  // 诩小溪下棋挑战处理函数
+  const handleXuXiaoxiChess = () => {
+    // 检查体力
+    if (playerStats.health < 5) {
+      addLog('体力不足，无法进行下棋切磋！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+    // 检查银两
+    if (playerStats.money < 10) {
+      addLog('银两不足，输了可要赔钱的！');
+      vibrate(VIBRATION_PATTERNS.ERROR);
+      return;
+    }
+
+    const outcome = simulateXuXiaoxiChessDuel({ playerStats, flags } as any);
+    
+    const relationChange = outcome.playerWon ? 5 : 2;
+    const effect = { 
+      money: outcome.effect.money || 0, 
+      health: outcome.effect.health || 0,
+      relationChange: { xu_xiaoxi: relationChange }
+    };
+    
+    const displayMessage = outcome.playerWon ? outcome.winMessage : outcome.loseMessage;
+    handleEventOption(effect, displayMessage || outcome.logMessage);
+    dismissEvent();
+  };
+
   const handleInteraction = (npcId: string, type: 'talk' | 'gift' | 'event', eventId?: string) => {
     vibrate(VIBRATION_PATTERNS.LIGHT);
 
@@ -402,7 +474,7 @@ export const NPCList: React.FC = () => {
           />
         </svg>
         <span 
-          className="absolute inset-0 flex items-center justify-center text-xs font-bold"
+          className="flex absolute inset-0 justify-center items-center text-xs font-bold"
           style={{ color: getColor() }}
         >
           {value}
@@ -421,7 +493,7 @@ export const NPCList: React.FC = () => {
           <header className="flex gap-4 items-center py-2 shrink-0">
             <button
               onClick={() => navigate('/game')}
-              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />
             </button>
@@ -435,8 +507,7 @@ export const NPCList: React.FC = () => {
             {/* 搜索框 - 古风样式 */}
             <div className={`
               relative transition-all duration-300
-              ${isSearchFocused ? 'scale-105' : ''}
-            `}>
+              ${isSearchFocused ? 'scale-105' : ''}`}>
               <Search 
                 className={`
                   absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300
@@ -466,7 +537,7 @@ export const NPCList: React.FC = () => {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-secondary transition-colors"
+                  className="absolute right-3 top-1/2 p-1 rounded-full transition-colors -translate-y-1/2 hover:bg-secondary"
                   title="清空搜索"
                 >
                   <X size={14} className="text-muted-foreground" />
@@ -480,15 +551,7 @@ export const NPCList: React.FC = () => {
               <select
                 value={sortType}
                 onChange={(e) => setSortType(e.target.value as SortType)}
-                className="
-                  w-full py-2 pl-9 pr-8 text-sm 
-                  bg-secondary/50 rounded-xl border border-white/5
-                  outline-none cursor-pointer
-                  transition-all duration-300
-                  hover:border-primary/30
-                  focus:border-primary/50 focus:ring-2 focus:ring-primary/20
-                  appearance-none
-                "
+                className="py-2 pr-8 pl-9 w-full text-sm rounded-xl border transition-all duration-300 appearance-none cursor-pointer outline-none bg-secondary/50 border-white/5 hover:border-primary/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
               >
                 {Object.entries(sortLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -507,7 +570,7 @@ export const NPCList: React.FC = () => {
           <div className="overflow-y-auto flex-1 pr-2 space-y-3 min-h-0">
             {filteredAndSortedNPCs.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
-                <span className="text-3xl mb-2 block">🔍</span>
+                <span className="block mb-2 text-3xl">🔍</span>
                 <span>未找到匹配的 NPC</span>
               </div>
             ) : (
@@ -521,7 +584,7 @@ export const NPCList: React.FC = () => {
                     key={npc.id} 
                     className="p-4 space-y-3 rounded-xl border transition-all duration-300 bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
                   >
-                    <div className="flex justify-between items-start gap-3">
+                    <div className="flex gap-3 justify-between items-start">
                       <div className="flex-1 min-w-0">
                         <h3 className="flex gap-2 items-center text-lg font-bold">
                           {npc.name}
@@ -584,8 +647,8 @@ export const NPCList: React.FC = () => {
                         className={`
                           flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors min-w-[80px]
                           ${!isGiftDisabled
-                            ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                            : 'bg-secondary/50 cursor-not-allowed opacity-60'
+                            ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                            : 'opacity-60 cursor-not-allowed bg-secondary/50'
                           }
                         `}
                         title={isJiYiOu ? '带着美食拜访季一藕' : isGiftDisabled ? '金钱不足 (需50文)' : ''}
@@ -593,6 +656,21 @@ export const NPCList: React.FC = () => {
                         <Gift size={14} />
                         <span>送礼</span>
                       </button>
+
+                      {/* 季一藕专属：医馆动物互动 */}
+                      {npc.id === 'ji_yi_ou' && (
+                        <button
+                          onClick={() => {
+                            setShowClinicAnimalModal(true);
+                            vibrate(VIBRATION_PATTERNS.MEDIUM);
+                          }}
+                          className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 min-w-[80px]"
+                          title="西林医馆 - 与小啾、互动"
+                        >
+                          <span className="text-base">🏥</span>
+                          <span>医馆</span>
+                        </button>
+                      )}
 
                       {npc.interactionEventIds?.map(eventId => {
                         const event = npcEvents.find(e => e.id === eventId);
@@ -654,6 +732,10 @@ export const NPCList: React.FC = () => {
           onClose={() => { setGiftNpcId(null); setGiftNpcName(null); }}
           onConfirm={handleJiYiOuGiftConfirm}
         />
+      )}
+
+      {showClinicAnimalModal && (
+        <ClinicAnimalModal onClose={() => setShowClinicAnimalModal(false)} />
       )}
 
       <ProfileModal 

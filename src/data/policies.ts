@@ -45,4 +45,14 @@ export const policies: Policy[] = [
     },
     cost: 100,
   },
+  {
+    id: 'policy_pragmatic',
+    name: '务实兴业',
+    description: '暂停文教投入，集中精力发展经济。\n效果：每日经济+2，文化-1',
+    dailyEffect: {
+      economy: 2,
+      culture: -1,
+    },
+    cost: 50,
+  },
 ];

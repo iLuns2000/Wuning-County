@@ -1,7 +1,7 @@
 // 云存档 API 服务
 // 对接后端: http://localhost:3000
 
-const API_BASE = 'http://106.54.50.15:3000/api';
+const API_BASE = 'https://wuning.online/api';
 
 // 通用请求函数
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -147,6 +147,78 @@ export async function addMoney(userId: string, amount: number): Promise<{ succes
   return request('/money/add', {
     method: 'POST',
     body: JSON.stringify({ user_id: userId, amount }),
+  });
+}
+
+// 设置金钱 (替换而非累加)
+export async function setMoney(userId: string, money: number): Promise<{ success: boolean; money?: number; error?: string }> {
+  return request('/money/set', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, money }),
+  });
+}
+
+// 从排行榜移除 (下榜)
+export async function removeFromLeaderboard(userId: string): Promise<{ success: boolean; error?: string }> {
+  return request('/money/remove', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+// 删除用户
+export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  return request('/user/delete', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+// ========== 好感度 API ==========
+
+export interface FavorabilityLeaderboardEntry {
+  rank: number;
+  user_id: string;
+  nickname: string | null;
+  favorability: number;
+}
+
+export interface FavorabilityLeaderboardResponse {
+  success: boolean;
+  leaderboard: FavorabilityLeaderboardEntry[];
+  error?: string;
+}
+
+// 获取好感度排行榜
+export async function getFavorabilityLeaderboard(limit: number = 10): Promise<FavorabilityLeaderboardResponse> {
+  return request(`/user/favorability/leaderboard?limit=${limit}`, {
+    method: 'GET',
+  });
+}
+
+// 设置好感度
+export async function setFavorability(userId: string, favorability: number): Promise<{ success: boolean; favorability?: number; error?: string }> {
+  return request('/user/favorability/set', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, favorability }),
+  });
+}
+
+// 获取用户好感度信息
+export async function getUserFavorabilityInfo(userId: string): Promise<{
+  success: boolean;
+  user?: {
+    user_id: string;
+    nickname: string | null;
+    favorability: number;
+    rank: number | null;
+    is_on_board: boolean;
+  };
+  error?: string;
+}> {
+  return request('/user/favorability/info', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
   });
 }
 

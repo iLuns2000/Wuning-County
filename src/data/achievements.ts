@@ -590,5 +590,28 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 50,
     isHidden: true,
     condition: (state) => !!state.flags['ji_yi_ou_hunt_unlocked'] // 临时用 flag 判断，实际通过狩猎触发
+  },
+  // ── 季一藕医馆动物互动成就 ────────────────────────────────
+  {
+    id: 'title_gugu_ga',
+    name: '咕咕嘎',
+    description: '逗鸟/教鸟累计达 6 次，与小啾成为好玩伴',
+    rewardExp: 100,
+    condition: (state) => (state.clinicAnimals?.birdTeaseOrTeachCount || 0) >= 6
+  },
+  {
+    id: 'title_wang_wang_wang',
+    name: '汪汪汪，谁家的小狗',
+    description: '学狗叫累计达 5 次，获得了小狗的认可',
+    rewardExp: 100,
+    condition: (state) => (state.clinicAnimals?.dogBarkPracticeTotal || 0) >= 5
+  },
+  {
+    id: 'title_yi_yi_gu_xing',
+    name: '一意孤行',
+    description: '教小啾脏话被抓累计 3 次，被禁止进入医馆',
+    rewardExp: 50,
+    isHidden: true,
+    condition: (state) => (state.clinicAnimals?.swearTeachCaughtCount || 0) >= 3
   }
 ];

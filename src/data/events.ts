@@ -626,7 +626,7 @@ export const randomEvents: GameEvent[] = [
     title: '买枸杞',
     description: '“你要买我家药园的枸杞？”小鹤兴奋地咧嘴傻笑。',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 20
     },
@@ -634,8 +634,8 @@ export const randomEvents: GameEvent[] = [
       {
         label: '购买 (50文)',
         message: '小鹤兴奋地咧嘴傻笑，并赠送了一罐可补元气益荣卫的自制枸杞膏。',
-        effect: { 
-          money: -50, 
+        effect: {
+          money: -50,
           itemsAdd: ['gouqi_gao'],
           relationChange: { xiao_he: 2 }
         }
@@ -651,7 +651,7 @@ export const randomEvents: GameEvent[] = [
     title: '买人参',
     description: '“你要买我家药园的人参？”小鹤兴奋地咧嘴傻笑。',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 80
     },
@@ -659,8 +659,8 @@ export const randomEvents: GameEvent[] = [
       {
         label: '购买 (200文)',
         message: '小鹤兴奋地咧嘴傻笑，并赠送了一小瓶润肤养颜的红颜酒。',
-        effect: { 
-          money: -200, 
+        effect: {
+          money: -200,
           itemsAdd: ['hongyan_jiu'],
           relationChange: { xiao_he: 5 }
         }
@@ -676,7 +676,7 @@ export const randomEvents: GameEvent[] = [
     title: '抱怨脱发',
     description: '“唉……最近不知怎么回事，头发掉了好多，我心里好难受啊。”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 99
     },
@@ -684,7 +684,7 @@ export const randomEvents: GameEvent[] = [
       {
         label: '向小鹤诉苦',
         message: '路过的小鹤听罢把你拉到了她的药园，并给你赠送了一些自制的七宝美髯蛋，说是补肝肾强筋骨乌须发，叮嘱你每日吃上2-3个，饮食清淡一点。你抱着几十个颜色奇怪的煮鸡蛋将信将疑地走了。',
-        effect: { 
+        effect: {
           itemsAdd: ['meiran_dan'],
           relationChange: { xiao_he: 10 }
         }
@@ -696,7 +696,7 @@ export const randomEvents: GameEvent[] = [
     title: '一起钓鱼',
     description: '“今儿天气不错，一起去钓鱼啊~”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 520
     },
@@ -704,7 +704,7 @@ export const randomEvents: GameEvent[] = [
       {
         label: '愉快地钓鱼',
         message: '“今天玩得很开心，钓到大鱼了，嘿嘿嘿嘿谢谢你呀~”小鹤开心地从她的藏珍匣拿出一条精美的带子，放到了你的手中。',
-        effect: { 
+        effect: {
           itemsAdd: ['xiao_he_tie'],
           relationChange: { xiao_he: 20 }
         }
@@ -841,7 +841,7 @@ export const npcEvents: GameEvent[] = [
     title: '买枸杞',
     description: '“你要买我家药园的枸杞？”小鹤兴奋地咧嘴傻笑。',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 20
     },
@@ -849,8 +849,8 @@ export const npcEvents: GameEvent[] = [
       {
         label: '购买 (50文)',
         message: '小鹤兴奋地咧嘴傻笑，并赠送了一罐可补元气益荣卫的自制枸杞膏。',
-        effect: { 
-          money: -50, 
+        effect: {
+          money: -50,
           itemsAdd: ['gouqi_gao'],
           relationChange: { xiao_he: 2 }
         }
@@ -866,7 +866,7 @@ export const npcEvents: GameEvent[] = [
     title: '买人参',
     description: '“你要买我家药园的人参？”小鹤兴奋地咧嘴傻笑。',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 80
     },
@@ -874,8 +874,8 @@ export const npcEvents: GameEvent[] = [
       {
         label: '购买 (200文)',
         message: '小鹤兴奋地咧嘴傻笑，并赠送了一小瓶润肤养颜的红颜酒。',
-        effect: { 
-          money: -200, 
+        effect: {
+          money: -200,
           itemsAdd: ['hongyan_jiu'],
           relationChange: { xiao_he: 5 }
         }
@@ -891,7 +891,7 @@ export const npcEvents: GameEvent[] = [
     title: '抱怨脱发',
     description: '“唉……最近不知怎么回事，头发掉了好多，我心里好难受啊。”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 99
     },
@@ -899,7 +899,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '向小鹤诉苦',
         message: '路过的小鹤听罢把你拉到了她的药园，并给你赠送了一些自制的七宝美髯蛋，说是补肝肾强筋骨乌须发，叮嘱你每日吃上2-3个，饮食清淡一点。你抱着几十个颜色奇怪的煮鸡蛋将信将疑地走了。',
-        effect: { 
+        effect: {
           itemsAdd: ['meiran_dan'],
           relationChange: { xiao_he: 10 }
         }
@@ -911,7 +911,7 @@ export const npcEvents: GameEvent[] = [
     title: '一起钓鱼',
     description: '“今儿天气不错，一起去钓鱼啊~”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => (state.npcRelations['xiao_he'] || 0) >= 520
     },
@@ -919,7 +919,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '愉快地钓鱼',
         message: '“今天玩得很开心，钓到大鱼了，嘿嘿嘿嘿谢谢你呀~”小鹤开心地从她的藏珍匣拿出一条精美的带子，放到了你的手中。',
-        effect: { 
+        effect: {
           itemsAdd: ['xiao_he_tie'],
           relationChange: { xiao_he: 20 }
         }
@@ -2437,27 +2437,27 @@ export const npcEvents: GameEvent[] = [
       {
         label: '探讨医学学术',
         message: '你们从医理谈到草药，从诊断谈到治疗，聊得十分投机。季一藕对你的见解大加赞赏。',
-        effect: { money: 50, itemsAdd: ['xianhe_grass'], experience: 30, relationChange: { ji_yi_ou: 10 } }
+        effect: { money: 50, experience: 30, relationChange: { ji_yi_ou: 10 }, probabilisticItemsAdd: [{ itemId: 'xianhe_grass', probability: 0.4, count: 1 }] }
       },
       {
         label: '聊聊八卦传闻',
         message: '你提到了隔壁家二婶的孩子还没娶到媳妇的事。季一藕立刻来了兴趣：“啊！你说的是那位呀，我听说他平时就爱和兄弟们喝茶看戏，可愁死他娘了……”你们聊得热火朝天，从二婶的儿子说到县里的各种趣事，季一藕笑得前仰后合。',
-        effect: { money: 50, itemsAdd: ['xianhe_grass'], experience: 30, relationChange: { ji_yi_ou: 10 } }
+        effect: { money: 50,  probabilisticItemsAdd: [{ itemId: 'xianhe_grass', probability: 0.4, count: 1 }], experience: 30, relationChange: { ji_yi_ou: 10 } }
       },
       {
         label: '研究阵法与机关密钥',
         message: '季一藕拿出师父给的珍藏小册子，神秘地说：“我发现这本子里好像藏着一些机关秘术的记载。”你们对着小册子研究了半天，虽然没完全破解其中的秘密，但也有了一些有趣的发现。',
-        effect: { money: 50, itemsAdd: ['xianhe_grass'],  experience: 30, relationChange: { ji_yi_ou: 10 } }
+        effect: { money: 50,  probabilisticItemsAdd: [{ itemId: 'xianhe_grass', probability: 0.4, count: 1 }], experience: 30, relationChange: { ji_yi_ou: 10 } }
       },
       {
         label: '听飞禽走兽的传说',
         message: '季一藕的翠色小鸟落在她肩膀上，她抚摸着小鸟的羽毛说：“我师父曾经说过，这世上有些鸟儿能通人性，甚至能预知祸福。”她给你讲了许多关于飞禽走兽的神奇传说，你听得入了神。',
-        effect: { money: 50, itemsAdd: ['xianhe_grass'],  experience: 30, relationChange: { ji_yi_ou: 10 } }
+        effect: { money: 50, probabilisticItemsAdd: [{ itemId: 'xianhe_grass', probability: 0.4, count: 1 }], experience: 30, relationChange: { ji_yi_ou: 10 } }
       },
       {
         label: '探索海底世界的秘密',
         message: '季一藕托着下巴，眼神望向远方：“我听说大海深处有一座神秘的宫殿，里面住着人鱼和各种奇珍异宝。”你们一起畅想着海底世界的奇妙景象，讨论着各种可能的秘密，仿佛真的置身于那神秘的海底宫殿。',
-        effect: { money: 50, itemsAdd: ['xianhe_grass'], experience: 30, relationChange: { ji_yi_ou: 10 } }
+        effect: { money: 50,  probabilisticItemsAdd: [{ itemId: 'xianhe_grass', probability: 0.4, count: 1 }], experience: 30, relationChange: { ji_yi_ou: 10 } }
       }
     ]
   },
@@ -2976,7 +2976,7 @@ export const npcEvents: GameEvent[] = [
         label: '好吃爱吃 (消耗所有羽毛)',
         message: '叽叽喳喳的欢鸣清脆悦耳，显然吃得格外尽兴！',
         effect: {
-          money: 1000000,
+          money: 20000,
           consumeAllAndProbabilisticReward: {
             consumeItemId: 'startled_magpie_feather',
             probabilityPerItem: 0.01,
@@ -3009,7 +3009,7 @@ export const npcEvents: GameEvent[] = [
     title: '射箭切磋',
     description: '关山箭馆内，季一藕手持长弓，笑着看向你：“久闻大名，可敢与我比试一番？”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => {
         // 体力不足时不可进行
@@ -3037,7 +3037,7 @@ export const npcEvents: GameEvent[] = [
     title: '狩猎邀请',
     description: '季一藕收起长弓，眼中闪过一丝兴奋：“切磋了这么多次，我想邀请你去郊外的林子里狩猎，敢不敢跟我一起去？”',
     type: 'npc',
-    triggerCondition: { 
+    triggerCondition: {
       probability: 0,
       custom: (state) => {
         // 需要解锁狩猎（累计10次射箭）
@@ -3056,6 +3056,191 @@ export const npcEvents: GameEvent[] = [
       {
         label: '下次吧',
         message: '你摆摆手：“下次吧。”季一藕有些失望地收起了弓箭。'
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_listen_music',
+    title: '邀请听曲',
+    description: '诩小溪轻抚琴弦，微微一笑："今日有兴，是否能请这位朋友共赏此曲？"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '诩小溪的琴声如泉水叮咚，又如行云流水。一曲终了，她笑道："认识你真开心。"',
+        effect: { money: 10, health: 10, relationChange: { xu_xiaoxi: 5 } }
+      },
+      {
+        label: '拒绝',
+        message: '诩小溪轻叹一声："知音难寻啊。"',
+        effect: { relationChange: { xu_xiaoxi: -2 } }
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_wudao',
+    title: '比武挑战',
+    description: '诩小溪摆开架式："哪位英雄好汉愿意上来比划比划？"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '挑战',
+        message: '',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: 'xu_xiaoxi_chess',
+    title: '邀请下棋',
+    description: '诩小溪面前摆着一盘棋，她轻声道："哪位有缘人能破解这盘棋！"',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '挑战',
+        message: '',
+        effect: {}
+      }
+    ]
+  },
+  {
+    id: "xiaozhou_cook",
+    title: "去给小舟炒两菜",
+    description: "小舟摸着肚子，一脸期待地看着你。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "行，这就给您做个仰望星空",
+        message: "嘶，你这手艺，去罗马都得被拉去埋了种菜",
+        effect: { relationChange: { xiao_zhou: -5 } }
+      },
+      {
+        label: "要我给你炒菜？起来！去给爷炒两菜！",
+        message: "别光吃酒，巴豆炒黄豆多吃点",
+        effect: { health: -5 }
+      },
+      {
+        label: "行，正好我刚学了个新菜，你尝尝",
+        message: "手艺不错，大厨牛逼，做菜累了吧，我给你按按肩，在西林医馆治肩肌劳损学了一手",
+        effect: {
+          relationChange: { xiao_zhou: 5 },
+          health: 15
+        }
+      }
+    ]
+  },
+  {
+    id: "xiaozhou_slack_off",
+    title: "一起翘班摸鱼",
+    description: "你和小舟躲在勾销房的角落里，气氛非常快活。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "你这个月的活是不是明天要交了？",
+        message: "“我去，你不早说！”，小舟连滚带爬回去了干活了，靠着一支笔一盏灯一个夜晚还了主簿大人一个奇迹，之后小舟为了感谢你给你整了两道硬菜下酒",
+        effect: {
+          relationChange: { xiao_zhou: 5 },
+          health: 10
+        }
+      },
+      {
+        label: "去西林医馆按肩",
+        message: "去按肩？那可以工伤报销了",
+        effect: {
+          money: 100,
+          health: 15
+        }
+      },
+      {
+        label: "你身后的是主簿大人吗？",
+        message: "主簿大人吃了没哇，哈哈（尴尬笑），今天的阳光真猛烈啊~哈哈（持续尴尬笑）\n随后你和小舟一并被抓去擦县衙门前的柱子了，获得了锻炼！",
+        effect: {
+          ability: 5,
+          health: 5
+        }
+      }
+    ]
+  },
+  {
+    id: "vimi_hoeing",
+    title: "锄地",
+    description: "百谷园的地需要翻整了，来帮园主一把？",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "日常努力锄地",
+        message: "嘭嘭嘭~碰上石头了，真是烦人！",
+        effect: {
+          ability: 5,
+          money: 300,
+          relationChange: { vimi: 10 },
+          health: -10
+        }
+      },
+      {
+        label: "雨后锄地",
+        message: "刚刚下过雨，这地就是好挖呀（开心）",
+        effect: {
+          ability: 5,
+          money: 180,
+          relationChange: { vimi: 6 },
+          health: -5
+        }
+      },
+      {
+        label: "晴天傍晚锄地",
+        message: "什么时候下雨啊，这地硬邦邦的，太累人了。",
+        effect: {
+          ability: 10,
+          money: 350,
+          relationChange: { vimi: 10 },
+          health: -10
+        }
+      }
+    ]
+  },
+  {
+    id: "vimi_weeding",
+    title: "除草",
+    description: "菜园里的草长得太快了，快来帮忙拔草。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "努力拔草中",
+        message: "喂喂喂，你可别把我菜当草拔了。",
+        effect: {
+          ability: 2,
+          money: 50,
+          relationChange: { vimi: -5 },
+          health: -5
+        }
+      },
+      {
+        label: "拔呀拔呀拔呀",
+        message: "这草长太快了，拔的累死了",
+        effect: {
+          ability: 5,
+          money: 300,
+          relationChange: { vimi: 10 },
+          health: -5
+        }
+      },
+      {
+        label: "打除草剂中",
+        message: "你！你！你！你已被我拉进黑名单。",
+        effect: {
+          ability: -20,
+          money: -200,
+          relationChange: { vimi: -50 },
+          health: -5
+        }
       }
     ]
   }

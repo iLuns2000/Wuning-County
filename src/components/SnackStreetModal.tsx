@@ -14,26 +14,31 @@ interface SnackStreetModalProps {
 }
 
 export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) => {
-  const { playerStats, buyItem, useItem, addLog } = useGameStore();
+  const gameStore = useGameStore();
+  const playerStats = gameStore.playerStats;
+  const { buyItem, useItem, addLog } = gameStore;
   const vibrate = useGameVibrate();
   const { theme } = useTheme();
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
+  // 安全获取金钱值
+  const money = playerStats?.money ?? 0;
+
   const getPrice = (snackId: string) => {
     const snack = snacks.find(s => s.id === snackId);
     if (!snack?.effect) return 10;
-    
+
     let price = 10;
     if (snack.effect.health) price += Math.abs(snack.effect.health) * 2;
     if (snack.effect.culture) price += snack.effect.culture * 5;
     if (snack.effect.ability) price += snack.effect.ability * 10;
     if (snack.effect.reputation) price += Math.abs(snack.effect.reputation) * 5;
-    
+
     return price;
   };
 
   const handleTaste = (snackId: string, price: number) => {
-    if (playerStats.money < price) {
+    if (money < price) {
       addLog('囊中羞涩，买不起这美食。');
       return;
     }
@@ -44,7 +49,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
   };
 
   const handleTakeout = (snackId: string, price: number) => {
-    if (playerStats.money < price) {
+    if (money < price) {
       addLog('囊中羞涩，买不起这美食。');
       return;
     }
@@ -121,7 +126,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {snacks.map((snack, index) => {
               const price = getPrice(snack.id);
-              const canBuy = playerStats.money >= price;
+              const canBuy = money >= price;
               
               return (
                 <div 
@@ -134,7 +139,7 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   {/* 悬停光效 */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-pointer-events-none pointer-events-none
                                 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent rounded-xl" />
                   
                   <div className="relative flex justify-between items-start mb-3">
