@@ -174,6 +174,54 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
   });
 }
 
+// ========== 好感度 API ==========
+
+export interface FavorabilityLeaderboardEntry {
+  rank: number;
+  user_id: string;
+  nickname: string | null;
+  favorability: number;
+}
+
+export interface FavorabilityLeaderboardResponse {
+  success: boolean;
+  leaderboard: FavorabilityLeaderboardEntry[];
+  error?: string;
+}
+
+// 获取好感度排行榜
+export async function getFavorabilityLeaderboard(limit: number = 10): Promise<FavorabilityLeaderboardResponse> {
+  return request(`/user/favorability/leaderboard?limit=${limit}`, {
+    method: 'GET',
+  });
+}
+
+// 设置好感度
+export async function setFavorability(userId: string, favorability: number): Promise<{ success: boolean; favorability?: number; error?: string }> {
+  return request('/user/favorability/set', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, favorability }),
+  });
+}
+
+// 获取用户好感度信息
+export async function getUserFavorabilityInfo(userId: string): Promise<{
+  success: boolean;
+  user?: {
+    user_id: string;
+    nickname: string | null;
+    favorability: number;
+    rank: number | null;
+    is_on_board: boolean;
+  };
+  error?: string;
+}> {
+  return request('/user/favorability/info', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
 // 赠送金钱 (上榜时同步财富)
 export async function syncMoney(fromUserId: string, toUserId: string, amount: number): Promise<{ success: boolean; error?: string }> {
   return request('/money/give', {
