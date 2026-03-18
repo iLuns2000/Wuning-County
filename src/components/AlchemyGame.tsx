@@ -15,6 +15,8 @@ const ALCHEMY_LEVELS: Record<number, { id: string; name: string; price: number; 
   512: { id: 'herb_ambergris', name: '龙涎香', price: 1500, color: 'bg-gray-600', textColor: 'text-white' },
   1024: { id: 'herb_snow_lotus', name: '天山雪莲', price: 4000, color: 'bg-cyan-600', textColor: 'text-white' },
   2048: { id: 'herb_ginseng_king', name: '千年人参', price: 10000, color: 'bg-red-700', textColor: 'text-white' },
+  4096: { id: 'herb_ginseng_king', name: '九转还魂草	', price: 15000, color: 'bg-red-700', textColor: 'text-white' },
+  8192: { id: 'herb_ginseng_king', name: '万年茯苓王		', price: 100000, color: 'bg-red-700', textColor: 'text-white' },
 };
 
 interface AlchemyGameProps {
@@ -27,6 +29,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
   const [gameOver, setGameOver] = useState(false);
   const [highestTile, setHighestTile] = useState(0);
   const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
+  const [maxReached, setMaxReached] = useState(false); // 8192已达标志
   const vibrate = useGameVibrate();
 
   // Initialize game
@@ -41,6 +44,7 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
     setBoard(newBoard);
     setGameOver(false);
     setHighestTile(2);
+    setMaxReached(false);
   };
 
   const addRandomTile = (currentBoard: number[][]) => {
@@ -85,7 +89,8 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
     for (let r = 0; r < 4; r++) {
       let row = workingBoard[r].filter(val => val !== 0);
       for (let c = 0; c < row.length - 1; c++) {
-        if (row[c] === row[c + 1]) {
+        // 8192上限检查：超过8192不合并
+        if (row[c] === row[c + 1] && row[c] < 8192) {
           row[c] *= 2;
           row[c + 1] = 0;
           moved = true; // Merge happened, but we also need to check if position changed
@@ -118,6 +123,11 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
           }
       }
       setHighestTile(max);
+
+      // 检查是否达到8192上限
+      if (max >= 8192) {
+        setMaxReached(true);
+      }
 
       if (checkGameOver(workingBoard)) {
         vibrate(VIBRATION_PATTERNS.ERROR); // Game over vibration
@@ -310,6 +320,30 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
                             className="p-2 w-full text-white bg-green-600 rounded hover:bg-green-700"
                         >
                             出售 ({ALCHEMY_LEVELS[highestTile]?.price} 文)
+                        </button>
+                        <button
+                            onClick={() => handleCashOut(false)}
+                            className="p-2 w-full text-white bg-blue-600 rounded hover:bg-blue-700"
+                        >
+                            保留物品
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {maxReached && !gameOver && (
+            <div className="flex absolute inset-0 z-10 justify-center items-center rounded-xl bg-black/60 backdrop-blur-sm">
+                <div className="p-6 m-4 text-center bg-card text-card-foreground rounded-lg duration-300 animate-in zoom-in border border-border shadow-xl">
+                    <h3 className="mb-2 text-xl font-bold text-green-600 dark:text-green-400">🎉 炼丹成功！</h3>
+                    <p className="mb-4 text-muted-foreground">已炼出最高品质仙丹！</p>
+                    <p className="mb-6 font-medium text-foreground">炼成：{ALCHEMY_LEVELS[8192]?.name}</p>
+                    <div className="flex flex-col gap-2">
+                         <button
+                            onClick={() => handleCashOut(true)}
+                            className="p-2 w-full text-white bg-green-600 rounded hover:bg-green-700"
+                        >
+                            出售 ({ALCHEMY_LEVELS[8192]?.price} 文)
                         </button>
                         <button
                             onClick={() => handleCashOut(false)}

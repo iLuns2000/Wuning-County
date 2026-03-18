@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers, Cloud, CloudOff } from 'lucide-react';
+import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers, Cloud, CloudOff, Clock } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +31,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     addLog,
     resetGame,
     saveToFile,
-    shareSave
+    shareSave,
+    timeSettings,
+    updateTimeSettings,
+    resetDayTimer
   } = useGameStore();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,6 +53,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const playerStats = useGameStore((state) => state.playerStats);
   const playerName = useGameStore((state) => state.playerProfile)?.name || '';
   const money = playerStats?.money || 0;
+
+  // 时间流速设置相关状态
+  const [durationInput, setDurationInput] = useState(timeSettings.dayDurationSeconds / 60);
+  const [toastSecondsInput, setToastSecondsInput] = useState(timeSettings.mobileToastSeconds ?? 1.5);
+
+  // 保存时间流速设置
+  const handleDurationSave = () => {
+    const seconds = Math.max(60, Math.floor(durationInput * 60)); // Min 1 minute
+    updateTimeSettings({ dayDurationSeconds: seconds, mobileToastSeconds: Math.max(1, Math.min(5, toastSecondsInput)) });
+    resetDayTimer(); // Reset timer when changing duration
+    addLog(`【系统】时间流速已更新：一天 ${durationInput} 分钟`);
+  };
 
   // 加载云存档列表
   const loadCloudSaves = async () => {
@@ -319,6 +334,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 title={vibrationEnabled ? "关闭震动" : "开启震动"}
               >
                 {vibrationEnabled ? <Vibrate size={20} /> : <VibrateOff size={20} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border border-dashed bg-muted/30 border-border">
+            <h3 className="flex gap-2 items-center mb-4 font-semibold">
+              <Clock size={16} className="text-primary" /> 时间流速设置
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="flex justify-between text-xs text-muted-foreground">
+                  <span>一天时长 (分钟)</span>
+                  <span className="font-bold">{durationInput} 分钟</span>
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  value={durationInput}
+                  onChange={(e) => setDurationInput(parseFloat(e.target.value))}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary bg-muted"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground px-1">
+                  <span>1m</span>
+                  <span>5m</span>
+                  <span>10m</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="flex justify-between text-xs text-muted-foreground">
+                  <span>手机提示时长 (秒)</span>
+                  <span className="font-bold">{toastSecondsInput} 秒</span>
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="0.5"
+                  value={toastSecondsInput}
+                  onChange={(e) => setToastSecondsInput(parseFloat(e.target.value))}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary bg-muted"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground px-1">
+                  <span>1s</span>
+                  <span>3s</span>
+                  <span>5s</span>
+                </div>
+              </div>
+
+              <p className="p-2 text-xs rounded text-muted-foreground bg-secondary/50">
+                最后1分钟为"夜晚"，结束后自动进入下一天。
+              </p>
+
+              <button
+                onClick={handleDurationSave}
+                className="w-full py-2 text-sm font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+              >
+                保存并重置计时器
               </button>
             </div>
           </div>

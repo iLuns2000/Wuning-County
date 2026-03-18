@@ -399,12 +399,12 @@ export function interactDog(
 
   const actionConfig = {
     pet: {
-      line: '你轻轻抚摸小狗的头，它舒服地闭上眼睛。',
+      line: '你轻轻抚摸小花的头，它舒服地闭上眼睛。',
       cost: { health: -5 },
       reward: { experience: 5, relationChange: { ji_yi_ou: 1 } }
     },
     feed: {
-      line: '你给小狗喂了医馆特制的小零食，它高兴地摇尾巴。',
+      line: '你给小花喂了医馆特制的小零食，它高兴地摇尾巴。',
       cost: { money: -10 },
       reward: { experience: 10, relationChange: { ji_yi_ou: 2 } }
     }
@@ -459,7 +459,7 @@ export function practiceDogBark(
 
   // 前 4 次固定惩罚
   if (totalBarks < 4) {
-    logs.push('你对着小狗"汪汪"叫了两声...');
+    logs.push('你对着小花"汪汪"叫了两声...');
     logs.push(`【惩罚】声望 ${DOG_BARK_EARLY_PENALTY.reputation}，体力 ${DOG_BARK_EARLY_PENALTY.health}`);
 
     const statePatch: Partial<ClinicAnimalState> = {
@@ -478,8 +478,8 @@ export function practiceDogBark(
 
   // 第 5 次 - 触发称号
   if (totalBarks === 4) {
-    logs.push('你对着小狗"汪汪"叫了两声...');
-    logs.push('小狗歪着头看你，突然你也觉得自己有些傻...');
+    logs.push('你对着小花"汪汪"叫了两声...');
+    logs.push('小花歪着头看你，突然你也觉得自己有些傻...');
     logs.push(`【成就解锁】学狗叫累计达 ${DOG_BARK_TOTAL_FOR_TITLE} 次，获得称号「汪汪汪，谁家的小狗」！`);
     logs.push(`奖励：声望 +${TITLE_WANG_WANG_WANG_REWARD.reputation}，铜钱 +${TITLE_WANG_WANG_WANG_REWARD.money}！`);
 
@@ -502,8 +502,8 @@ export function practiceDogBark(
   const success = Math.random() < DOG_BARK_SUCCESS_RATE;
 
   if (success) {
-    logs.push('你对着小狗"汪汪"叫了两声...');
-    logs.push('小狗兴奋地回应你："汪汪！"');
+    logs.push('你对着小花"汪汪"叫了两声...');
+    logs.push('小花兴奋地回应你："汪汪！"');
     logs.push(`【成功】声望 +${DOG_BARK_SUCCESS_REWARD.reputation}，铜钱 +${DOG_BARK_SUCCESS_REWARD.money}`);
 
     const statePatch: Partial<ClinicAnimalState> = {
@@ -519,8 +519,8 @@ export function practiceDogBark(
       logs
     };
   } else {
-    logs.push('你对着小狗"汪汪"叫了两声...');
-    logs.push('小狗疑惑地看了你一眼，仿佛在说：你谁？');
+    logs.push('你对着小花"汪汪"叫了两声...');
+    logs.push('小花疑惑地看了你一眼，仿佛在说：你谁？');
     logs.push(`【失败】今日已禁止动物互动。`);
 
     const statePatch: Partial<ClinicAnimalState> = {

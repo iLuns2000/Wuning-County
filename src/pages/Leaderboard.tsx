@@ -25,7 +25,7 @@ export const Leaderboard: React.FC = () => {
   const npcRelations = useGameStore((state) => state.npcRelations) || {};
   
   // 楼县令好感度（单个NPC）
-  const countyMagistrateFavorability = npcRelations['楼县令'] || 0;
+  const countyMagistrateFavorability = npcRelations['lou_xianling'] || 0;
   
   const deviceId = getDeviceId();
   const PAGE_SIZE = 50;

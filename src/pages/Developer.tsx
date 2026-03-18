@@ -74,7 +74,6 @@ export const Developer: React.FC = () => {
         health: formData.health,
         experience: formData.experience,
         accuracy: formData.accuracy,
-        accuracy: playerStats.accuracy,
         debt: playerStats.debt,
       },
       countyStats: {

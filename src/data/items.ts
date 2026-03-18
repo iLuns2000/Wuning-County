@@ -614,6 +614,8 @@ export const items: Item[] = [
   { id: 'herb_ambergris', name: '龙涎香', description: '大海中异兽的珍宝，异香扑鼻，价值连城。', type: 'material', price: 1500, color: 'bg-gray-600', textColor: 'text-white' },
   { id: 'herb_snow_lotus', name: '天山雪莲', description: '生长在极寒之地的雪莲，能解百毒。', type: 'material', price: 4000, color: 'bg-cyan-600', textColor: 'text-white' },
   { id: 'herb_ginseng_king', name: '千年人参', description: '吸收了千年日精月华的人参，已有灵性。', type: 'material', price: 10000, color: 'bg-red-700', textColor: 'text-white' },
+  { id: 'herb_returning_grass', name: '九转还魂草', description: '珍贵的草药，有起死回生的功效。', type: 'material', price: 15000, color: 'bg-red-700', textColor: 'text-white' },
+  { id: 'herb_fuling_king', name: '万年茯苓王', description: '罕见的茯苓，具有极高的药用价值。', type: 'material', price: 100000, color: 'bg-red-700', textColor: 'text-white' },
   {
     id: 'clay_figure_manager',
     name: '小掌柜泥人',

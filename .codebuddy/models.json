@@ -1,8 +1,8 @@
 {
   "models": [
     {
-      "id": "MiniMax-M2.5",
-      "name": "MiniMax-M2.5",
+      "id": "MiniMax-M2.7",
+      "name": "MiniMax-M2.7",
       "vendor": "MiniMax",
       "apiKey": "sk-cp--kdbFZP8p8WM7ItNQVuW1WWKux1KGGp_tQHSLi02fwFNnrjRrnT1DVKydqneNVZ8eQ-_75fhiJH9CadXNZy3JDAZ_iFGolnUrArm9On1u9f6dEXPiX75LKg",
       "maxInputTokens": 200000,
@@ -13,5 +13,5 @@
       "supportsImages": true
     }
   ],
-  "availableModels": ["MiniMax-M2.5"]
+  "availableModels": ["MiniMax-M2.7"]
 }

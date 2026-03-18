@@ -78,7 +78,7 @@ export const DOG_ACTIONS: DogAction[] = [
   {
     id: 'pet',
     label: '抚摸',
-    description: '轻轻抚摸小狗的头',
+    description: '轻轻抚摸小花的头',
     cost: {
       health: 5
     },
@@ -90,7 +90,7 @@ export const DOG_ACTIONS: DogAction[] = [
   {
     id: 'feed',
     label: '喂零食',
-    description: '给小狗喂些医馆特制的小零食',
+    description: '给小花喂些医馆特制的小零食',
     cost: {
       money: -10
     },
@@ -102,7 +102,7 @@ export const DOG_ACTIONS: DogAction[] = [
   {
     id: 'bark_learn',
     label: '学狗叫',
-    description: '尝试模仿狗叫声与小狗交流',
+    description: '尝试模仿狗叫声与小花交流',
     cost: {
       health: 10
     }

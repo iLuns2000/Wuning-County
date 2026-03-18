@@ -130,14 +130,14 @@ export const ClinicAnimalModal: React.FC<ClinicAnimalModalProps> = ({ onClose })
   // 小狗互动
   const handlePetDog = () => {
     const result = interactDog(state, 'pet');
-    addLog(result.message || result.success ? '你轻轻抚摸小狗的头，它舒服地闭上眼睛。' : result.message);
+    addLog(result.message || result.success ? '你轻轻抚摸小花的头，它舒服地闭上眼睛。' : result.message);
     processResult(result);
     vibrate(VIBRATION_PATTERNS.MEDIUM);
   };
 
   const handleFeedDog = () => {
     const result = interactDog(state, 'feed');
-    addLog(result.message || result.success ? '你给小狗喂了零食，它高兴地摇尾巴。' : result.message);
+    addLog(result.message || result.success ? '你给小花喂了零食，它高兴地摇尾巴。' : result.message);
     processResult(result);
     vibrate(VIBRATION_PATTERNS.MEDIUM);
   };
@@ -205,7 +205,7 @@ export const ClinicAnimalModal: React.FC<ClinicAnimalModalProps> = ({ onClose })
             }`}
           >
             <Dog size={16} />
-            <span>小狗</span>
+            <span>小花（小狗）</span>
           </button>
         </div>
 
