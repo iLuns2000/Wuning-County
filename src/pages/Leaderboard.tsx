@@ -24,8 +24,8 @@ export const Leaderboard: React.FC = () => {
   const playerName = useGameStore((state) => state.playerProfile)?.name || '';
   const npcRelations = useGameStore((state) => state.npcRelations) || {};
   
-  // 计算县令好感度（所有NPC好感度之和）
-  const totalFavorability = Object.values(npcRelations).reduce((sum: number, val) => sum + (typeof val === 'number' ? val : 0), 0);
+  // 楼县令好感度（单个NPC）
+  const countyMagistrateFavorability = npcRelations['楼县令'] || 0;
   
   const deviceId = getDeviceId();
   const PAGE_SIZE = 50;
@@ -96,9 +96,9 @@ export const Leaderboard: React.FC = () => {
     try {
       await registerUser(deviceId, displayName);
       setUserNickname(displayName);
-      await setFavorability(deviceId, totalFavorability);
+      await setFavorability(deviceId, countyMagistrateFavorability);
       
-      alert(`恭喜上榜成功！\n当前县令好感度: ${totalFavorability}\n每天会自动同步一次好感度到排行榜。`);
+      alert(`恭喜上榜成功！\n当前楼县令好感度: ${countyMagistrateFavorability}\n每天会自动同步一次好感度到排行榜。`);
       setHasUserJoined(true);
       loadLeaderboard('favorability');
     } catch (e) {
@@ -133,13 +133,13 @@ export const Leaderboard: React.FC = () => {
   // 获取当前类型的数值
   const currentValue = leaderboardType === 'money' 
     ? money 
-    : totalFavorability;
+    : countyMagistrateFavorability;
   
   const currentDisplayValue = leaderboardType === 'money'
     ? (currentUserRank as LeaderboardEntry)?.money?.toLocaleString() || '0'
     : (currentUserRank as FavorabilityLeaderboardEntry)?.favorability?.toLocaleString() || '0';
 
-  const valueLabel = leaderboardType === 'money' ? '财富' : '好感度';
+  const valueLabel = leaderboardType === 'money' ? '财富' : '县令好感度';
   const unit = leaderboardType === 'money' ? '文' : '点';
 
   return (
@@ -175,7 +175,7 @@ export const Leaderboard: React.FC = () => {
             }`}
           >
             <Heart className="inline-block w-4 h-4 mr-1" />
-            好感榜
+            县令好感榜
           </button>
         </div>
 
@@ -237,8 +237,8 @@ export const Leaderboard: React.FC = () => {
                           await setMoney(deviceId, money);
                           alert(`财富已同步！\n当前财富: ${money.toLocaleString()} 文`);
                         } else {
-                          await setFavorability(deviceId, totalFavorability);
-                          alert(`好感度已同步！\n当前好感度: ${totalFavorability}`);
+                          await setFavorability(deviceId, countyMagistrateFavorability);
+                          alert(`楼县令好感度已同步！\n当前好感度: ${countyMagistrateFavorability}`);
                         }
                         loadLeaderboard(leaderboardType);
                       } catch (e) {
