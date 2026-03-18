@@ -2910,7 +2910,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '学习偷盗 (银两-1000, 体力-10)',
         message: '手要轻，心要静，来去不留痕。你按照惊鹊的教导练习，技艺有所提升。',
-        effect: { ability: 6, money: -1000, health: -10, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.3, count: 1 }] }
+        effect: { ability: 6, money: -1000, health: -10, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.03, count: 1 }] }
       },
       {
         label: '离开',
@@ -2948,7 +2948,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '一个人挖 (体力-50, 银两-5000)',
         message: '你独自前往城外僻静处挖洞，土层渐深时，指尖忽然触到一片柔软光滑的黑色羽毛，上面还泛着淡淡的青蓝光泽 —— 这分明是惊鹊留下的。',
-        effect: { health: -50, money: -5000, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.5, count: 1 }] }
+        effect: { health: -50, money: -5000, probabilisticItemsAdd: [{ itemId: 'startled_magpie_feather', probability: 0.1, count: 1 }] }
       },
       {
         label: '和惊鹊一起挖 (体力-100%, 银两-20%)',
