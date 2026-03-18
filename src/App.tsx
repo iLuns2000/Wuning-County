@@ -161,7 +161,7 @@ function App() {
     const wuningActivity = {
       id: 'wuning_bookstore_2026',
       title: '无宁书驿等你来！',
-      imageUrl: '/images/wuning.png',
+      imageUrl: '/images/wuning.webp',
       imageAlt: '无宁书驿活动公告',
     };
 
