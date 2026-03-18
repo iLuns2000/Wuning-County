@@ -22,7 +22,6 @@ export const roles: RoleConfig[] = [
       health: 100,
       experience: 0,
       accuracy: 10,
-      accuracy: 30,
       debt: 0,
     },
     initialCountyStats: {
@@ -52,7 +51,6 @@ export const roles: RoleConfig[] = [
       health: 100,
       experience: 0,
       accuracy: 10,
-      accuracy: 20,
       debt: 0,
     },
     initialCountyStats: {
@@ -82,7 +80,6 @@ export const roles: RoleConfig[] = [
       health: 120,
       experience: 0,
       accuracy: 20,
-      accuracy: 60,
       debt: 0,
     },
     initialCountyStats: {
