@@ -251,6 +251,16 @@ export interface GameState {
 
   // 医馆动物
   clinicAnimals: ClinicAnimalState;
+
+  // 活动弹窗
+  activityPopup: {
+    id: string;
+    title?: string;
+    imageUrl: string;
+    imageAlt?: string;
+    linkUrl?: string;
+  } | null;
+  dismissedActivities: Record<string, string>; // activityId -> contentHash
 }
 
 export interface DisasterState {

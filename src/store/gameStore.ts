@@ -478,6 +478,10 @@ interface GameStore extends GameState {
   // Achievement Actions
   dismissAchievementPopup: () => void;
 
+  // Activity Popup Actions
+  setActivityPopup: (activity: { id: string; imageUrl: string; imageAlt?: string; linkUrl?: string } | null) => void;
+  dismissActivityPopup: (activityId: string, contentHash: string) => void;
+
   // Explore Actions
   performExplore: () => void;
   fillCave: () => void;
@@ -636,6 +640,10 @@ export const useGameStore = create<GameStore>()(
       // 季一藕医馆动物互动初始状态
       clinicAnimals: getDefaultClinicAnimalState(),
 
+      // 活动弹窗初始状态
+      activityPopup: null,
+      dismissedActivities: {},
+
       markInteraction: () => {
         const state = get();
         if (!state.hasInteractedToday) {
@@ -644,6 +652,17 @@ export const useGameStore = create<GameStore>()(
       },
 
       dismissAchievementPopup: () => set({ latestUnlockedAchievementId: undefined }),
+
+      setActivityPopup: (activity) => set({ activityPopup: activity }),
+      dismissActivityPopup: (activityId, contentHash) => {
+        set((state) => ({
+          dismissedActivities: {
+            ...state.dismissedActivities,
+            [activityId]: contentHash,
+          },
+          activityPopup: null,
+        }));
+      },
 
       performExplore: () => {
         set({ isExploring: true, exploreResult: null });
@@ -4308,6 +4327,7 @@ export const useGameStore = create<GameStore>()(
           inventory: migratedInventory,
           activeDebuffs: persisted.activeDebuffs ?? [],
           lastDebuffCheckDay: persisted.lastDebuffCheckDay ?? 0,
+          dismissedActivities: persisted.dismissedActivities ?? {},
         };
       },
       partialize: (state) => ({
@@ -4365,6 +4385,8 @@ export const useGameStore = create<GameStore>()(
         // Debuff 系统持久化
         activeDebuffs: state.activeDebuffs,
         lastDebuffCheckDay: state.lastDebuffCheckDay,
+        // 活动弹窗持久化
+        dismissedActivities: state.dismissedActivities,
       }), // Save everything except actions
     }
   )

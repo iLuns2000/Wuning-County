@@ -28,11 +28,13 @@ import { BugReport } from '@/pages/BugReport';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SplashScreen } from '@/components/SplashScreen';
+import { ActivityModal, hashContent } from '@/components/ActivityModal';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
+import { useGameStore } from '@/store/gameStore';
 import { useEffect } from 'react';
 
 /* 古风字体类名工具 */
@@ -142,6 +144,41 @@ function App() {
   // 启动画面状态
   const [showSplash, setShowSplash] = useState(true);
 
+  // 活动弹窗状态
+  const activityPopup = useGameStore((state) => state.activityPopup);
+  const dismissedActivities = useGameStore((state) => state.dismissedActivities);
+  const setActivityPopup = useGameStore((state) => state.setActivityPopup);
+  const dismissActivityPopup = useGameStore((state) => state.dismissActivityPopup);
+
+  // 检查是否应该显示活动弹窗
+  const shouldShowActivityPopup = activityPopup && (
+    !dismissedActivities[activityPopup.id] ||
+    dismissedActivities[activityPopup.id] !== hashContent(activityPopup.id, activityPopup.imageUrl, activityPopup.title)
+  );
+
+  // 设置无宁书驿活动弹窗 (仅首次/内容变化时显示)
+  useEffect(() => {
+    const wuningActivity = {
+      id: 'wuning_bookstore_2026',
+      title: '无宁书驿等你来！',
+      imageUrl: '/images/wuning.png',
+      imageAlt: '无宁书驿活动公告',
+    };
+
+    // 检查是否需要显示
+    const dismissedHash = dismissedActivities[wuningActivity.id];
+    const currentHash = hashContent(wuningActivity.id, wuningActivity.imageUrl, wuningActivity.title);
+
+    if (!dismissedHash || dismissedHash !== currentHash) {
+      // 延迟显示，等启动画面结束后
+      const timer = setTimeout(() => {
+        setActivityPopup(wuningActivity);
+      }, showSplash ? 3000 : 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSplash, dismissedActivities, setActivityPopup]);
+
   return (
     <>
       {showSplash && <SplashScreen onReady={() => setShowSplash(false)} />}
@@ -169,11 +206,24 @@ function App() {
       <FireworksSplash />
       <MobileLogToast />
       <Watermark />
+      {/* 活动弹窗 */}
+      {shouldShowActivityPopup && activityPopup && (
+        <ActivityModal
+          isOpen={true}
+          activityId={activityPopup.id}
+          title={activityPopup.title}
+          imageUrl={activityPopup.imageUrl}
+          imageAlt={activityPopup.imageAlt}
+          linkUrl={activityPopup.linkUrl}
+          onClose={() => setActivityPopup(null)}
+          onDismiss={(id, hash) => dismissActivityPopup(id, hash)}
+        />
+      )}
       <div className="fixed bottom-2 left-0 w-full text-center text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
-        <a 
-          href="https://beian.miit.gov.cn/" 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
           className="transition-colors pointer-events-auto hover:text-muted-foreground/80"
         >
           苏ICP备2026005123号
