@@ -12,7 +12,7 @@ import { npcs } from '@/data/npcs';
 import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
-import { items } from '@/data/items';
+import { items, hairstyleItemIds, barberExclusiveHairItemIds } from '@/data/items';
 import { snacks } from '@/data/snacks';
 import { treasurePrices } from '@/data/treasures';
 import { charities } from '@/data/charities';
@@ -523,6 +523,7 @@ interface GameStore extends GameState {
   useItem: (itemId: string) => void;
   equipApparel: (slot: ApparelSlot, itemId: string) => void;
   unequipApparel: (slot: ApparelSlot) => void;
+  randomizeHairStyle: () => { success: boolean; hairItemId?: string; hairName?: string; isNew: boolean; };
   equipAccessory: (itemId: string) => void;
   unequipAccessory: (itemId: string) => void;
 
@@ -1257,6 +1258,37 @@ export const useGameStore = create<GameStore>()(
         set(s => ({
           equippedApparel: { ...s.equippedApparel, [slot]: undefined }
         }));
+      },
+
+      randomizeHairStyle: () => {
+        const state = get();
+        const hairItems = hairstyleItemIds.flatMap(id => {
+          const item = items.find(candidate => candidate.id === id);
+          return item ? [item] : [];
+        });
+        if (hairItems.length === 0) {
+          get().addLog('【梦幻只雕剃肆】今日竟无发样可换。');
+          return { success: false, isNew: false };
+        }
+
+        const barberExclusiveSet = new Set(barberExclusiveHairItemIds);
+        const barberExclusiveItems = hairItems.filter(item => barberExclusiveSet.has(item.id));
+        const normalHairItems = hairItems.filter(item => !barberExclusiveSet.has(item.id));
+
+        const shouldRollExclusive = barberExclusiveItems.length > 0 && Math.random() < 0.1;
+        const sourcePool = shouldRollExclusive ? barberExclusiveItems : (normalHairItems.length > 0 ? normalHairItems : hairItems);
+        const availableHairItems = sourcePool.filter(item => item.id !== state.equippedApparel.hair);
+        const pool = availableHairItems.length > 0 ? availableHairItems : sourcePool;
+        const nextHair = pool[Math.floor(Math.random() * pool.length)];
+        const alreadyOwned = invHas(state.inventory, nextHair.id);
+
+        set(s => ({
+          inventory: alreadyOwned ? s.inventory : invAdd(s.inventory, nextHair.id),
+          equippedApparel: { ...s.equippedApparel, hair: nextHair.id }
+        }));
+
+        get().addLog(`【发型】换上了${nextHair.name}。`);
+        return { success: true, hairItemId: nextHair.id, hairName: nextHair.name, isNew: !alreadyOwned };
       },
 
       equipAccessory: (itemId) => {

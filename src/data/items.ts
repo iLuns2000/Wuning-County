@@ -102,6 +102,113 @@ export const items: Item[] = [
     type: 'misc'
   },
   {
+    id: 'hair_yunluo_ji',
+    name: '云螺髻',
+    description: '发髻绾成双螺，鬓边留出柔软碎发，清雅中带着几分少女灵动。',
+    type: 'apparel',
+    price: 320,
+    slot: 'hair',
+    style: '清雅'
+  },
+  {
+    id: 'hair_jinque_gaoji',
+    name: '金雀高髻',
+    description: '高高束起的发髻如金雀停枝，线条利落，最衬端庄贵气。',
+    type: 'apparel',
+    price: 580,
+    slot: 'hair',
+    style: '华贵'
+  },
+  {
+    id: 'hair_qingfeng_mawei',
+    name: '轻风马尾',
+    description: '以青绫束成的高马尾，发尾轻扬，走动时自带英气。',
+    type: 'apparel',
+    price: 260,
+    slot: 'hair',
+    style: '英气'
+  },
+  {
+    id: 'hair_taohua_bian',
+    name: '桃花侧辫',
+    description: '一侧细辫垂落肩头，像是随手簪了几瓣桃花，俏皮又明媚。',
+    type: 'apparel',
+    price: 300,
+    slot: 'hair',
+    style: '俏皮'
+  },
+  {
+    id: 'hair_muyun_panji',
+    name: '暮云盘髻',
+    description: '乌发低低盘起，纹理如暮云缓卷，温润含蓄，很有书卷气。',
+    type: 'apparel',
+    price: 420,
+    slot: 'hair',
+    style: '典雅'
+  },
+  {
+    id: 'hair_xueliu_feixian',
+    name: '雪柳飞仙髻',
+    description: '层层发髻上扬如飞仙，鬓角收得干净利落，显得格外出挑。',
+    type: 'apparel',
+    price: 760,
+    slot: 'hair',
+    style: '华贵'
+  },
+  {
+    id: 'hair_jiucai_ren',
+    name: '韭菜人发型',
+    description: '头顶几缕青翠发束像刚出土的嫩韭菜，离远看竟有种奇妙的精神气。',
+    type: 'apparel',
+    price: 188,
+    slot: 'hair',
+    style: '俏皮'
+  },
+  {
+    id: 'hair_shamate',
+    name: '杀马特发型',
+    description: '发尾炸开如雷火，层次夸张到能惊动半条街，是理发铺压箱底的狂野作品。',
+    type: 'apparel',
+    slot: 'hair',
+    style: '英气'
+  },
+  {
+    id: 'hat_bamboo_douli',
+    name: '青篾斗笠',
+    description: '以细篾编成的轻巧斗笠，遮阳避雨都很实用，带点江湖行路人的味道。',
+    type: 'accessory',
+    price: 240,
+    slot: 'head',
+    style: '英气'
+  },
+  {
+    id: 'hat_ruanyan_limao',
+    name: '软檐笠帽',
+    description: '帽檐微垂，边缘压着细线纹，戴上后显得人温温柔柔，很衬日常游逛。',
+    type: 'accessory',
+    price: 360,
+    slot: 'head',
+    style: '清雅'
+  },
+  {
+    id: 'hat_jinwen_xiaomao',
+    name: '锦纹小帽',
+    description: '帽面缀着低调锦纹，收束利落，带着一点富贵人家出门踏青的讲究。',
+    type: 'accessory',
+    price: 520,
+    slot: 'head',
+    style: '典雅'
+  },
+  {
+    id: 'hat_shusheng_mao',
+    name: '书生帽',
+    description: '一顶常见于书院与文会间的方正小帽，压住发髻后更显温雅书卷气。',
+    type: 'accessory',
+    price: 420,
+    slot: 'head',
+    style: '典雅'
+  },
+  {
     id: 'clo_apricot_ruqun',
     name: '杏色襦裙',
     description: '温柔杏色襦裙，裙摆轻盈，适合日常雅会。',
@@ -915,3 +1022,7 @@ export const items: Item[] = [
 export const getItemById = (id: string): Item | undefined => {
     return items.find(i => i.id === id);
 };
+
+
+export const hairstyleItemIds = items.filter(item => item.type === 'apparel' && item.slot === 'hair').map(item => item.id);
+export const barberExclusiveHairItemIds = ['hair_shamate'];

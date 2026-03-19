@@ -4,7 +4,7 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { Scissors, Sparkles } from 'lucide-react';
 
 export const BarberShop: React.FC = () => {
-  const { playerStats, handleEventOption, inventory, flags } = useGameStore();
+  const { playerStats, handleEventOption, inventory, flags, randomizeHairStyle } = useGameStore();
   const vibrate = useGameVibrate();
 
   const hasCoupon = (inventory['barber_discount_coupon'] || 0) > 0;
@@ -20,8 +20,18 @@ export const BarberShop: React.FC = () => {
       return;
     }
 
+    const hairResult = randomizeHairStyle();
     const messageParts: string[] = [];
     messageParts.push('【梦幻只雕剃肆】洗剪吹完成，焕然一新。');
+    if (hairResult.success && hairResult.hairName) {
+      messageParts.push(`这次给你换上了【${hairResult.hairName}】。`);
+      if (hairResult.hairItemId === 'hair_shamate') {
+        messageParts.push('店家忽然灵感爆棚，给你整出了限定杀马特。');
+      }
+      if (hairResult.isNew) {
+        messageParts.push('新发型已经记入你的梳妆台。');
+      }
+    }
 
     // Consume coupon if present
     const effect: import('@/types/game').Effect = {
