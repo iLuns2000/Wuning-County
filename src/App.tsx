@@ -8,23 +8,8 @@
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { Home } from '@/pages/Home';
-import { Game } from '@/pages/Game';
-import { NPCList } from '@/pages/NPCList';
-import { NPCDetail } from '@/pages/NPCDetail';
-import { TaskList } from '@/pages/TaskList';
-import { Facilities } from '@/pages/Facilities';
-import { Buildings } from '@/pages/Buildings';
-import { Collection } from '@/pages/Collection';
-import { Credits } from '@/pages/Credits';
-import { Developer } from '@/pages/Developer';
-import { SaveViewer } from '@/pages/SaveViewer';
-import { PigeonRace } from '@/pages/PigeonRace';
-import { GameManual } from '@/pages/GameManual';
-import { Leaderboard } from '@/pages/Leaderboard';
-import { BugReport } from '@/pages/BugReport';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -36,6 +21,30 @@ import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
 import { useGameStore } from '@/store/gameStore';
 import { useEffect } from 'react';
+
+// 路由懒加载
+const Home = lazy(() => import('@/pages/Home').then(m => ({ default: m.Home })));
+const Game = lazy(() => import('@/pages/Game').then(m => ({ default: m.Game })));
+const NPCList = lazy(() => import('@/pages/NPCList').then(m => ({ default: m.NPCList })));
+const NPCDetail = lazy(() => import('@/pages/NPCDetail').then(m => ({ default: m.NPCDetail })));
+const TaskList = lazy(() => import('@/pages/TaskList').then(m => ({ default: m.TaskList })));
+const Facilities = lazy(() => import('@/pages/Facilities').then(m => ({ default: m.Facilities })));
+const Buildings = lazy(() => import('@/pages/Buildings').then(m => ({ default: m.Buildings })));
+const Collection = lazy(() => import('@/pages/Collection').then(m => ({ default: m.Collection })));
+const Credits = lazy(() => import('@/pages/Credits').then(m => ({ default: m.Credits })));
+const Developer = lazy(() => import('@/pages/Developer').then(m => ({ default: m.Developer })));
+const SaveViewer = lazy(() => import('@/pages/SaveViewer').then(m => ({ default: m.SaveViewer })));
+const PigeonRace = lazy(() => import('@/pages/PigeonRace').then(m => ({ default: m.PigeonRace })));
+const GameManual = lazy(() => import('@/pages/GameManual').then(m => ({ default: m.GameManual })));
+const Leaderboard = lazy(() => import('@/pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const BugReport = lazy(() => import('@/pages/BugReport').then(m => ({ default: m.BugReport })));
+
+// 加载中组件
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+);
 
 /* 古风字体类名工具 */
 export const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -186,21 +195,21 @@ function App() {
         <ScrollToTop />
         <InventoryMigrationNotice />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/game" element={<Game />} />
-        <Route path="/npcs" element={<NPCList />} />
-        <Route path="/npcs/:id" element={<NPCDetail />} />
-        <Route path="/tasks" element={<TaskList />} />
-        <Route path="/facilities" element={<Facilities />} />
-        <Route path="/buildings" element={<Buildings />} />
-        <Route path="/collection" element={<Collection />} />
-        <Route path="/credits" element={<Credits />} />
-        <Route path="/developer" element={<Developer />} />
-        <Route path="/save-view" element={<SaveViewer />} />
-        <Route path="/pigeon-race" element={<PigeonRace />} />
-        <Route path="/manual" element={<GameManual />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/bug-report" element={<BugReport />} />
+        <Route path="/" element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
+        <Route path="/game" element={<Suspense fallback={<PageLoader />}><Game /></Suspense>} />
+        <Route path="/npcs" element={<Suspense fallback={<PageLoader />}><NPCList /></Suspense>} />
+        <Route path="/npcs/:id" element={<Suspense fallback={<PageLoader />}><NPCDetail /></Suspense>} />
+        <Route path="/tasks" element={<Suspense fallback={<PageLoader />}><TaskList /></Suspense>} />
+        <Route path="/facilities" element={<Suspense fallback={<PageLoader />}><Facilities /></Suspense>} />
+        <Route path="/buildings" element={<Suspense fallback={<PageLoader />}><Buildings /></Suspense>} />
+        <Route path="/collection" element={<Suspense fallback={<PageLoader />}><Collection /></Suspense>} />
+        <Route path="/credits" element={<Suspense fallback={<PageLoader />}><Credits /></Suspense>} />
+        <Route path="/developer" element={<Suspense fallback={<PageLoader />}><Developer /></Suspense>} />
+        <Route path="/save-view" element={<Suspense fallback={<PageLoader />}><SaveViewer /></Suspense>} />
+        <Route path="/pigeon-race" element={<Suspense fallback={<PageLoader />}><PigeonRace /></Suspense>} />
+        <Route path="/manual" element={<Suspense fallback={<PageLoader />}><GameManual /></Suspense>} />
+        <Route path="/leaderboard" element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
+        <Route path="/bug-report" element={<Suspense fallback={<PageLoader />}><BugReport /></Suspense>} />
       </Routes>
       <NewYearCountdownBanner />
       <FireworksSplash />
