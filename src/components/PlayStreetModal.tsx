@@ -6,7 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import { X, ShoppingBag, Gem, Star, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { items } from '@/data/items';
+import { items, barberExclusiveHairItemIds } from '@/data/items';
 import { AccessorySlot, ApparelSlot, Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
@@ -55,7 +55,9 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
 
   const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), []);
 
-  const apparelItems = useMemo(() => items.filter(i => i.type === 'apparel'), []);
+  const barberExclusiveHairSet = useMemo(() => new Set(barberExclusiveHairItemIds), []);
+
+  const apparelItems = useMemo(() => items.filter(i => i.type === 'apparel' && !barberExclusiveHairSet.has(i.id)), [barberExclusiveHairSet]);
   const accessoryItems = useMemo(() => items.filter(i => i.type === 'accessory'), []);
 
   const ownedItems = useMemo(() => {
@@ -122,7 +124,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
               </div>
               <div>
                 <h2 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0] font-display">游乐街</h2>
-                <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">古装服饰 · 梳妆打扮</p>
+                <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">古装服饰 · 发型换装 · 梳妆打扮</p>
               </div>
             </div>
             <button
@@ -177,6 +179,10 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
         <div className="flex-1 overflow-y-auto p-5 bg-[#faf7f0] dark:bg-[#1a1815]">
           {/* 服装店 */}
           {tab === 'apparel' && (
+            <>
+            <div className="mb-3 p-3 rounded-lg border border-[#e0d9cc] dark:border-[#3d3629] bg-white/80 dark:bg-[#242018]/80 text-xs text-[#8b7355] dark:text-[#a08060]">
+新增发型铺与帽子铺：可购买发型、帽子并在梳妆台随时切换；建筑阁的洗剪吹还会随机帮你换上新发样，并有 10% 概率触发限定杀马特。
+            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {apparelItems.map(item => {
                 const price = getPrice(item);
@@ -231,6 +237,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 );
               })}
             </div>
+            </>
           )}
 
           {/* 首饰店 */}
