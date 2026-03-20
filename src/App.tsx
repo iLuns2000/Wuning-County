@@ -168,10 +168,10 @@ function App() {
   // 设置无宁书驿活动弹窗 (仅首次/内容变化时显示)
   useEffect(() => {
     const wuningActivity = {
-      id: 'wuning_bookstore_2026',
-      title: '无宁书驿等你来！',
-      imageUrl: '/images/wuning.webp',
-      imageAlt: '无宁书驿活动公告',
+      id: 'wuning_shanghai_see',
+      title: '321上海见！无宁县民大集合！',
+      imageUrl: 'https://wuning-1302840896.cos.ap-nanjing.myqcloud.com/img-1774047165681bfaa98c7a845cafae660d5dd69836ebc4f608034996f7ff52edefc4cd5394c76.jpg',
+      imageAlt: '321上海见活动公告',
     };
 
     // 检查是否需要显示
