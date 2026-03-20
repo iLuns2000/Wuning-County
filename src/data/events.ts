@@ -3243,5 +3243,29 @@ export const npcEvents: GameEvent[] = [
         }
       }
     ]
+  },
+  {
+    id: "shisanyue_ke_tang",
+    title: "互动",
+    description: "十三月正托着下巴，兴致勃勃地观察着馆内的动向。",
+    type: "npc",
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: "嗑",
+        message: "我可没在偷偷看戏，我只是在……巡查馆内规矩。",
+        effect: { relationChange: { shisanyue: 2 } }
+      },
+      {
+        label: "嗑",
+        message: "你可别去拆穿他们，我还想多看一会儿呢。",
+        effect: { relationChange: { shisanyue: 2 } }
+      },
+      {
+        label: "嗑",
+        message: "有时候看着他们，倒觉得比看戏本还精彩。",
+        effect: { relationChange: { shisanyue: 2 } }
+      }
+    ]
   }
 ];
