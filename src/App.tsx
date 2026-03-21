@@ -170,7 +170,7 @@ function App() {
     const wuningActivity = {
       id: 'wuning_shanghai_see',
       title: '321上海见！无宁县民大集合！',
-      imageUrl: 'https://wuning-1302840896.cos.ap-nanjing.myqcloud.com/img-1774047165681bfaa98c7a845cafae660d5dd69836ebc4f608034996f7ff52edefc4cd5394c76.jpg',
+      imageUrl: '/images/shanghai-meet.jpg',
       imageAlt: '321上海见活动公告',
     };
 
