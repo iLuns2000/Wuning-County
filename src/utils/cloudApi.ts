@@ -263,3 +263,27 @@ export function getUserNickname(): string {
 export function setUserNickname(nickname: string): void {
   localStorage.setItem('wuning_nickname', nickname);
 }
+
+// ========== 公告 API ==========
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  image_url: string;
+  link_url: string;
+  display_position: 'activity' | 'banner' | 'top';
+  priority: number;
+}
+
+export interface AnnouncementResponse {
+  success: boolean;
+  data: Announcement[];
+}
+
+// 获取当前生效的公告
+export async function getActiveAnnouncements(): Promise<AnnouncementResponse> {
+  return request('/announcements/active', {
+    method: 'GET',
+  });
+}

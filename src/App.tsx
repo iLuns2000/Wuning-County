@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
 import { useGameStore } from '@/store/gameStore';
+import { getActiveAnnouncements, type Announcement } from '@/utils/cloudApi';
 import { useEffect } from 'react';
 
 // 路由懒加载
@@ -165,27 +166,63 @@ function App() {
     dismissedActivities[activityPopup.id] !== hashContent(activityPopup.id, activityPopup.imageUrl, activityPopup.title)
   );
 
-  // 设置无宁书驿活动弹窗 (仅首次/内容变化时显示)
+  // 设置活动弹窗 (从API获取，仅首次/内容变化时显示)
   useEffect(() => {
-    const wuningActivity = {
-      id: 'wuning_shanghai_see',
-      title: '321上海见！无宁县民大集合！',
-      imageUrl: '/images/shanghai-meet.jpg',
-      imageAlt: '321上海见活动公告',
+    // 从API获取公告
+    const fetchAnnouncement = async () => {
+      try {
+        const res = await getActiveAnnouncements();
+        if (res.success && res.data && res.data.length > 0) {
+          // 取优先级最高的活动弹窗类型的公告
+          const activityAnnouncement = res.data.find(a => a.display_position === 'activity');
+          if (activityAnnouncement) {
+            const announcement: Announcement = activityAnnouncement;
+            const apiActivity = {
+              id: `announcement_${announcement.id}`,
+              title: announcement.title,
+              imageUrl: announcement.image_url,
+              imageAlt: announcement.content || '公告',
+              linkUrl: announcement.link_url,
+            };
+
+            // 检查是否需要显示
+            const dismissedHash = dismissedActivities[apiActivity.id];
+            const currentHash = hashContent(apiActivity.id, apiActivity.imageUrl, apiActivity.title);
+
+            if (!dismissedHash || dismissedHash !== currentHash) {
+              // 延迟显示，等启动画面结束后
+              const timer = setTimeout(() => {
+                setActivityPopup(apiActivity);
+              }, showSplash ? 3000 : 500);
+
+              return () => clearTimeout(timer);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('获取公告失败:', error);
+        // API失败时使用默认活动（上海见活动）
+        const wuningActivity = {
+          id: 'wuning_shanghai_see',
+          title: '321上海见！无宁县民大集合！',
+          imageUrl: '/images/shanghai-meet.jpg',
+          imageAlt: '321上海见活动公告',
+        };
+
+        const dismissedHash = dismissedActivities[wuningActivity.id];
+        const currentHash = hashContent(wuningActivity.id, wuningActivity.imageUrl, wuningActivity.title);
+
+        if (!dismissedHash || dismissedHash !== currentHash) {
+          const timer = setTimeout(() => {
+            setActivityPopup(wuningActivity);
+          }, showSplash ? 3000 : 500);
+
+          return () => clearTimeout(timer);
+        }
+      }
     };
 
-    // 检查是否需要显示
-    const dismissedHash = dismissedActivities[wuningActivity.id];
-    const currentHash = hashContent(wuningActivity.id, wuningActivity.imageUrl, wuningActivity.title);
-
-    if (!dismissedHash || dismissedHash !== currentHash) {
-      // 延迟显示，等启动画面结束后
-      const timer = setTimeout(() => {
-        setActivityPopup(wuningActivity);
-      }, showSplash ? 3000 : 500);
-
-      return () => clearTimeout(timer);
-    }
+    fetchAnnouncement();
   }, [showSplash, dismissedActivities, setActivityPopup]);
 
   return (
