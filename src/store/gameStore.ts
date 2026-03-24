@@ -479,7 +479,7 @@ interface GameStore extends GameState {
   dismissAchievementPopup: () => void;
 
   // Activity Popup Actions
-  setActivityPopup: (activity: { id: string; imageUrl: string; imageAlt?: string; linkUrl?: string } | null) => void;
+  setActivityPopup: (activity: { id: string; title?: string; content?: string; imageUrl: string; imageAlt?: string; linkUrl?: string; } | null) => void;
   dismissActivityPopup: (activityId: string, contentHash: string) => void;
 
   // Explore Actions

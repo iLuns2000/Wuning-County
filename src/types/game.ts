@@ -256,6 +256,7 @@ export interface GameState {
   activityPopup: {
     id: string;
     title?: string;
+    content?: string;
     imageUrl: string;
     imageAlt?: string;
     linkUrl?: string;
