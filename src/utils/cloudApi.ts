@@ -283,7 +283,11 @@ export interface AnnouncementResponse {
 
 // 获取当前生效的公告
 export async function getActiveAnnouncements(): Promise<AnnouncementResponse> {
-  return request('/announcements/active', {
+  const res = await request<{ code: number; data: Announcement[] }>('/announcements/active', {
     method: 'GET',
   });
+  return {
+    success: res.code === 0,
+    data: res.data || [],
+  };
 }
