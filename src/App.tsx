@@ -42,8 +42,8 @@ const BugReport = lazy(() => import('@/pages/BugReport').then(m => ({ default: m
 
 // 加载中组件
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  <div className="flex justify-center items-center min-h-screen">
+    <div className="w-12 h-12 rounded-full border-t-2 border-b-2 animate-spin border-primary"></div>
   </div>
 );
 
@@ -97,7 +97,7 @@ const InventoryMigrationNotice: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-80 rounded-2xl border border-border bg-card shadow-2xl p-6 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+      <div className="flex flex-col gap-4 items-center p-6 w-80 rounded-2xl border shadow-2xl duration-200 border-border bg-card animate-in zoom-in-95">
         {/* 图标 */}
         <div className="text-3xl">{done ? '✅' : '📦'}</div>
 
@@ -108,28 +108,28 @@ const InventoryMigrationNotice: React.FC = () => {
 
         {/* 说明文字 */}
         {!done ? (
-          <p className="text-sm text-muted-foreground text-center leading-relaxed">
+          <p className="text-sm leading-relaxed text-center text-muted-foreground">
             正在将行囊数据升级为压缩格式
             <br />
             <span className="font-semibold text-yellow-500">请勿退出，避免数据丢失</span>
           </p>
         ) : (
-          <p className="text-sm text-muted-foreground text-center leading-relaxed">
+          <p className="text-sm leading-relaxed text-center text-muted-foreground">
             共迁移 <span className="font-semibold text-foreground">{info.totalItems}</span> 条记录
             &nbsp;→&nbsp;
             <span className="font-semibold text-foreground">{info.uniqueItems}</span> 种物品
             <br />
-            <span className="text-green-500 font-semibold">存储空间大幅减少 ✓</span>
+            <span className="font-semibold text-green-500">存储空间大幅减少 ✓</span>
           </p>
         )}
 
         {/* 进度条 */}
-        <div className="w-full space-y-1">
+        <div className="space-y-1 w-full">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{done ? '迁移完成' : '迁移中...'}</span>
             <span>{progress}%</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+          <div className="overflow-hidden w-full h-2 rounded-full bg-secondary">
             <div
               className={`h-full rounded-full transition-all duration-200 ${done ? 'bg-green-500' : 'bg-primary'}`}
               style={{ width: `${progress}%` }}
@@ -139,7 +139,7 @@ const InventoryMigrationNotice: React.FC = () => {
 
         {/* 完成后提示 */}
         {done && (
-          <p className="text-xs text-muted-foreground animate-in fade-in duration-500">
+          <p className="text-xs duration-500 text-muted-foreground animate-in fade-in">
             窗口将自动关闭…
           </p>
         )}
@@ -163,7 +163,7 @@ function App() {
   // 检查是否应该显示活动弹窗
   const shouldShowActivityPopup = activityPopup && (
     !dismissedActivities[activityPopup.id] ||
-    dismissedActivities[activityPopup.id] !== hashContent(activityPopup.id, activityPopup.imageUrl, activityPopup.title)
+    dismissedActivities[activityPopup.id] !== hashContent(activityPopup.id, activityPopup.imageUrl, activityPopup.title, activityPopup.content)
   );
 
   // 设置活动弹窗 (从API获取，仅首次/内容变化时显示)
@@ -180,14 +180,15 @@ function App() {
             const apiActivity = {
               id: `announcement_${announcement.id}`,
               title: announcement.title,
+              content: announcement.content,
               imageUrl: announcement.image_url,
-              imageAlt: announcement.content || '公告',
+              imageAlt: '公告',
               linkUrl: announcement.link_url,
             };
 
             // 检查是否需要显示
             const dismissedHash = dismissedActivities[apiActivity.id];
-            const currentHash = hashContent(apiActivity.id, apiActivity.imageUrl, apiActivity.title);
+            const currentHash = hashContent(apiActivity.id, apiActivity.imageUrl, apiActivity.title, apiActivity.content);
 
             if (!dismissedHash || dismissedHash !== currentHash) {
               // 延迟显示，等启动画面结束后
@@ -201,24 +202,6 @@ function App() {
         }
       } catch (error) {
         console.error('获取公告失败:', error);
-        // API失败时使用默认活动（上海见活动）
-        const wuningActivity = {
-          id: 'wuning_shanghai_see',
-          title: '321上海见！无宁县民大集合！',
-          imageUrl: '/images/shanghai-meet.jpg',
-          imageAlt: '321上海见活动公告',
-        };
-
-        const dismissedHash = dismissedActivities[wuningActivity.id];
-        const currentHash = hashContent(wuningActivity.id, wuningActivity.imageUrl, wuningActivity.title);
-
-        if (!dismissedHash || dismissedHash !== currentHash) {
-          const timer = setTimeout(() => {
-            setActivityPopup(wuningActivity);
-          }, showSplash ? 3000 : 500);
-
-          return () => clearTimeout(timer);
-        }
       }
     };
 
@@ -258,6 +241,7 @@ function App() {
           isOpen={true}
           activityId={activityPopup.id}
           title={activityPopup.title}
+          content={activityPopup.content}
           imageUrl={activityPopup.imageUrl}
           imageAlt={activityPopup.imageAlt}
           linkUrl={activityPopup.linkUrl}

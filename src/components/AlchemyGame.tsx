@@ -15,8 +15,8 @@ const ALCHEMY_LEVELS: Record<number, { id: string; name: string; price: number; 
   512: { id: 'herb_ambergris', name: '龙涎香', price: 1500, color: 'bg-gray-600', textColor: 'text-white' },
   1024: { id: 'herb_snow_lotus', name: '天山雪莲', price: 4000, color: 'bg-cyan-600', textColor: 'text-white' },
   2048: { id: 'herb_ginseng_king', name: '千年人参', price: 10000, color: 'bg-red-700', textColor: 'text-white' },
-  4096: { id: 'herb_ginseng_king', name: '九转还魂草	', price: 15000, color: 'bg-red-700', textColor: 'text-white' },
-  8192: { id: 'herb_ginseng_king', name: '万年茯苓王		', price: 100000, color: 'bg-red-700', textColor: 'text-white' },
+  4096: { id: 'herb_returning_grass', name: '九转还魂草', price: 15000, color: 'bg-red-700', textColor: 'text-white' },
+  8192: { id: 'herb_fuling_king', name: '万年茯苓王', price: 100000, color: 'bg-red-700', textColor: 'text-white' },
 };
 
 interface AlchemyGameProps {
@@ -309,8 +309,8 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
         </div>
 
         {gameOver && (
-            <div className="flex absolute inset-0 z-10 justify-center items-center rounded-xl bg-black/60 backdrop-blur-sm">
-                <div className="p-6 m-4 text-center bg-card text-card-foreground rounded-lg duration-300 animate-in zoom-in border border-border shadow-xl">
+            <div className="flex absolute inset-0 z-10 justify-center items-center rounded-xl backdrop-blur-sm bg-black/60">
+                <div className="p-6 m-4 text-center rounded-lg border shadow-xl duration-300 bg-card text-card-foreground animate-in zoom-in border-border">
                     <h3 className="mb-2 text-xl font-bold text-red-600 dark:text-red-400">丹炉已满！</h3>
                     <p className="mb-4 text-muted-foreground">无法再放入更多药材了。</p>
                     <p className="mb-6 font-medium text-foreground">最终炼成：{ALCHEMY_LEVELS[highestTile]?.name}</p>
@@ -333,8 +333,8 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
         )}
 
         {maxReached && !gameOver && (
-            <div className="flex absolute inset-0 z-10 justify-center items-center rounded-xl bg-black/60 backdrop-blur-sm">
-                <div className="p-6 m-4 text-center bg-card text-card-foreground rounded-lg duration-300 animate-in zoom-in border border-border shadow-xl">
+            <div className="flex absolute inset-0 z-10 justify-center items-center rounded-xl backdrop-blur-sm bg-black/60">
+                <div className="p-6 m-4 text-center rounded-lg border shadow-xl duration-300 bg-card text-card-foreground animate-in zoom-in border-border">
                     <h3 className="mb-2 text-xl font-bold text-green-600 dark:text-green-400">🎉 炼丹成功！</h3>
                     <p className="mb-4 text-muted-foreground">已炼出最高品质仙丹！</p>
                     <p className="mb-6 font-medium text-foreground">炼成：{ALCHEMY_LEVELS[8192]?.name}</p>

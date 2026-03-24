@@ -41,7 +41,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [showClipboard, setShowClipboard] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [downloadInfo, setDownloadInfo] = useState<{ url: string; filename: string } | null>(null);
+  const [downloadInfo, setDownloadInfo] = useState<{ url: string; filename: string; size?: string } | null>(null);
+  const [currentSaveSize, setCurrentSaveSize] = useState<string>('');
   const hasSavePicker = typeof (window as any).showSaveFilePicker === 'function';
   
   // 云存档相关状态
@@ -81,6 +82,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
+  // 格式化大小
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
   // 上传云存档
   const handleCloudUpload = async () => {
     setSyncing(true);
@@ -90,17 +98,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       // 同步财富
       await addMoney(deviceId, money);
       // 上传存档
-      const gameState = useGameStore.getState();
-      const saveData = JSON.stringify({
-        playerStats: gameState.playerStats,
-        inventory: gameState.inventory,
-        day: gameState.day,
-        playerProfile: gameState.playerProfile,
-        role: gameState.role,
-      });
+      const saveData = exportSaveString();
+      const size = new TextEncoder().encode(saveData).length;
+      const formattedSize = formatSize(size);
+      
       const result = await uploadCloudSave(deviceId, saveData);
       if (result.success) {
-        addLog(`【系统】云存档上传成功！存档ID: ${result.save_id?.slice(0,8)}..., sync_id: ${result.sync_id?.slice(0,8)}...（一次性，请妥善保管，24小时后失效）`);
+        addLog(`【系统】云存档上传成功！大小: ${formattedSize}, 存档ID: ${result.save_id?.slice(0,8)}..., sync_id: ${result.sync_id?.slice(0,8)}...（一次性，请妥善保管，24小时后失效）`);
         loadCloudSaves();
       } else {
         addLog(`【系统】云存档上传失败: ${result.error}`);
@@ -118,10 +122,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     try {
       const result = await downloadCloudSave(saveId);
       if (result.success && result.save_data) {
-        const saveData = JSON.parse(result.save_data);
-        importSave(saveData);
-        addLog('【系统】云存档下载并导入成功！');
-        onClose();
+        const success = importSave(result.save_data);
+        if (success) {
+          addLog('【系统】云存档下载并导入成功！该存档已按规定从云端删除。');
+          // 下载成功后自动删除云端存档
+          try {
+            await deleteCloudSave(saveId, deviceId);
+          } catch (delError) {
+            console.error('自动删除失败:', delError);
+          }
+          onClose();
+        } else {
+          // importSave 内部会打印失败日志
+        }
       } else {
         addLog(`【系统】云存档下载失败: ${result.error}`);
       }
@@ -136,10 +149,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     try {
       const result = await downloadCloudSave(undefined, syncId);
       if (result.success && result.save_data) {
-        const saveData = JSON.parse(result.save_data);
-        importSave(saveData);
-        addLog('【系统】云存档下载并导入成功！（已使用一次性sync_id）');
-        onClose();
+        const success = importSave(result.save_data);
+        if (success) {
+          addLog('【系统】云存档下载并导入成功！（已使用一次性sync_id，存档已失效）');
+          // 如果返回了 save_id，也尝试删除它
+          if (result.save_id) {
+            try {
+              await deleteCloudSave(result.save_id, deviceId);
+            } catch (delError) {
+              console.error('自动删除失败:', delError);
+            }
+          }
+          onClose();
+        } else {
+          // importSave 内部会打印失败日志
+        }
       } else {
         addLog(`【系统】云存档下载失败: ${result.error}`);
       }
@@ -162,6 +186,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       console.error('删除失败:', e);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      const data = exportSaveString();
+      const bytes = new TextEncoder().encode(data).length;
+      setCurrentSaveSize(formatSize(bytes));
+    }
+  }, [isOpen, exportSaveString]);
 
   useEffect(() => {
     return () => {
@@ -390,7 +422,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
               <button
                 onClick={handleDurationSave}
-                className="w-full py-2 text-sm font-bold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                className="py-2 w-full text-sm font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 保存并重置计时器
               </button>
@@ -432,14 +464,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
 
           <div className="p-4 rounded-lg border border-dashed bg-muted/30 border-border">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">存档管理</h3>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex gap-2 items-center">
+                <h3 className="font-semibold">存档管理</h3>
+                {currentSaveSize && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    当前: {currentSaveSize}
+                  </span>
+                )}
+              </div>
               <button 
                 onClick={() => {
                   if (!showCloudSaves) loadCloudSaves();
                   setShowCloudSaves(!showCloudSaves);
                 }}
-                className="text-sm text-amber-600 hover:text-amber-700 flex items-center gap-1"
+                className="flex gap-1 items-center text-sm text-amber-600 hover:text-amber-700"
               >
                 <Cloud size={16} />
                 云存档 ({cloudSaves.length})
@@ -451,8 +490,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             
             {/* 云存档列表 */}
             {showCloudSaves && (
-              <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <div className="flex items-center gap-2 mb-2 text-amber-800">
+              <div className="p-3 mb-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex gap-2 items-center mb-2 text-amber-800">
                   <Cloud size={16} />
                   <span className="font-medium">云端存档</span>
                   <span className="text-xs text-amber-600">(保留48小时)</span>
@@ -460,25 +499,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 {cloudLoading ? (
                   <div className="text-sm text-amber-600">加载中...</div>
                 ) : cloudSaves.length === 0 ? (
-                  <div className="text-sm text-amber-600 mb-2">暂无云存档</div>
+                  <div className="mb-2 text-sm text-amber-600">暂无云存档</div>
                 ) : (
-                  <div className="space-y-2 mb-2 max-h-32 overflow-y-auto">
+                  <div className="overflow-y-auto mb-2 space-y-2 max-h-32">
                     {cloudSaves.map((save) => (
-                      <div key={save.save_id} className="flex items-center justify-between p-2 bg-white rounded text-sm">
+                      <div key={save.save_id} className="flex justify-between items-center p-2 text-sm bg-white rounded">
                         <div className="flex-1 min-w-0">
-                          <div className="truncate text-amber-900">ID: {save.save_id.slice(0, 12)}...</div>
+                          <div className="text-amber-900 truncate">ID: {save.save_id.slice(0, 12)}...</div>
                           <div className="text-xs text-amber-600">过期: {new Date(save.expires_at).toLocaleString('zh-CN')}</div>
                         </div>
                         <div className="flex gap-1 ml-2">
                           <button 
                             onClick={() => handleCloudDownload(save.save_id)}
-                            className="px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700"
+                            className="px-2 py-1 text-xs text-white bg-amber-600 rounded hover:bg-amber-700"
                           >
                             下载
                           </button>
                           <button 
                             onClick={() => handleDeleteCloudSave(save.save_id)}
-                            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                            className="px-2 py-1 text-xs text-white bg-red-500 rounded hover:bg-red-600"
                           >
                             删除
                           </button>
@@ -491,7 +530,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <button 
                     onClick={handleCloudUpload}
                     disabled={syncing}
-                    className="flex-1 py-2 text-sm rounded-lg transition-colors bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                    className="flex flex-1 gap-1 justify-center items-center py-2 text-sm text-white bg-amber-600 rounded-lg transition-colors hover:bg-amber-700 disabled:opacity-50"
                   >
                     <Cloud size={14} />
                     {syncing ? '上传中...' : '上传到云端'}
@@ -532,7 +571,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <button 
                             onClick={() => {
                               const info = exportSave();
-                              setDownloadInfo(info);
+                              setDownloadInfo({ ...info, size: currentSaveSize });
                             }}
                             className="flex-1 min-w-[140px] gap-1 justify-center items-center px-3 py-2 rounded-lg transition-colors bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
                         >
@@ -588,7 +627,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                           download={downloadInfo.filename}
                           className="underline underline-offset-2 text-primary hover:text-primary/80"
                         >
-                          点击此处下载存档（{downloadInfo.filename}）
+                          点击此处下载存档（{downloadInfo.filename} - {downloadInfo.size}）
                         </a>
                         <button
                           onClick={() => {

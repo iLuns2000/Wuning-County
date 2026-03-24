@@ -12,6 +12,7 @@ interface ActivityModalProps {
   isOpen: boolean;
   activityId: string;        // 活动唯一标识符
   title?: string;           // 活动标题
+  content?: string;         // 活动文字内容
   imageUrl: string;          // 图片URL
   imageAlt?: string;         // 图片描述
   linkUrl?: string;         // 可选的点击图片跳转链接
@@ -20,17 +21,28 @@ interface ActivityModalProps {
 }
 
 /**
+ * 格式化图片URL，如果缺少完整前缀则补齐
+ */
+const formatImageUrl = (url: string): string => {
+  if (url && url.startsWith('/uploads/') && !url.startsWith('http')) {
+    return `https://wuning.online${url}`;
+  }
+  return url;
+};
+
+/**
  * 计算内容的简单哈希值
  * 用于判断内容是否发生变化（不包含时间戳）
  */
-const hashContent = (activityId: string, imageUrl: string, title?: string): string => {
-  return `${activityId}:${imageUrl}:${title || ''}`;
+const hashContent = (activityId: string, imageUrl: string, title?: string, content?: string): string => {
+  return `${activityId}:${formatImageUrl(imageUrl)}:${title || ''}:${content || ''}`;
 };
 
 export const ActivityModal: React.FC<ActivityModalProps> = ({
   isOpen,
   activityId,
   title,
+  content,
   imageUrl,
   imageAlt = '活动图片',
   linkUrl,
@@ -56,7 +68,7 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
     setTimeout(() => {
       onClose();
       // 记录已关闭的活动和内容哈希
-      const contentHash = hashContent(activityId, imageUrl, title);
+      const contentHash = hashContent(activityId, imageUrl, title, content);
       onDismiss(activityId, contentHash);
     }, 300);
   };
@@ -74,34 +86,41 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
       className={`
         fixed inset-0 z-50 flex items-center justify-center p-4
         transition-all duration-300
-        ${isVisible ? 'bg-black/60 backdrop-blur-sm' : 'bg-transparent'}
+        ${isVisible ? 'backdrop-blur-sm bg-black/60' : 'bg-transparent'}
       `}
       onClick={handleClose}
     >
       <div
         className={`
-          relative max-w-lg w-full h-[80vh] rounded-2xl overflow-hidden
+          relative max-w-lg w-full h-[80vh] rounded-2xl overflow-hidden bg-muted
           transition-all duration-300
-          ${isVisible ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}
+          ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
         `}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 可滚动的内部容器 */}
-        <div className="h-full overflow-y-auto overscroll-contain">
+        <div className="overflow-y-auto overscroll-contain h-full">
           {/* 关闭按钮 */}
           <button
             onClick={handleClose}
-            className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            className="absolute top-3 right-3 z-20 p-2 rounded-full transition-colors bg-black/50 hover:bg-black/70"
           >
             <X className="w-5 h-5 text-white" />
           </button>
 
           {/* 标题 */}
           {title && (
-            <div className="bg-gradient-to-r from-amber-600 to-orange-500 px-6 py-4 sticky top-0 z-10">
-              <h2 className="text-xl font-bold text-white text-center drop-shadow-lg">
+            <div className="sticky top-0 z-10 px-6 py-4 bg-gradient-to-r from-amber-600 to-orange-500">
+              <h2 className="text-xl font-bold text-center text-white drop-shadow-lg">
                 {title}
               </h2>
+            </div>
+          )}
+
+          {/* 文字内容 */}
+          {content && (
+            <div className="px-6 py-4 leading-relaxed whitespace-pre-wrap text-foreground">
+              {content}
             </div>
           )}
 
@@ -109,20 +128,19 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
           <div
             className={`
               relative cursor-pointer group
-              ${linkUrl ? 'hover:ring-4 hover:ring-primary/50' : ''}
-            `}
+              ${linkUrl ? 'hover:ring-4 hover:ring-primary/50' : ''}`}
             onClick={handleImageClick}
           >
             <img
-              src={imageUrl}
+              src={formatImageUrl(imageUrl)}
               alt={imageAlt}
-              className="w-full h-auto object-contain"
+              className="object-contain w-full h-auto"
               loading="eager"
             />
             {/* 点击提示 */}
             {linkUrl && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+              <div className="flex absolute inset-0 justify-center items-center opacity-0 transition-opacity bg-black/40 group-hover:opacity-100">
+                <span className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground">
                   点击查看详情
                 </span>
               </div>
@@ -141,6 +159,8 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
 interface ActivityPopupManagerProps {
   activities: Array<{
     id: string;
+    title?: string;
+    content?: string;
     imageUrl: string;
     imageAlt?: string;
     linkUrl?: string;
@@ -160,7 +180,7 @@ export const ActivityPopupManager: React.FC<ActivityPopupManagerProps> = ({
   const activeActivity = activities.find((activity) => {
     const dismissedHash = dismissedActivities[activity.id];
     // 如果没有关闭过，或者内容哈希不匹配，则显示
-    return !dismissedHash || dismissedHash !== hashContent(activity.id, activity.imageUrl);
+    return !dismissedHash || dismissedHash !== hashContent(activity.id, activity.imageUrl, activity.title, activity.content);
   });
 
   if (!activeActivity) return null;
@@ -169,6 +189,8 @@ export const ActivityPopupManager: React.FC<ActivityPopupManagerProps> = ({
     <ActivityModal
       isOpen={true}
       activityId={activeActivity.id}
+      title={activeActivity.title}
+      content={activeActivity.content}
       imageUrl={activeActivity.imageUrl}
       imageAlt={activeActivity.imageAlt}
       linkUrl={activeActivity.linkUrl}
@@ -178,4 +200,4 @@ export const ActivityPopupManager: React.FC<ActivityPopupManagerProps> = ({
   );
 };
 
-export { hashContent };
+export { hashContent, formatImageUrl };
