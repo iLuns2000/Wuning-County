@@ -2,8 +2,8 @@
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-03-18 13:02:13
- * @FilePath: \Wuning-County\src\pages\NPCList.tsx
+ * @LastEditTime: 2026-03-29 10:18:38
+ * @FilePath: \textgame\src\pages\NPCList.tsx
  * @Description: NPC列表页 - 古风UI优化版
  * 
  * Copyright (c) 2026 by , All Rights Reserved. 
@@ -101,7 +101,7 @@ export const NPCList: React.FC = () => {
     if (trimmedName !== currentName && hasUsedFreeNameChange && !isMoGuRenaming) {
       setPlayerProfile({ avatar });
       addLog('【个人资料】名称修改请找墨骨进行修改。');
-      alert('名称修改请找墨骨进行修改');
+      alert('名称修改请在npc列表找墨骨进行修改');
       return;
     }
 
@@ -669,6 +669,21 @@ export const NPCList: React.FC = () => {
                         >
                           <span className="text-base">🏥</span>
                           <span>医馆</span>
+                        </button>
+                      )}
+
+                      {/* 鲨鱼剃须刀专属：NPC入住申请 */}
+                      {npc.id === 'shayu_tixudao' && (
+                        <button
+                          onClick={() => {
+                            window.open('https://f.wps.cn/g/JZcuQ1nM/', '_blank');
+                            vibrate(VIBRATION_PATTERNS.MEDIUM);
+                          }}
+                          className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 min-w-[80px]"
+                          title="NPC入住申请"
+                        >
+                          <span className="text-base">📝</span>
+                          <span>入住申请</span>
                         </button>
                       )}
 

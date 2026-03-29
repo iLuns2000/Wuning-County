@@ -37,7 +37,7 @@ export const NPCDetail: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Basic Info */}
         <div className="p-6 space-y-4 rounded-lg border bg-card text-card-foreground">
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4 items-center">
             <div className="p-4 rounded-full bg-primary/10">
               <User size={48} className="text-primary" />
             </div>
@@ -48,7 +48,7 @@ export const NPCDetail: React.FC = () => {
                   {npc.title}
                 </span>
                 {npc.identityCode && (
-                  <span className="flex items-center gap-1 px-2 py-1 text-xs font-mono rounded-full bg-secondary/50 text-muted-foreground/70">
+                  <span className="flex gap-1 items-center px-2 py-1 font-mono text-xs rounded-full bg-secondary/50 text-muted-foreground/70">
                     <Fingerprint size={12} />
                     {npc.identityCode}
                   </span>
@@ -64,7 +64,7 @@ export const NPCDetail: React.FC = () => {
             </div>
             <div className="w-full h-2 rounded-full bg-secondary">
               <div 
-                className="h-full rounded-full bg-primary transition-all duration-500"
+                className="h-full rounded-full transition-all duration-500 bg-primary"
                 style={{ width: `${Math.min(100, relation)}%` }}
               />
             </div>
@@ -77,7 +77,7 @@ export const NPCDetail: React.FC = () => {
 
           {relation >= 80 && npc.dailyLife && (
             <div className="p-4 rounded-md bg-secondary/30">
-               <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
+               <h3 className="flex gap-2 items-center mb-2 font-semibold text-primary">
                  <Briefcase size={16} />
                  <span>县居日常</span>
                </h3>
@@ -87,7 +87,7 @@ export const NPCDetail: React.FC = () => {
 
           {relation >= 100 && npc.background && (
             <div className="p-4 rounded-md bg-secondary/50">
-               <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
+               <h3 className="flex gap-2 items-center mb-2 font-semibold text-primary">
                  <Scroll size={16} />
                  <span>身世背景</span>
                </h3>
@@ -97,25 +97,42 @@ export const NPCDetail: React.FC = () => {
 
           {relation >= 100 && npc.hiddenTreasure && (
             <div className="p-4 rounded-md bg-primary/5">
-               <h3 className="mb-2 font-semibold text-primary flex items-center gap-2">
+               <h3 className="flex gap-2 items-center mb-2 font-semibold text-primary">
                  <Package size={16} />
                  <span>藏珍匣</span>
                </h3>
                <p className="text-sm italic">{npc.hiddenTreasure}</p>
             </div>
           )}
+
+          {/* Special Buttons */}
+          {npc.id === 'shayu_tixudao' && (
+            <div className="pt-4 border-t border-border/50">
+              <button
+                onClick={() => {
+                  window.open('https://f.wps.cn/g/JZcuQ1nM/', '_blank');
+                  vibrate(VIBRATION_PATTERNS.MEDIUM);
+                }}
+                className="flex gap-2 justify-center items-center px-6 py-3 w-full text-sm font-medium text-orange-400 rounded-lg transition-colors bg-orange-500/10 hover:bg-orange-500/20"
+                title="NPC入住申请"
+              >
+                <span className="text-xl">📝</span>
+                <span className="text-lg">NPC入住申请</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Danqing Portrait */}
         <div className="p-6 space-y-4 rounded-lg border bg-card text-card-foreground">
-          <h3 className="text-xl font-bold flex items-center gap-2">
+          <h3 className="flex gap-2 items-center text-xl font-bold">
             <span>丹青画像</span>
             {!isDanqingUnlocked && <Lock size={16} className="text-muted-foreground" />}
           </h3>
           
           <div className="flex flex-col justify-center items-center p-8 min-h-[300px] rounded-lg border-2 border-dashed border-border bg-secondary/20">
             {isDanqingUnlocked ? (
-              <div className="text-center space-y-4">
+              <div className="space-y-4 text-center">
                 {/* If it's a description */}
                 {npc.danqing ? (
                   <p className="text-lg italic leading-relaxed text-foreground/80">
