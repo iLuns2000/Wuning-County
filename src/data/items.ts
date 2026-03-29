@@ -497,6 +497,18 @@ export const items: Item[] = [
     style: '典雅'
   },
   {
+    id: 'xianhe_grass',
+    name: '仙鹤草',
+    description: '一种珍稀的草药，叶片如鹤羽般轻盈，具有延年益寿之效。',
+    type: 'material'
+  },
+  {
+    id: 'story_collection',
+    name: '故事集',
+    description: '一本厚厚的故事集，记录了你讲过的一百零一个精彩故事。',
+    type: 'misc'
+  },
+  {
     id: 'lingnan_fried_food',
     name: '嘎炸',
     description: '岭南带来的嘎炸，可入药食用。',

@@ -8,7 +8,7 @@ export const randomEvents: GameEvent[] = [
     description: '县城集市开张，各种商品琳琅满目。',
     type: 'daily',
     stylePreference: { preferred: ['清雅', '俏皮'] },
-    triggerCondition: { probability: 1.0 }, // simplified
+    triggerCondition: { probability: 0.2 }, // simplified
     options: [
       {
         label: '前往集市',
@@ -990,6 +990,25 @@ export const npcEvents: GameEvent[] = [
         label: '嘲讽两句',
         message: '你嘲笑这竹篮样式过时，老李气得吹胡子瞪眼。',
         effect: { relationChange: { lao_li: -20, lao_zhang: 10 } } // 老张幸灾乐祸
+      }
+    ]
+  },
+  {
+    id: 'shayu_sunbathe',
+    title: '晒太阳',
+    description: '小店老板鲨鱼剃须刀邀请你在门口一起晒太阳。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '接受',
+        message: '你和老板一起躺在门口晒太阳，老板说要不要来一把椅子躺着更舒服，于是你买下了一把躺椅。',
+        effect: { money: -50, health: 5, relationChange: { shayu_tixudao: 10 } }
+      },
+      {
+        label: '拒绝',
+        message: '你拒绝了邀请，继续忙自己的事情。',
+        effect: { relationChange: { shayu_tixudao: -1 } }
       }
     ]
   },
@@ -2866,12 +2885,12 @@ export const npcEvents: GameEvent[] = [
       {
         label: '讲志怪故事',
         message: '竟有如此怪事，果真奇闻！',
-        effect: { ability: 5, money: 500, relationChange: { jingyin: 10 }, health: -5 }
+        effect: { ability: 5, money: 500, relationChange: { jingyin: 10 }, health: -5, flagsIncrement: ['story_count'] }
       },
       {
         label: '讲人物故事',
         message: '是个人物，编入人物列传！',
-        effect: { ability: 5, money: 250, relationChange: { jingyin: 10 }, health: -5 }
+        effect: { ability: 5, money: 250, relationChange: { jingyin: 10 }, health: -5, flagsIncrement: ['story_count'] }
       },
       {
         label: '不讲故事',

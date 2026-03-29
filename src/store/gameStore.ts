@@ -2042,26 +2042,60 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const newUnlockedIds: string[] = [];
         let totalRewardExp = 0;
+        let bonusMoney = 0;
+        let bonusReputation = 0;
+        let bonusAbility = 0;
+        let bonusItems: string[] = [];
 
         achievements.forEach(ach => {
           if (!state.achievements.includes(ach.id)) {
             if (ach.condition(state)) {
               newUnlockedIds.push(ach.id);
               totalRewardExp += ach.rewardExp;
+              
+              // 仙鹤草特殊奖励逻辑
+              if (ach.id === 'xianhe_grass_5') {
+                bonusMoney += 100; bonusReputation += 50; bonusAbility += 30;
+                get().addLog(`【获得称号】跃跃欲试：金钱+100，声望+50，能力+30`);
+              } else if (ach.id === 'xianhe_grass_10') {
+                bonusMoney += 300; bonusReputation += 70; bonusAbility += 50;
+                get().addLog(`【获得称号】与神并肩：金钱+300，声望+70，能力+50`);
+              } else if (ach.id === 'xianhe_grass_20') {
+                bonusMoney += 600; bonusReputation += 100; bonusAbility += 77;
+                get().addLog(`【获得称号】与神同行：金钱+600，声望+100，能力+77`);
+              } else if (ach.id === 'xianhe_grass_30') {
+                bonusMoney += 1200; bonusReputation += 166; bonusAbility += 120;
+                get().addLog(`【获得称号】羽化登仙：金钱+1200，声望+166，能力+120`);
+              } else if (ach.id === 'one_thousand_and_one_nights') {
+                bonusItems.push('story_collection');
+                get().addLog(`【获得物品】故事集：一本厚厚的故事集，记录了你讲过的一百零一个故事。`);
+              }
+
               get().addLog(`【成就达成】${ach.name}：获得 ${ach.rewardExp} 阅历！`);
             }
           }
         });
 
         if (newUnlockedIds.length > 0) {
-          set(state => ({
-            achievements: [...state.achievements, ...newUnlockedIds],
-            latestUnlockedAchievementId: newUnlockedIds[newUnlockedIds.length - 1], // Show the latest one
-            playerStats: {
-              ...state.playerStats,
-              experience: state.playerStats.experience + totalRewardExp
-            }
-          }));
+          set(state => {
+            const newInventory = { ...state.inventory };
+            bonusItems.forEach(itemId => {
+              newInventory[itemId] = (newInventory[itemId] || 0) + 1;
+            });
+
+            return {
+              achievements: [...state.achievements, ...newUnlockedIds],
+              latestUnlockedAchievementId: newUnlockedIds[newUnlockedIds.length - 1], // Show the latest one
+              inventory: newInventory,
+              playerStats: {
+                ...state.playerStats,
+                experience: state.playerStats.experience + totalRewardExp,
+                money: state.playerStats.money + bonusMoney,
+                reputation: state.playerStats.reputation + bonusReputation,
+                ability: state.playerStats.ability + bonusAbility
+              }
+            };
+          });
         }
       },
 
@@ -3345,29 +3379,27 @@ export const useGameStore = create<GameStore>()(
 
         const candidates = [...guaranteedEvents, ...randomCandidates];
 
-        // 1. 如果有必定触发的事件，直接触发
-        if (guaranteedEvents.length > 0) {
-          const [first, ...rest] = guaranteedEvents;
+        // 1. 获取必定触发的事件
+        let finalEvents = [...guaranteedEvents];
+
+        // 2. 全局 30% 触发概率，尝试从随机候选中筛选
+        if (Math.random() <= 0.3) {
+          const possibleRandomEvents = randomCandidates.filter(e => {
+            const prob = e.triggerCondition?.probability;
+            if (prob === undefined) return true;
+            return Math.random() < prob;
+          });
+
+          if (possibleRandomEvents.length > 0) {
+            // 随机选一个随机事件加入队列
+            const randomEvent = possibleRandomEvents[Math.floor(Math.random() * possibleRandomEvents.length)];
+            finalEvents.push(randomEvent);
+          }
+        }
+
+        if (finalEvents.length > 0) {
+          const [first, ...rest] = finalEvents;
           set({ currentEvent: first, eventQueue: rest });
-          return;
-        }
-
-        // 2. 全局 30% 触发概率
-        if (Math.random() > 0.3) {
-          set({ currentEvent: null, eventQueue: [] });
-          return;
-        }
-
-        // 3. 从候选中按概率筛选
-        const possibleEvents = randomCandidates.filter(e => {
-          const prob = e.triggerCondition?.probability;
-          if (prob === undefined) return true;
-          return Math.random() < prob;
-        });
-
-        if (possibleEvents.length > 0) {
-          const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
-          set({ currentEvent: event, eventQueue: [] });
         } else {
           set({ currentEvent: null, eventQueue: [] });
         }

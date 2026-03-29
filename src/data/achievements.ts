@@ -53,9 +53,9 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'master',
     name: '一代宗师',
-    description: '能力值达到 500',
-    rewardExp: 500,
-    condition: (state) => state.playerStats.ability >= 500
+    description: '能力值达到 120',
+    rewardExp: 120,
+    condition: (state) => state.playerStats.ability >= 120
   },
   {
     id: 'wealthy',
@@ -74,9 +74,16 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
   {
     id: 'chicken_case_solved',
     name: '断案如神',
-    description: '成功破获老李偷鸡案，查明真相',
+    description: '大人手段实在高',
     rewardExp: 100,
     condition: (state) => !!state.flags['chicken_case_solved_success']
+  },
+  {
+    id: 'chicken_theft_case',
+    name: '老李偷鸡案',
+    description: '老张说他家的鸡被偷 \n 老张说他家的鸡被偷 \n 老李说他说他没有偷 \n 你来我往争吵没有用 \n 不如县官面前走一走',
+    rewardExp: 50,
+    condition: (state) => state.flags['chicken_stage'] === 3
   },
   {
     id: 'tea_seeking',
@@ -613,5 +620,41 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 50,
     isHidden: true,
     condition: (state) => (state.clinicAnimals?.swearTeachCaughtCount || 0) >= 3
+  },
+  // 仙鹤草系列成就
+  {
+    id: 'xianhe_grass_5',
+    name: '仙鹤草：跃跃欲试',
+    description: '累计获得 5 株仙鹤草',
+    rewardExp: 100,
+    condition: (state) => (state.inventory['xianhe_grass'] || 0) >= 5
+  },
+  {
+    id: 'xianhe_grass_10',
+    name: '仙鹤草：与神并肩',
+    description: '累计获得 10 株仙鹤草',
+    rewardExp: 300,
+    condition: (state) => (state.inventory['xianhe_grass'] || 0) >= 10
+  },
+  {
+    id: 'xianhe_grass_20',
+    name: '仙鹤草：与神同行',
+    description: '累计获得 20 株仙鹤草',
+    rewardExp: 600,
+    condition: (state) => (state.inventory['xianhe_grass'] || 0) >= 20
+  },
+  {
+    id: 'xianhe_grass_30',
+    name: '仙鹤草：羽化登仙',
+    description: '累计获得 30 株仙鹤草',
+    rewardExp: 1200,
+    condition: (state) => (state.inventory['xianhe_grass'] || 0) >= 30
+  },
+  {
+    id: 'one_thousand_and_one_nights',
+    name: '一千零一夜',
+    description: '你获得了故事集',
+    rewardExp: 1001,
+    condition: (state) => (state.flags['story_count'] || 0) >= 101
   }
 ];

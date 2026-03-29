@@ -136,8 +136,8 @@ export interface LeaderboardResponse {
 }
 
 // 获取排行榜
-export async function getLeaderboard(limit: number = 10): Promise<LeaderboardResponse> {
-  return request(`/money/leaderboard?limit=${limit}`, {
+export async function getLeaderboard(limit: number = 10, offset: number = 0): Promise<LeaderboardResponse> {
+  return request(`/money/leaderboard?limit=${limit}&offset=${offset}`, {
     method: 'GET',
   });
 }
@@ -190,8 +190,8 @@ export interface FavorabilityLeaderboardResponse {
 }
 
 // 获取好感度排行榜
-export async function getFavorabilityLeaderboard(limit: number = 10): Promise<FavorabilityLeaderboardResponse> {
-  return request(`/user/favorability/leaderboard?limit=${limit}`, {
+export async function getFavorabilityLeaderboard(limit: number = 10, offset: number = 0): Promise<FavorabilityLeaderboardResponse> {
+  return request(`/user/favorability/leaderboard?limit=${limit}&offset=${offset}`, {
     method: 'GET',
   });
 }

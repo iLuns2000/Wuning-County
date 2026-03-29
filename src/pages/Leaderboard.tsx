@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal, Heart } from 'lucide-react';
+import { ArrowLeft, Trophy, RefreshCw, UserPlus, UserMinus, Medal, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, setMoney, removeFromLeaderboard, deleteUser, getFavorabilityLeaderboard, setFavorability, getUserFavorabilityInfo } from '@/utils/cloudApi';
 import { LeaderboardEntry, FavorabilityLeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
@@ -28,22 +28,23 @@ export const Leaderboard: React.FC = () => {
   const countyMagistrateFavorability = npcRelations['lou_xianling'] || 0;
   
   const deviceId = getDeviceId();
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 10;
 
   // 加载排行榜
-  const loadLeaderboard = async (type: LeaderboardType) => {
+  const loadLeaderboard = async (type: LeaderboardType, page: number = 1) => {
     setLoading(true);
+    const offset = (page - 1) * PAGE_SIZE;
     try {
       let result;
       if (type === 'money') {
-        result = await getLeaderboard(PAGE_SIZE);
+        result = await getLeaderboard(PAGE_SIZE, offset);
         if (result.success) {
           setLeaderboard(result.leaderboard);
           const isOnBoard = result.leaderboard.some((e: LeaderboardEntry) => e.user_id === deviceId);
           setHasUserJoined(isOnBoard);
         }
       } else {
-        result = await getFavorabilityLeaderboard(PAGE_SIZE);
+        result = await getFavorabilityLeaderboard(PAGE_SIZE, offset);
         if (result.success) {
           setLeaderboard(result.leaderboard);
           const isOnBoard = result.leaderboard.some((e: FavorabilityLeaderboardEntry) => e.user_id === deviceId);
@@ -60,11 +61,20 @@ export const Leaderboard: React.FC = () => {
   // 切换排行榜类型
   const handleTypeChange = (type: LeaderboardType) => {
     setLeaderboardType(type);
-    loadLeaderboard(type);
+    setCurrentPage(1);
+    loadLeaderboard(type, 1);
+  };
+
+  // 翻页
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    setCurrentPage(newPage);
+    loadLeaderboard(leaderboardType, newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
-    loadLeaderboard(leaderboardType);
+    loadLeaderboard(leaderboardType, currentPage);
   }, []);
 
   // 注册/更新用户并上榜（财富榜）
@@ -154,7 +164,7 @@ export const Leaderboard: React.FC = () => {
 
       <div className="mx-auto space-y-4 max-w-md">
         {/* 排行榜类型切换 */}
-        <div className="flex gap-2 bg-white rounded-lg p-2 shadow-md">
+        <div className="flex gap-2 p-2 bg-white rounded-lg shadow-md">
           <button
             onClick={() => handleTypeChange('money')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
@@ -163,7 +173,7 @@ export const Leaderboard: React.FC = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Trophy className="inline-block w-4 h-4 mr-1" />
+            <Trophy className="inline-block mr-1 w-4 h-4" />
             财富榜
           </button>
           <button
@@ -174,7 +184,7 @@ export const Leaderboard: React.FC = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Heart className="inline-block w-4 h-4 mr-1" />
+            <Heart className="inline-block mr-1 w-4 h-4" />
             县令好感榜
           </button>
         </div>
@@ -306,7 +316,7 @@ export const Leaderboard: React.FC = () => {
           <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600' : 'bg-pink-600'}`}>
             <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
-              {leaderboardType === 'money' ? '富豪排行' : '人气排行'} TOP {leaderboard.length + 1} (每页50人)
+              {leaderboardType === 'money' ? '富豪排行' : '人气排行'} (每页{PAGE_SIZE}人)
             </h2>
           </div>
           
@@ -315,78 +325,106 @@ export const Leaderboard: React.FC = () => {
               <RefreshCw className="mx-auto mb-2 w-6 h-6 animate-spin" />
               官府正在整理榜文...
             </div>
-          ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-indigo-500">
-              {leaderboardType === 'money' ? '暂无上榜商贾' : '暂无上榜人物'}
-            </div>
           ) : (
-            <div className="divide-y divide-indigo-50">
-              {/* 固定第一名：县令（好感榜）/ 小四（财富榜） */}
-              {leaderboardType === 'money' ? (
-                <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-yellow-400 text-yellow-900">
-                    1
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <div className="font-medium text-indigo-900">
-                      小四<span className="text-yellow-600 text-sm ml-1">(无宁县首富)</span>
+            <>
+              <div className="divide-y divide-indigo-50">
+                {/* 固定第一名：县令（好感榜）/ 小四（财富榜） - 仅在第一页显示 */}
+                {currentPage === 1 && (
+                  leaderboardType === 'money' ? (
+                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold text-yellow-900 bg-yellow-400 rounded-full">
+                        1
+                      </div>
+                      <div className="flex-1 ml-3">
+                        <div className="font-medium text-indigo-900">
+                          小四<span className="ml-1 text-sm text-yellow-600">(无宁县首富)</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-indigo-800">*************</div>
+                        <div className="text-xs text-indigo-500">文</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-indigo-800">*************</div>
-                    <div className="text-xs text-indigo-500">文</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold bg-pink-400 text-pink-900">
-                    1
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <div className="font-medium text-pink-900">
-                      县令<span className="text-pink-600 text-sm ml-1">(德高望重)</span>
+                  ) : (
+                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold text-pink-900 bg-pink-400 rounded-full">
+                        1
+                      </div>
+                      <div className="flex-1 ml-3">
+                        <div className="font-medium text-pink-900">
+                          县令<span className="ml-1 text-sm text-pink-600">(德高望重)</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-pink-800">*************</div>
+                        <div className="text-xs text-pink-500">好感度</div>
+                      </div>
                     </div>
+                  )
+                )}
+                
+                {leaderboard.length === 0 ? (
+                  <div className="p-8 text-center text-indigo-500">
+                    {leaderboardType === 'money' ? '暂无更多商贾' : '暂无更多人物'}
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-pink-800">*************</div>
-                    <div className="text-xs text-pink-500">好感度</div>
-                  </div>
-                </div>
-              )}
-              
-              {/* 真实排行榜 - 从第2名开始 */}
-              {leaderboard.map((entry) => (
-                <div
-                  key={entry.user_id}
-                  className={`flex items-center px-4 py-3 hover:bg-indigo-50/50 transition-colors ${
-                    entry.user_id === deviceId ? 'bg-indigo-50' : ''
-                  }`}
+                ) : (
+                  leaderboard.map((entry) => (
+                    <div
+                      key={entry.user_id}
+                      className={`flex items-center px-4 py-3 hover:bg-indigo-50/50 transition-colors ${
+                        entry.user_id === deviceId ? 'bg-indigo-50' : ''
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                         entry.rank === 1 ? 'bg-gray-300 text-gray-700' :
+                         entry.rank === 2 ? 'bg-amber-600 text-white' :
+                         'bg-indigo-100 text-indigo-700'
+                       }`}>
+                         {entry.rank + 1}
+                       </div>
+                      <div className="flex-1 ml-3">
+                        <div className="font-medium text-indigo-900">
+                          {entry.nickname || (leaderboardType === 'money' ? '匿名商贾' : '匿名人士')}
+                          {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500">(您)</span>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-indigo-800">
+                          {leaderboardType === 'money' 
+                            ? (entry as LeaderboardEntry).money?.toLocaleString()
+                            : (entry as FavorabilityLeaderboardEntry).favorability?.toLocaleString()
+                          }
+                        </div>
+                        <div className="text-xs text-indigo-500">{leaderboardType === 'money' ? '文' : '好感度'}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 翻页控件 */}
+              <div className="flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-white rounded-md border border-indigo-200 disabled:opacity-50 disabled:bg-gray-50"
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    entry.rank === 2 ? 'bg-gray-300 text-gray-700' :
-                    entry.rank === 3 ? 'bg-amber-600 text-white' :
-                    'bg-indigo-100 text-indigo-700'
-                  }`}>
-                    {entry.rank + 1}
-                  </div>
-                  <div className="flex-1 ml-3">
-                    <div className="font-medium text-indigo-900">
-                      {entry.nickname || (leaderboardType === 'money' ? '匿名商贾' : '匿名人士')}
-                      {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500">(您)</span>}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-indigo-800">
-                      {leaderboardType === 'money' 
-                        ? (entry as LeaderboardEntry).money?.toLocaleString()
-                        : (entry as FavorabilityLeaderboardEntry).favorability?.toLocaleString()
-                      }
-                    </div>
-                    <div className="text-xs text-indigo-500">{leaderboardType === 'money' ? '文' : '好感度'}</div>
-                  </div>
+                  <ChevronLeft className="w-4 h-4" />
+                  上页
+                </button>
+                <div className="text-sm font-medium text-indigo-900">
+                  第 {currentPage} 页
                 </div>
-              ))}
-            </div>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={leaderboard.length < PAGE_SIZE}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-white rounded-md border border-indigo-200 disabled:opacity-50 disabled:bg-gray-50"
+                >
+                  下页
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
           )}
         </div>
 

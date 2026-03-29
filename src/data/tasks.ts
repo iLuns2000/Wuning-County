@@ -258,7 +258,7 @@ export const tasks: Task[] = [
     description: '行侠仗义固然重要，但武学之道永无止境。你需要在武学上更进一步，成为一代宗师。武学的最高境界不仅是武技精湛，更要能将其升华为一种文化传承，以武载道，德艺双馨。',
     goalDescription: '能力达到 90 且 文化达到 60',
     checkCompletion: (state: GameState) => state.playerStats.ability >= 90 && state.countyStats.culture >= 60,
-    reward: { reputation: 500 },
+    reward: { reputation: 120 },
     rewardText: '你的武功已臻化境，开宗立派，成为了一代宗师。你不仅武学超群，更将武学文化传播四方，被后世奉为"武圣"。',
     specialAction: {
       label: '生死历练',

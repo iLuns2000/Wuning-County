@@ -113,18 +113,18 @@ const AncientStatItem: React.FC<{
   const percentage = maxValue ? (value / maxValue) * 100 : null;
   
   return (
-    <div className="relative group min-w-0">
+    <div className="relative min-w-0 group">
       <div className={`flex justify-between items-center p-1.5 sm:p-2 rounded-lg border transition-colors
         ${isLightMode 
           ? 'bg-amber-50/80 border-amber-200/50' 
           : 'bg-black/20 border-white/5'
         }`}>
-        <div className="flex gap-1 sm:gap-2 items-center min-w-0">
+        <div className="flex gap-1 items-center min-w-0 sm:gap-2">
           <span className={`${color} shrink-0`}>{icon}</span>
           <span className={`text-xs truncate hidden sm:inline ${isLightMode ? 'text-stone-600' : 'text-muted-foreground'}`}>{label}</span>
           <span className={`text-xs truncate sm:hidden ${isLightMode ? 'text-stone-600' : 'text-muted-foreground'}`}>{label.slice(0,1)}</span>
         </div>
-        <span className={`font-mono font-bold ${color} text-xs sm:text-sm shrink-0`}>
+        <span className={`font-mono text-xs font-bold ${color} sm:text-sm shrink-0`}>
           {value}{maxValue ? `/${maxValue}` : ''}
         </span>
       </div>
@@ -280,13 +280,13 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
             icon={<Star size={14} className="text-indigo-500" />}
             label="阅历"
           />
-          <AnimatedNumber 
+          {/* <AnimatedNumber 
             value={playerStats.accuracy || 0} 
             prevValue={prevStats.accuracy}
             color="text-orange-400"
             icon={<Crosshair size={14} className="text-orange-500" />}
             label="准头"
-          />
+          /> */}
         </div>
         
         {/* 体力进度条 */}
