@@ -2,7 +2,7 @@
  * @Author: xyZhan
  * @Date: 2026-01-20 20:03:30
  * @LastEditors: xyZhan
- * @LastEditTime: 2026-01-31 19:24:23
+ * @LastEditTime: 2026-04-03 09:19:26
  * @FilePath: \textgame\src\data\items.ts
  * @Description: 
  * 
@@ -606,8 +606,21 @@ export const items: Item[] = [
   },
   {
     id: 'jingshanwei_hundred_token',
-    name: '径山卫百户令',
-    description: '径山卫百户的令牌，不知道是什么材质做的，水火不侵',
+    name: '南直隶径山卫百户令',
+    description: '关山昔年在北境径山卫任百户时的旧令，铃印俨然。他嘱你收好，谓遇急难时或有用处。',
+    type: 'misc'
+  },
+  {
+    id: 'wild_hunt_meat_haul',
+    name: '野猎分肉',
+    description: '随关山与众人出猎分得的新鲜肉食，大约三五斤，肥瘦相宜。',
+    type: 'consumable',
+    effect: { health: 12 }
+  },
+  {
+    id: 'lingyin_half_price_voucher',
+    name: '泠音乐坊半价券',
+    description: '泠音所赠。下次在乐坊点歌或包场时花费减半，一次结算限用一张，不可与其它减免叠加。',
     type: 'misc'
   },
   {

@@ -1119,6 +1119,83 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'lingyin_enter',
+    title: '进入乐坊',
+    description: '泠音从帘后探身看了你一眼：「……请进。」台前乐架空空，倒还清静。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '随便听听',
+        message:
+          '泠音冲你点了下头，眼神飘向别处——你心里莫名闪过一句没敢说出口的念叨：怎么又有白嫖怪。',
+        effect: { health: 5, relationChange: { ling_yin: 1 } }
+      },
+      {
+        label: '点一首歌',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '我要包场！',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '对不起走错了',
+        message: '泠音「哦」了一声，失落地扭头进了后台，帘子哗地落下。',
+        effect: { relationChange: { ling_yin: -20 } }
+      }
+    ]
+  },
+  {
+    id: 'lingyin_help_speaker',
+    title: '帮助坊主',
+    description: '泠音围着一堆线缆和木箱打转，额角沁汗：音箱坏了，今晚若弄不好……她抬头看见你，张了张嘴又卡住。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '我来帮你',
+        message:
+          '你们折腾半晌，杂音总算歇了。泠音长出一口气，把一张折好的券塞进你手心：「多谢……拿着吧，下次来再谢你。」',
+        effect: {
+          health: -20,
+          relationChange: { ling_yin: 50 },
+          itemsAdd: ['lingyin_half_price_voucher']
+        }
+      }
+    ]
+  },
+  {
+    id: 'yun_que_bird_choice',
+    title: '喜不喜欢小鸟',
+    description:
+      '云雀蜷在摇椅里抬眼一瞥，唇角弯着：「说说呗，喜不喜欢小鸟？选错了——可是要付出代价的哦。」',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '喜欢小鸟（自愿给云雀50文）',
+        message:
+          '你掏出五十文搁在她手边小几上。云雀眼睛一亮，合掌轻笑：「识相——小鸟记住你啦。」',
+        effect: { money: -50, relationChange: { yun_que: 10 } }
+      },
+      {
+        label: '不喜欢：一不留神掉进洞里了',
+        message:
+          '你嘴硬说不想搭理这只「小鸟」，转身没留神，地面竟有个浅坑（还是她脚边狸猫刨的？），结结实实摔了一跤。',
+        effect: { health: -10 }
+      },
+      {
+        label: '不喜欢：甘愿给100文精神损失费',
+        message:
+          '你撇撇嘴说没兴趣，又不愿吃皮肉苦，只好黑着脸数出一百文：「算我倒霉。」云雀接过铜钱，哼了一声：「行吧，精神损失结了。下次记得带糕点。」',
+        effect: { money: -100 }
+      }
+    ]
+  },
+  {
     id: 'yun_enter_shop',
     title: '进店坐下',
     description: '云老板走上来问到客官想吃点啥？要不要试试本店新推出的茶点？',
@@ -1706,6 +1783,62 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'baizhou_bookbox_secret',
+    title: '书箱里的秘密',
+    description:
+      '书院自习时，柏舟的书箱没锁好，你不小心撞倒了她的书箱，齿轮与机关设计草图散落一地。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '收拾掉落物并合上箱盖',
+        message:
+          '你迅速收拾好书箱里的东西并合上箱盖。“你的机关宝贝差点掉出来，我帮你守好了～”（柏舟松了口气，眼底泛起暖意）“多谢你……夫子最厌这些旁门左道，若被看见，我这半年的心血就全毁了。其实我在造灌溉水车，若能成，县外的田就不怕旱了。”',
+        effect: { reputation: 30, relationChange: { baizhou: 20 } }
+      },
+      {
+        label: '摆弄鲁班锁：“这锁真有意思，教我怎么解吧？”',
+        message:
+          '（柏舟先是一惊，随即笑了）“你倒胆大……这锁要先转第三圈，再推左侧榫头。我教你，解开了便算你入门，往后我画新图纸，也敢拿给你看了。”',
+        effect: { money: 500, reputation: 20, relationChange: { baizhou: 25 } }
+      },
+      {
+        label: '向夫子告状',
+        message:
+          '（柏舟被夫子训斥后，找到你）“你为何要这般害我？我不过是想造些对乡亲们有用的东西，碍着谁了？！”',
+        effect: { reputation: -40, relationChange: { baizhou: -50 } }
+      }
+    ]
+  },
+  {
+    id: 'baizhou_chaifang_meet',
+    title: '柴房偶遇',
+    description:
+      '你在永安寺的柴房外听见木构件碰撞声，推门撞见柏舟蹲在地上摆弄半完成的机关连弩草图，她慌忙想把图纸藏进书箱。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '凑过去共研机巧',
+        message:
+          '你凑过去道：“这连弩扳机结构可以优化，我懂些机巧之道，或许能帮上忙？”（柏舟猛地抬头，眼中闪过惊喜，又迅速按住图纸）“你……你竟也懂机关术？！这扳机力道总是不稳，我试了七八种榫卯都没调好——快请坐！我这就把草稿铺开来，咱们一起琢磨！”',
+        effect: { money: 200, reputation: 50, relationChange: { baizhou: 30 } }
+      },
+      {
+        label: '帮她望风，想看她怀中的鲁班锁',
+        message:
+          '“若有人来了我帮你挡着，让我看看你怀里的鲁班锁？”（柏舟耳根微红，犹豫片刻后从袖中摸出木锁，指尖摩挲着纹路）“……多谢。这锁是家传的，拆解开最能定心神。你若想学，我教你，只是千万别让院长和夫子看见了。”',
+        effect: { money: 350, reputation: 20, relationChange: { baizhou: 25 } }
+      },
+      {
+        label: '斥责她沉迷奇技淫巧',
+        message:
+          '“科举才是正途，这些奇技淫巧耽误前程，我劝你收手！”（柏舟脸色骤沉，猛地将图纸揉成一团，声音发紧）“道不同不相为谋！我造机关是为了利国利民，不是为了沽名钓誉！你既瞧不上，便请出去，往后不必再与我说话！”',
+        effect: { reputation: -30, relationChange: { baizhou: -40 } }
+      }
+    ]
+  },
+  {
     id: 'baizhou_interact',
     title: '机关术探讨',
     description: '柏舟拿着一张图纸兴奋地找你：“这个设计怎么样？要不要一起合作？”',
@@ -1765,6 +1898,81 @@ export const npcEvents: GameEvent[] = [
         label: '闭眼瞎射',
         message: '你闭着眼睛射了一箭，果然脱靶了。',
         effect: { flagsIncrement: ['guanshan_miss_continuous'], flagsSet: { guanshan_hit_continuous: 0 } }
+      }
+    ]
+  },
+  {
+    id: 'guanshan_hunt',
+    title: '箭馆野猎',
+    description: '关山振声道：「今日我们出城打猎，侠士可愿一起？」',
+    type: 'npc',
+    triggerCondition: {
+      probability: 0,
+      custom: (state) => (state.playerStats.health || 0) >= 10
+    },
+    options: [
+      {
+        label: '一同前往',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '改日吧',
+        message: '关山叹道：「甚是可惜啊。」'
+      }
+    ]
+  },
+  {
+    id: 'guanshan_hunt_novice',
+    title: '箭馆野猎',
+    description: '关山正色道：「前方危险，侠士可要注意了。」',
+    type: 'npc',
+    triggerCondition: {
+      probability: 0,
+      custom: () => false
+    },
+    options: [
+      {
+        label: '小子初来乍到，自当听从馆主安排',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '我自有万夫不当之勇，区区虫豸何足惧哉？',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '还是改日吧',
+        message: '关山叹道：「甚是可惜啊。」'
+      }
+    ]
+  },
+  {
+    id: 'guanshan_night_fire',
+    title: '围炉夜话',
+    description: '今夜箭馆早打烊，炉火尚温。关山抱出一坛酒：「侠士可愿与老夫痛饮三碗？」',
+    type: 'npc',
+    triggerCondition: {
+      probability: 0,
+      custom: (state) => {
+        if ((state.npcRelations['guanshan'] || 0) < 100) return false;
+        if (state.flags['guanshan_night_fire_banned']) return false;
+        const d = state.day || 1;
+        // 满分好感后按日伪随机约四成概率出现
+        return ((d * 37 + 91) % 100) < 40;
+      }
+    },
+    options: [
+      {
+        label: '痛饮三碗！',
+        message: '',
+        effect: {}
+      },
+      {
+        label: '今晚不便，改日再叙',
+        message: '',
+        effect: {}
       }
     ]
   },

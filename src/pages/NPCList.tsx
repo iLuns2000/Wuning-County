@@ -183,6 +183,154 @@ export const NPCList: React.FC = () => {
       return;
     }
 
+    // 关山箭馆野猎
+    if (eventId === 'guanshan_hunt' && option.label === '一同前往') {
+      const s = useGameStore.getState();
+      if (s.playerStats.health < 10) {
+        addLog('体力不足，不妨歇息后再与馆主出猎。');
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+      const hasArchery =
+        s.achievements.includes('guanshan_hit_5') || s.achievements.includes('guanshan_hit_10');
+      if (hasArchery) {
+        if (s.playerStats.money < 800) {
+          addLog('银两不足（需800文），只得作罢。');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        handleEventOption(
+          { money: -800, health: 10, reputation: 5, relationChange: { guanshan: 10 } },
+          '关山朗声大笑：「好兄弟，一起冲！」你冲锋在前，与众兄弟大丰收，满载而归。'
+        );
+      } else {
+        triggerSpecificEvent('guanshan_hunt_novice');
+      }
+      return;
+    }
+
+    if (eventId === 'guanshan_hunt_novice') {
+      if (option.label === '小子初来乍到，自当听从馆主安排') {
+        const s = useGameStore.getState();
+        if (s.playerStats.money < 2000) {
+          addLog('银两不足（需2000文），无法跟队出装。');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        handleEventOption(
+          {
+            money: -2000,
+            health: 3,
+            reputation: 5,
+            relationChange: { guanshan: 5 },
+            itemsAdd: ['wild_hunt_meat_haul']
+          },
+          '你小心跟随，与众兄弟大丰收，满载而归，分得鲜肉三五斤。'
+        );
+        return;
+      }
+      if (option.label === '我自有万夫不当之勇，区区虫豸何足惧哉？') {
+        const s = useGameStore.getState();
+        if (s.playerStats.money < 2000) {
+          addLog('银两不足（尚需赔付伤药杂项）。');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        if (s.playerStats.health < 20) {
+          addLog('体力过低，只怕撑不住这一趟惊险。');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        handleEventOption(
+          { money: -2000, health: -20, reputation: -5, relationChange: { guanshan: -5 } },
+          '你逞强冲锋在前，不慎脚下打滑，掉到了野猪窝里，狼狈不堪……'
+        );
+        return;
+      }
+    }
+
+    // 关山围炉夜话
+    if (eventId === 'guanshan_night_fire' && option.label === '痛饮三碗！') {
+      const s = useGameStore.getState();
+      const hasArchery =
+        s.achievements.includes('guanshan_hit_5') || s.achievements.includes('guanshan_hit_10');
+      if (hasArchery) {
+        handleEventOption(
+          {
+            experience: 5,
+            itemsAdd: ['jingshanwei_hundred_token'],
+            flagsSet: { guanshan_night_decline_streak: 0 }
+          },
+          '说到兴浓处，关山拍案：「当年便是如此这般！」他解下旧令塞入你掌心：「这件东西你且收好，将来遇险也许能救你一命。」'
+        );
+      } else {
+        handleEventOption(
+          { experience: 5, flagsSet: { guanshan_night_decline_streak: 0 } },
+          '关山拍膝长叹：「当年便是如此这般……」酒过三巡，你只觉胸中所学见闻又广了几分。'
+        );
+      }
+      return;
+    }
+
+    if (eventId === 'guanshan_night_fire' && option.label === '今晚不便，改日再叙') {
+      const s = useGameStore.getState();
+      const streak = (s.flags['guanshan_night_decline_streak'] || 0) + 1;
+      const banned = streak >= 2;
+      handleEventOption(
+        {
+          relationChange: { guanshan: -5 },
+          flagsSet: {
+            guanshan_night_decline_streak: streak,
+            ...(banned ? { guanshan_night_fire_banned: true } : {})
+          }
+        },
+        banned
+          ? '关山嘿然一笑：「嘿！这小子～」他摇摇头——从此不再邀你围炉夜话。'
+          : '关山嘿然道：「嘿！这小子～」'
+      );
+      return;
+    }
+
+    // 泠音乐坊：点歌 / 包场（支持半价券，一次抵扣一张）
+    if (eventId === 'lingyin_enter' && (option.label === '点一首歌' || option.label === '我要包场！')) {
+      const s = useGameStore.getState();
+      const isFullHouse = option.label === '我要包场！';
+      const baseCost = isFullHouse ? 5000 : 10;
+      const hasVoucher = (s.inventory['lingyin_half_price_voucher'] || 0) > 0;
+      const cost = hasVoucher ? Math.floor(baseCost / 2) : baseCost;
+      if (s.playerStats.money < cost) {
+        addLog(`银两不足（需 ${cost} 文）${hasVoucher ? '（已计半价券）' : ''}。`);
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+      const rel = isFullHouse ? 30 : 5;
+      const heal = isFullHouse ? 999 : 10;
+      const baseMsg = isFullHouse
+        ? '泠音眼睛倏地亮了：「终于有大冤种——咳，终于有知音了！」当晚乐坊只为你一人亮着灯。'
+        : '泠音挽袖调弦：「客官要点首什么歌？」';
+      const voucherNote = hasVoucher
+        ? ' 你掏出泠音给的半价券，结算时只收了一半价钱。'
+        : '';
+      handleEventOption(
+        {
+          money: -cost,
+          health: heal,
+          relationChange: { ling_yin: rel },
+          ...(hasVoucher ? { itemsRemove: ['lingyin_half_price_voucher'] } : {})
+        },
+        baseMsg + voucherNote
+      );
+      return;
+    }
+
+    if (eventId === 'lingyin_help_speaker' && option.label === '我来帮你') {
+      if (playerStats.health < 20) {
+        addLog('体力不足，折腾音箱只怕要先累趴下。');
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+    }
+
     // 诩小溪比武挑战特殊处理
     if (eventId === 'xu_xiaoxi_wudao' && option.label === '挑战') {
       handleXuXiaoxiWudao();
