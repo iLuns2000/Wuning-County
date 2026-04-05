@@ -107,6 +107,9 @@ export type PigeonCondition = 'healthy' | 'tired' | 'injured' | 'lost';
 
 export type PigeonRaceType = 'sprint' | 'endurance';
 
+/** 灰市补剂档位（速燃剂 / 强效剂 / 禁忌剂） */
+export type PigeonDopingTier = 1 | 2 | 3;
+
 export interface PigeonStats {
   speed: number;      // 1-100
   endurance: number;  // 1-100
@@ -124,6 +127,15 @@ export interface Pigeon {
   injuredDaysLeft?: number;  // days until recovery from 'injured'
   winCount: number;
   raceCount: number;
+  /** 代谢损伤 0–100，用药累积，影响得分与长期风险 */
+  metabolicDamage?: number;
+  /** 速度 debuff 剩余天数（速燃剂后遗症），与 speedDebuffAmount 成对 */
+  speedDebuffDaysLeft?: number;
+  speedDebuffAmount?: number;
+  /** 训练收益惩罚剩余天数（强效剂后遗症） */
+  trainEfficiencyDebuffDaysLeft?: number;
+  /** 抽检禁赛：day > 此值才可参赛（与 injured 分离） */
+  raceBannedUntilDay?: number;
 }
 
 export interface PigeonRaceRecord {
@@ -136,6 +148,9 @@ export interface PigeonRaceRecord {
   rewardReputation: number;
   weather: WeatherType;
   note?: string;
+  dopingTier?: PigeonDopingTier;
+  dopingCaught?: boolean;
+  dopingInspectionNote?: string;
 }
 // ─────────────────────────────────────────────────────────
 
@@ -147,6 +162,8 @@ export interface DailyActionCounts {
   explore: number;
   caveFilled: boolean;
   pigeonRace: number;
+  /** 灰市补剂每日最多 1 次 */
+  pigeonBooster: number;
   extraDefenseCount: number;
 }
 
@@ -241,6 +258,19 @@ export interface GameState {
   pigeons: Pigeon[];
   pigeonRaceHistory: PigeonRaceRecord[];
   selectedPigeonId?: string;
+  /** 灰市补剂已解锁（可由随机事件写入 flags.pigeon_booster_unlocked，与此字段同步） */
+  pigeonBoosterUnlocked?: boolean;
+  /** 今日已选补剂绑定鸽子，参赛须同鸽 */
+  pendingDoping: { pigeonId: string; tier: PigeonDopingTier } | null;
+  /** 连续用药天数（用于抽检加成） */
+  dopingStreak: number;
+  lastPlayerDopingDay: number;
+  /** 近 7 日内被抓的游戏日，用于累犯倍率 */
+  pigeonDopingCaughtDays: number[];
+  /** 灰市药商锁定至该日（含）不可购买补剂 */
+  pigeonBoosterLockUntilDay?: number;
+  /** 连续无补剂夺冠场次（清白冠军成就） */
+  pigeonCleanWinStreak?: number;
 
   // 战火警报
   raidAlert?: boolean; // 当日发生山贼夜袭时为 true，展示警报动画后清除

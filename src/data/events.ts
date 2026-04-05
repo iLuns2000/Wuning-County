@@ -781,6 +781,34 @@ export const randomEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'pigeon_gray_market_messenger',
+    title: '黑市信使',
+    description:
+      '巷口有人塞给你一张字条，上写「灰市药商」联络暗号——能在赛前换一日爆发，但代价与风险自负。你想起鸽会里关于抽检的传言……',
+    type: 'opportunity',
+    triggerCondition: {
+      probability: 0.05,
+      custom: (state) =>
+        (state.pigeons || []).length > 0 &&
+        (state.pigeonRaceHistory || []).length >= 3 &&
+        !state.flags?.pigeon_booster_unlocked &&
+        !state.pigeonBoosterUnlocked,
+    },
+    options: [
+      {
+        label: '记下门路（解锁灰市补剂）',
+        message:
+          '你收起字条。对方点头消失在人潮里——日后赛前可在鸽会侧门寻「补剂」生意，但切记风声紧时莫露头。',
+        effect: { flagsSet: { pigeon_booster_unlocked: true } },
+      },
+      {
+        label: '当场撕毁，不沾灰产',
+        message: '你把字条撕碎扔进阴沟。正道赛马，心里更踏实。',
+        effect: { reputation: 2 },
+      },
+    ],
+  },
+  {
     id: 'pigeon_black_market_tip',
     title: '黑市情报',
     description: '一名神秘人悄悄靠近，低声说能给你提供赛鸽内幕——要么降低报名费，要么提高彩头。',

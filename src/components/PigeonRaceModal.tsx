@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Bird, Coins, Dumbbell, Flag, Soup, Trophy, AlertTriangle, Clock, Pencil, Check } from 'lucide-react';
+import { X, Bird, Coins, Dumbbell, Flag, Soup, Trophy, AlertTriangle, Clock, Pencil, Check, FlaskConical } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { Pigeon, PigeonCondition, PigeonRaceType } from '@/types/game';
+import { Pigeon, PigeonCondition, PigeonDopingTier, PigeonRaceType } from '@/types/game';
 
 interface PigeonRaceModalProps {
   onClose: () => void;
@@ -13,6 +13,40 @@ const CONDITION_LABELS: Record<PigeonCondition, { text: string; className: strin
   injured:  { text: '受伤',   className: 'text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-400' },
   lost:     { text: '迷路',   className: 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400' },
 };
+
+const DOPING_TIERS_UI: {
+  tier: PigeonDopingTier;
+  name: string;
+  cost: number;
+  gain: string;
+  risk: string;
+  sequelae: string;
+}[] = [
+  {
+    tier: 1,
+    name: '速燃剂',
+    cost: 60,
+    gain: '当日比赛：速度+8、爆发(胆气)+6',
+    risk: '基础抽检约 8%（恶劣天气+3%、连续用药至多+20%）',
+    sequelae: '赛后疲劳+20，次日速度-2（1 天）',
+  },
+  {
+    tier: 2,
+    name: '强效剂',
+    cost: 120,
+    gain: '当日比赛：速度+14、耐力+10',
+    risk: '基础抽检约 18%',
+    sequelae: '赛后疲劳+35，2 日内训练收益约 -30%',
+  },
+  {
+    tier: 3,
+    name: '禁忌剂',
+    cost: 220,
+    gain: '当日比赛：速度+22、耐力+16，冲刺档位+1',
+    risk: '基础抽检约 35%',
+    sequelae: '代谢损伤+28；受伤率+20%；可能永久属性-1～3',
+  },
+];
 
 const TRAIN_MODES: { mode: 'speed' | 'endurance' | 'homing'; label: string; stat: keyof Pigeon['stats']; cost: string }[] = [
   { mode: 'speed',     label: '速度训练', stat: 'speed',     cost: '-4体 -8文' },
@@ -49,13 +83,20 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
     playerStats,
     dailyCounts,
     currentEvent,
+    flags,
+    day,
     pigeons,
     pigeonRaceHistory,
     selectedPigeonId,
+    pigeonBoosterUnlocked,
+    pendingDoping,
+    pigeonBoosterLockUntilDay,
+    dopingStreak,
     buyPigeon,
     renamePigeon,
     trainPigeon,
     enterPigeonRace,
+    usePigeonBooster,
     selectPigeon,
     releasePigeon,
   } = useGameStore();
@@ -65,10 +106,17 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
   const [showMoneyTip, setShowMoneyTip] = useState(false);
   // 改名状态：{ id, value }
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
+  const [showDopingPanel, setShowDopingPanel] = useState(false);
+  const [dopingConfirmTier, setDopingConfirmTier] = useState<PigeonDopingTier | null>(null);
 
   const selectedPigeon = pigeons.find(p => p.id === selectedPigeonId) ?? pigeons[0] ?? null;
   const raceUsedToday = (dailyCounts.pigeonRace || 0) >= 1;
+  const boosterUsedToday = (dailyCounts.pigeonBooster || 0) >= 1;
   const isDisabled = !!currentEvent || pendingAction;
+  const boosterUnlocked = !!pigeonBoosterUnlocked || !!flags?.pigeon_booster_unlocked;
+  const pendingPigeonName = pendingDoping
+    ? pigeons.find(p => p.id === pendingDoping.pigeonId)?.name ?? '（未知）'
+    : '';
 
   const withDebounce = (fn: () => void) => {
     if (pendingAction) return;
@@ -99,6 +147,15 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
   const handleReleasePigeon = (mode: 'soup' | 'sell' | 'free') => {
     if (!selectedPigeon) return;
     withDebounce(() => releasePigeon(selectedPigeon.id, mode));
+  };
+
+  const handleConfirmDoping = () => {
+    if (!selectedPigeon || !dopingConfirmTier) return;
+    withDebounce(() => {
+      usePigeonBooster(selectedPigeon.id, dopingConfirmTier);
+      setDopingConfirmTier(null);
+      setShowDopingPanel(false);
+    });
   };
 
   const handleStartRename = (p: Pigeon) => {
@@ -276,6 +333,66 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
                       <AlertTriangle size={11} /> 疲劳过高，训练可能受伤
                     </div>
                   )}
+                  <div className="flex items-center gap-2 text-xs mt-1 pt-1 border-t border-border">
+                    <span className="text-muted-foreground w-10 shrink-0">代谢损</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary">
+                      <div
+                        className="h-1.5 rounded-full bg-orange-500/90 transition-all"
+                        style={{ width: `${Math.min(100, selectedPigeon.metabolicDamage ?? 0)}%` }}
+                      />
+                    </div>
+                    <span className="w-7 text-right tabular-nums text-muted-foreground">
+                      {selectedPigeon.metabolicDamage ?? 0}
+                    </span>
+                  </div>
+                  {pendingDoping && (
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-snug">
+                      今日灰市补剂已用于「{pendingPigeonName}」，请用该鸽参赛或待明日重置。
+                    </p>
+                  )}
+                </div>
+
+                {/* 灰市补剂 */}
+                <div>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                    <FlaskConical size={12} className="text-orange-600 dark:text-orange-400" /> 灰市补剂
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => boosterUnlocked && setShowDopingPanel(true)}
+                    disabled={
+                      isDisabled ||
+                      !boosterUnlocked ||
+                      !selectedPigeon ||
+                      raceUsedToday ||
+                      boosterUsedToday ||
+                      selectedPigeon.condition === 'injured' ||
+                      selectedPigeon.condition === 'lost' ||
+                      (pigeonBoosterLockUntilDay != null && day <= pigeonBoosterLockUntilDay) ||
+                      (selectedPigeon.raceBannedUntilDay != null && day <= selectedPigeon.raceBannedUntilDay)
+                    }
+                    title={
+                      !boosterUnlocked
+                        ? '累计参赛≥3场并触发随机事件「黑市信使」后解锁'
+                        : undefined
+                    }
+                    className="w-full text-left px-3 py-2 rounded-lg border border-orange-200/80 bg-orange-50/50 text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-orange-200 text-xs disabled:opacity-45 disabled:cursor-not-allowed hover:border-orange-400/60 transition-colors"
+                  >
+                    {boosterUnlocked
+                      ? boosterUsedToday
+                        ? '今日已用过补剂'
+                        : raceUsedToday
+                          ? '今日已参赛，无法用药'
+                          : pigeonBoosterLockUntilDay != null && day <= pigeonBoosterLockUntilDay
+                            ? '药商暂避风头'
+                            : '赛前选用补剂（高风险）…'
+                      : '灰市补剂未解锁'}
+                  </button>
+                  {!boosterUnlocked && (
+                    <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                      条件：拥有信鸽、累计参赛至少 3 场，并偶遇事件「黑市信使」。
+                    </p>
+                  )}
                 </div>
 
                 {/* Training */}
@@ -356,7 +473,9 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
                         isDisabled || raceUsedToday ||
                         selectedPigeon.condition === 'injured' ||
                         selectedPigeon.condition === 'lost' ||
-                        playerStats.money < 20
+                        playerStats.money < 20 ||
+                        (pendingDoping != null && pendingDoping.pigeonId !== selectedPigeon.id) ||
+                        (selectedPigeon.raceBannedUntilDay != null && day <= selectedPigeon.raceBannedUntilDay)
                       }
                       className="flex flex-col items-center gap-0.5 p-3 rounded-lg border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400 disabled:opacity-50 transition-all"
                     >
@@ -370,7 +489,9 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
                         isDisabled || raceUsedToday ||
                         selectedPigeon.condition === 'injured' ||
                         selectedPigeon.condition === 'lost' ||
-                        playerStats.money < 35
+                        playerStats.money < 35 ||
+                        (pendingDoping != null && pendingDoping.pigeonId !== selectedPigeon.id) ||
+                        (selectedPigeon.raceBannedUntilDay != null && day <= selectedPigeon.raceBannedUntilDay)
                       }
                       className="flex flex-col items-center gap-0.5 p-3 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400 disabled:opacity-50 transition-all"
                     >
@@ -394,8 +515,8 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
                           className="flex justify-between items-center px-2 py-1.5 rounded text-xs bg-secondary/40"
                         >
                           <span className="text-muted-foreground">第{r.day}日 {r.raceType === 'sprint' ? '短程' : '长程'}</span>
-                          <span className={r.rank === 1 ? 'font-bold text-yellow-500' : r.rank <= 3 ? 'text-primary' : 'text-muted-foreground'}>
-                            第{r.rank}名
+                          <span className={r.rank === 1 ? 'font-bold text-yellow-500' : r.rank > 0 && r.rank <= 3 ? 'text-primary' : 'text-muted-foreground'}>
+                            {r.rank === 0 ? '成绩取消' : `第${r.rank}名`}
                           </span>
                           <span>{weatherNames[r.weather]}</span>
                           <span className={r.rewardMoney > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
@@ -410,6 +531,86 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
             )}
           </div>
         </div>
+
+        {showDopingPanel && selectedPigeon && (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center p-3 rounded-xl bg-black/60 backdrop-blur-[1px]">
+            <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-xl space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <FlaskConical className="text-orange-500" size={18} /> 灰市补剂
+                </h3>
+                <button
+                  type="button"
+                  className="text-muted-foreground p-1 hover:text-foreground"
+                  onClick={() => {
+                    setShowDopingPanel(false);
+                    setDopingConfirmTier(null);
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              {!dopingConfirmTier ? (
+                <>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    灰市补剂可能导致赛后代谢损伤与抽检处罚，为游戏虚构玩法。所选补剂仅对今日下一次参赛生效，且须与当前信鸽一致。
+                    {dopingStreak > 1 ? ` 当前连续用药 ${dopingStreak} 日，抽检修正上升。` : ''}
+                  </p>
+                  <div className="space-y-2">
+                    {DOPING_TIERS_UI.map(t => (
+                      <button
+                        key={t.tier}
+                        type="button"
+                        disabled={playerStats.money < t.cost || pendingAction}
+                        onClick={() => setDopingConfirmTier(t.tier)}
+                        className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary/60 disabled:opacity-40 text-xs space-y-1 transition-colors"
+                      >
+                        <div className="font-semibold text-foreground">
+                          {t.name} · {t.cost} 文
+                        </div>
+                        <div className="text-muted-foreground">{t.gain}</div>
+                        <div className="text-amber-700/90 dark:text-amber-400/90">{t.risk}</div>
+                        <div className="text-red-700/85 dark:text-red-400/80">{t.sequelae}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                (() => {
+                  const t = DOPING_TIERS_UI.find(x => x.tier === dopingConfirmTier)!;
+                  return (
+                    <>
+                      <p className="text-xs font-medium text-foreground">
+                        确认对「{selectedPigeon.name}」使用 {t.name}（-{t.cost} 文）？
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{t.sequelae}</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        赛后可能抽检：罚款、禁赛、强制休养或声望损失；累犯惩罚加重。
+                      </p>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          className="flex-1 py-2 rounded-lg border border-border text-xs hover:bg-secondary/50"
+                          onClick={() => setDopingConfirmTier(null)}
+                        >
+                          返回
+                        </button>
+                        <button
+                          type="button"
+                          className="flex-1 py-2 rounded-lg bg-orange-600 text-white text-xs disabled:opacity-50 hover:bg-orange-700"
+                          disabled={playerStats.money < t.cost || pendingAction}
+                          onClick={handleConfirmDoping}
+                        >
+                          确认使用
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

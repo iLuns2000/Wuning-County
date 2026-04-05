@@ -589,6 +589,23 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     condition: (state) =>
       (state.pigeons || []).reduce((sum, p) => sum + p.raceCount, 0) >= 20
   },
+  {
+    id: 'pigeon_doping_edge_champion',
+    name: '险胜一线',
+    description: '使用禁忌剂参赛、未遭抽检且夺得第一名',
+    rewardExp: 220,
+    condition: (state) =>
+      (state.pigeonRaceHistory || []).some(
+        r => r.dopingTier === 3 && r.rank === 1 && !r.dopingCaught
+      ),
+  },
+  {
+    id: 'pigeon_clean_champion_streak',
+    name: '清白冠军',
+    description: '连续 3 场不适用灰市补剂而夺冠',
+    rewardExp: 200,
+    condition: (state) => (state.pigeonCleanWinStreak ?? 0) >= 3,
+  },
   // 季一藕狩猎相关成就
   {
     id: 'dreaming_fugitive',

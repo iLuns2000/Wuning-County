@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, CountyDevelopmentPathId, ActiveDebuff } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, PigeonDopingTier, CountyDevelopmentPathId, ActiveDebuff } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -309,32 +309,74 @@ const getWeatherRaceRiskModifier = (weather: WeatherType) => {
   }
 };
 
+/** 灰市补剂档位配置（与设计文档 3 档对齐，抽象命名） */
+const PIGEON_DOPING_TIERS: Record<
+  PigeonDopingTier,
+  {
+    label: string;
+    cost: number;
+    baseCatch: number;
+    metabolicAdd: number;
+    postFatigue: number;
+  }
+> = {
+  1: { label: '速燃剂', cost: 60, baseCatch: 0.08, metabolicAdd: 8, postFatigue: 20 },
+  2: { label: '强效剂', cost: 120, baseCatch: 0.18, metabolicAdd: 16, postFatigue: 35 },
+  3: { label: '禁忌剂', cost: 220, baseCatch: 0.35, metabolicAdd: 28, postFatigue: 0 },
+};
+
+const isBadWeatherForDopingInspection = (weather: WeatherType) =>
+  weather === 'rain_heavy' || weather === 'snow_heavy' || weather === 'rain_light' || weather === 'snow_light';
+
+const isPigeonBoosterUnlocked = (state: Pick<GameState, 'flags' | 'pigeonBoosterUnlocked'>) =>
+  !!state.pigeonBoosterUnlocked || !!state.flags?.pigeon_booster_unlocked;
+
+type CalcPigeonRaceScoreOpts = {
+  boosterTier?: PigeonDopingTier;
+  rng?: () => number;
+};
+
 const calcPigeonRaceScore = (
   pigeon: Pigeon,
   raceType: PigeonRaceType,
   weather: WeatherType,
-  rng = Math.random
+  opts?: CalcPigeonRaceScoreOpts
 ): number => {
-  const { speed, endurance, homing, courage } = pigeon.stats;
+  const rng = opts?.rng ?? Math.random;
+  const tier = opts?.boosterTier;
+  const metabolicDamage = pigeon.metabolicDamage ?? 0;
+  const speedDebuff = (pigeon.speedDebuffDaysLeft ?? 0) > 0 ? (pigeon.speedDebuffAmount ?? 0) : 0;
+
+  let speed = pigeon.stats.speed + (tier === 1 ? 8 : tier === 2 ? 14 : tier === 3 ? 22 : 0);
+  let endurance = pigeon.stats.endurance + (tier === 2 ? 10 : tier === 3 ? 16 : 0);
+  let courage = pigeon.stats.courage + (tier === 1 ? 6 : 0);
+  speed = clampStat(speed - speedDebuff);
+  endurance = clampStat(endurance);
+  courage = clampStat(courage);
+  const { homing } = pigeon.stats;
+
   const modifier = getWeatherRaceRiskModifier(weather);
-  const fatiguePenalty = pigeon.fatigue / 200; // max -0.5 at fatigue=100
+  const fatiguePenalty = Math.max(0, pigeon.fatigue - 40) * 0.4;
+  const damagePenalty = metabolicDamage * 0.15;
   let base: number;
   if (raceType === 'sprint') {
     base = speed * 0.5 + endurance * 0.2 + homing * 0.2 + courage * 0.1;
   } else {
     base = endurance * 0.5 + homing * 0.3 + speed * 0.1 + courage * 0.1;
   }
-  const noise = (rng() - 0.5) * 20; // ±10 random variance
-  return Math.max(0, base * (1 - modifier.speedPenalty) * (1 - fatiguePenalty) + noise);
+  const noise = (rng() - 0.5) * 20;
+  return Math.max(0, base * (1 - modifier.speedPenalty) - fatiguePenalty - damagePenalty + noise);
 };
 
-const rollRaceRank = (score: number, rng = Math.random): number => {
-  // Score thresholds (against ~8 NPC opponents with avg score ~55)
-  // Rank 1: score >= 70; Rank 2: score >= 55; Rank 3: score >= 42
-  if (score >= 70) return rng() < 0.7 ? 1 : 2;
-  if (score >= 55) return rng() < 0.5 ? 2 : (rng() < 0.5 ? 1 : 3);
-  if (score >= 42) return 3;
-  return Math.min(8, Math.floor(4 + rng() * 5)); // 4-8
+/** 禁忌剂：名次档位提升一档（向更前一名靠拢，最好为第 1） */
+const rollRaceRank = (score: number, rng: () => number, tier3Boost?: boolean): number => {
+  let rank: number;
+  if (score >= 70) rank = rng() < 0.7 ? 1 : 2;
+  else if (score >= 55) rank = rng() < 0.5 ? 2 : (rng() < 0.5 ? 1 : 3);
+  else if (score >= 42) rank = 3;
+  else rank = Math.min(8, Math.floor(4 + rng() * 5));
+  if (tier3Boost && rank > 1) rank -= 1;
+  return rank;
 };
 
 const calcRaceReward = (
@@ -552,6 +594,7 @@ interface GameStore extends GameState {
   renamePigeon: (id: string, name: string) => void;
   trainPigeon: (id: string, mode: 'speed' | 'endurance' | 'homing') => void;
   enterPigeonRace: (id: string, raceType: PigeonRaceType) => void;
+  usePigeonBooster: (pigeonId: string, tier: PigeonDopingTier) => void;
   selectPigeon: (id?: string) => void;
   /** 处置鸽舍中的鸽子：炖汤得物品 / 售卖 100 文 / 免费放生 */
   releasePigeon: (id: string, mode: 'soup' | 'sell' | 'free') => void;
@@ -593,7 +636,7 @@ export const useGameStore = create<GameStore>()(
       playerProfile: { name: '无名', avatar: '' },
       playerStats: { money: 0, reputation: 0, ability: 0, health: 100, experience: 0, accuracy: 0, debt: 0 },
       countyStats: { economy: 50, order: 50, culture: 50, livelihood: 50 },
-      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
+      dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, pigeonBooster: 0, extraDefenseCount: 0 },
       npcInteractionStates: {},
       isVoiceLost: false,
       isMoGuRenaming: false,
@@ -635,6 +678,13 @@ export const useGameStore = create<GameStore>()(
       pigeons: [],
       pigeonRaceHistory: [],
       selectedPigeonId: undefined,
+      pigeonBoosterUnlocked: false,
+      pendingDoping: null,
+      dopingStreak: 0,
+      lastPlayerDopingDay: 0,
+      pigeonDopingCaughtDays: [],
+      pigeonBoosterLockUntilDay: undefined,
+      pigeonCleanWinStreak: 0,
 
       // Debuff 系统初始状态
       activeDebuffs: [],
@@ -1409,7 +1459,7 @@ export const useGameStore = create<GameStore>()(
           playerProfile: { name: roleConfig.name, avatar: '' },
           playerStats: { ...roleConfig.initialStats, experience: 0 },
           countyStats: { ...roleConfig.initialCountyStats },
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, pigeonBooster: 0, extraDefenseCount: 0 },
           npcInteractionStates: {},
           isVoiceLost: false,
           isMoGuRenaming: false,
@@ -1436,6 +1486,13 @@ export const useGameStore = create<GameStore>()(
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
+          pigeonBoosterUnlocked: false,
+          pendingDoping: null,
+          dopingStreak: 0,
+          lastPlayerDopingDay: 0,
+          pigeonDopingCaughtDays: [],
+          pigeonBoosterLockUntilDay: undefined,
+          pigeonCleanWinStreak: 0,
           countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
           externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
         });
@@ -2586,6 +2643,31 @@ export const useGameStore = create<GameStore>()(
             }
             // 疲劳自然恢复 -20
             updated = { ...updated, fatigue: Math.max(0, updated.fatigue - 20) };
+            // 代谢损伤缓慢恢复
+            const md = updated.metabolicDamage ?? 0;
+            if (md > 0) {
+              const dec = 1 + Math.floor(Math.random() * 2);
+              updated = { ...updated, metabolicDamage: Math.max(0, md - dec) };
+            }
+            // 速燃剂速度 debuff 按日递减
+            const sdl = updated.speedDebuffDaysLeft ?? 0;
+            if (sdl > 0) {
+              const nextS = sdl - 1;
+              updated = {
+                ...updated,
+                speedDebuffDaysLeft: nextS > 0 ? nextS : undefined,
+                speedDebuffAmount: nextS > 0 ? updated.speedDebuffAmount : undefined,
+              };
+            }
+            // 强效剂训练 debuff 按日递减
+            const tel = updated.trainEfficiencyDebuffDaysLeft ?? 0;
+            if (tel > 0) {
+              const nextT = tel - 1;
+              updated = {
+                ...updated,
+                trainEfficiencyDebuffDaysLeft: nextT > 0 ? nextT : undefined,
+              };
+            }
             return updated;
           });
           // ─────────────────────────────────────────────────────
@@ -2622,7 +2704,7 @@ export const useGameStore = create<GameStore>()(
             marketPrices: newMarketPrices,
             marketInventory: newMarketInventory,
             ownedFacilities: newOwnedFacilities,
-            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
+            dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, pigeonBooster: 0, extraDefenseCount: 0 },
             hasInteractedToday: false,
             npcInteractionStates: {}, // Reset daily NPC interaction limits
             // 季一藕医馆动物互动每日重置
@@ -2643,6 +2725,8 @@ export const useGameStore = create<GameStore>()(
             flags: newFlags, // Apply reset flags
             ownedGoods: newOwnedGoods, // Apply spoilage & harvest
             pigeons: newPigeons, // 赛鸽日结算
+            pendingDoping: null,
+            pigeonBoosterUnlocked: !!newFlags.pigeon_booster_unlocked || !!state.pigeonBoosterUnlocked,
             leekPlots: (state.leekPlots || []).map(p => {
               // 0. Handle Mower Reset
               if (mowerHarvestedPlots.has(p.id)) {
@@ -2839,8 +2923,10 @@ export const useGameStore = create<GameStore>()(
         if (state.playerStats.health < cost.health) { get().addLog('【赛鸽】体力不足，无法训练。'); return; }
         if (state.playerStats.money < cost.money)   { get().addLog('【赛鸽】钱财不足，无法支付训练费用。'); return; }
 
-        // 属性提升
-        const gain = 1 + Math.floor(Math.random() * 2); // 1-2
+        // 属性提升（强效剂后遗症：训练收益 -30%）
+        const debuffDays = pigeon.trainEfficiencyDebuffDaysLeft ?? 0;
+        const gainRaw = 1 + Math.floor(Math.random() * 2); // 1-2
+        const gain = debuffDays > 0 ? Math.max(1, Math.round(gainRaw * 0.7)) : gainRaw;
         const fatigueAdd = mode === 'speed' ? 12 : mode === 'endurance' ? 10 : 8;
         const newFatigue = Math.min(100, pigeon.fatigue + fatigueAdd);
 
@@ -2870,12 +2956,71 @@ export const useGameStore = create<GameStore>()(
         }));
 
         const modeNames = { speed: '速度', endurance: '耐力', homing: '归巢' };
-        get().addLog(`【赛鸽】${pigeon.name} 完成${modeNames[mode]}训练，${modeNames[mode]}+${gain}（当前 ${newStats[statKey]}），疲劳度 ${newFatigue}。${injuryMsg}`);
+        const debuffNote = debuffDays > 0 ? '（代谢紊乱，训练收效降低）' : '';
+        get().addLog(`【赛鸽】${pigeon.name} 完成${modeNames[mode]}训练，${modeNames[mode]}+${gain}（当前 ${newStats[statKey]}），疲劳度 ${newFatigue}。${injuryMsg}${debuffNote}`);
         setTimeout(() => get().checkAchievements(), 0);
+      },
+
+      usePigeonBooster: (pigeonId, tier) => {
+        const state = get();
+        if (!isPigeonBoosterUnlocked(state)) {
+          get().addLog('【赛鸽·灰市】你尚未结识药商门路（需累计参赛并偶遇信使）。');
+          return;
+        }
+        if (state.pigeonBoosterLockUntilDay != null && state.day <= state.pigeonBoosterLockUntilDay) {
+          get().addLog('【赛鸽·灰市】药商近日避风头，暂无货源。');
+          return;
+        }
+        if ((state.dailyCounts.pigeonBooster || 0) >= 1) {
+          get().addLog('【赛鸽·灰市】今日已用过补剂，不可再服。');
+          return;
+        }
+        if ((state.dailyCounts.pigeonRace || 0) >= 1) {
+          get().addLog('【赛鸽·灰市】今日已赛过，补剂仅可在赛前使用。');
+          return;
+        }
+        const cfg = PIGEON_DOPING_TIERS[tier];
+        if (state.playerStats.money < cfg.cost) {
+          get().addLog(`【赛鸽·灰市】铜钱不足（需 ${cfg.cost} 文）。`);
+          return;
+        }
+        const pigeon = (state.pigeons || []).find(p => p.id === pigeonId);
+        if (!pigeon) {
+          get().addLog('【赛鸽·灰市】未找到信鸽。');
+          return;
+        }
+        if (pigeon.condition === 'injured' || pigeon.condition === 'lost') {
+          get().addLog(`【赛鸽·灰市】${pigeon.name} 状态不佳，不宜用药。`);
+          return;
+        }
+        if (pigeon.raceBannedUntilDay != null && state.day <= pigeon.raceBannedUntilDay) {
+          get().addLog(`【赛鸽·灰市】${pigeon.name} 仍在禁赛期。`);
+          return;
+        }
+
+        const nextStreak =
+          state.lastPlayerDopingDay > 0 && state.day === state.lastPlayerDopingDay + 1
+            ? state.dopingStreak + 1
+            : 1;
+
+        set(s => ({
+          playerStats: { ...s.playerStats, money: s.playerStats.money - cfg.cost },
+          pendingDoping: { pigeonId, tier },
+          dailyCounts: { ...s.dailyCounts, pigeonBooster: (s.dailyCounts.pigeonBooster || 0) + 1 },
+          dopingStreak: nextStreak,
+          lastPlayerDopingDay: state.day,
+        }));
+        get().addLog(
+          `【赛鸽·灰市】为「${pigeon.name}」购入${cfg.label}（-${cfg.cost} 文）。` +
+            `赛后可能代谢紊乱，且存在抽检风险（档位基础 ${Math.round(cfg.baseCatch * 100)}%` +
+            `${isBadWeatherForDopingInspection(state.weather) ? '，恶劣天气+3%' : ''}` +
+            `${nextStreak > 1 ? `，连续用药+${Math.min((nextStreak - 1) * 5, 20)}%` : ''}）。`
+        );
       },
 
       enterPigeonRace: (id, raceType) => {
         const state = get();
+        const rng = Math.random;
         if ((state.dailyCounts.pigeonRace || 0) >= 1) {
           get().addLog('【赛鸽】今日已参赛一次，明日再战。');
           return;
@@ -2884,6 +3029,16 @@ export const useGameStore = create<GameStore>()(
         if (!pigeon) { get().addLog('【赛鸽】未找到指定信鸽。'); return; }
         if (pigeon.condition === 'injured') { get().addLog(`【赛鸽】${pigeon.name} 正在养伤，无法参赛。`); return; }
         if (pigeon.condition === 'lost')    { get().addLog(`【赛鸽】${pigeon.name} 尚未归巢，无法参赛。`); return; }
+        if (pigeon.raceBannedUntilDay != null && state.day <= pigeon.raceBannedUntilDay) {
+          get().addLog(`【赛鸽】${pigeon.name} 仍在禁赛期，无法参赛。`);
+          return;
+        }
+
+        const pending = state.pendingDoping;
+        if (pending && pending.pigeonId !== id) {
+          get().addLog('【赛鸽】今日灰市补剂已绑定另一只信鸽，请选用那只参赛，或明日再议。');
+          return;
+        }
 
         const entryFee = raceType === 'sprint' ? 20 : 35;
         if (state.playerStats.money < entryFee) {
@@ -2895,75 +3050,205 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        // 计算分数与名次
-        const score = calcPigeonRaceScore(pigeon, raceType, state.weather);
-        const rank  = rollRaceRank(score);
-        const reward = rank <= 3 ? calcRaceReward(raceType, rank) : { money: 0, reputation: 0 };
+        const boosterTier = pending?.pigeonId === id ? pending.tier : undefined;
+        const dopingCfg = boosterTier ? PIGEON_DOPING_TIERS[boosterTier] : undefined;
 
-        // 风险判定
+        const score = calcPigeonRaceScore(pigeon, raceType, state.weather, { boosterTier, rng });
+        let rank = rollRaceRank(score, rng, boosterTier === 3);
+        let reward = rank <= 3 ? calcRaceReward(raceType, rank) : { money: 0, reputation: 0 };
+
+        // 灰市抽检（仅用药场次）
+        let dopingCaught = false;
+        let inspectionParts: string[] = [];
+        let catchFine = 0;
+        let catchRep = 0;
+        let newBanUntil: number | undefined;
+        let nextCaughtDays = [...(state.pigeonDopingCaughtDays || [])].filter(d => state.day - d < 7);
+        let boosterLockUntil: number | undefined = state.pigeonBoosterLockUntilDay;
+        let dopingHeavyInjuryDays: number | undefined;
+
+        if (boosterTier && dopingCfg) {
+          let catchP = dopingCfg.baseCatch;
+          if (isBadWeatherForDopingInspection(state.weather)) {
+            catchP += 0.03;
+            inspectionParts.push('恶劣天气+3%');
+          }
+          const streakExtra = Math.min(Math.max(0, state.dopingStreak - 1) * 0.05, 0.2);
+          if (streakExtra > 0) inspectionParts.push(`连续用药+${Math.round(streakExtra * 100)}%`);
+          catchP += streakExtra;
+          catchP = Math.max(0, Math.min(0.92, catchP));
+          dopingCaught = rng() < catchP;
+          inspectionParts.push(`终判抽检率 ${Math.round(catchP * 100)}%`);
+
+          if (dopingCaught) {
+            const catchesIn7d = nextCaughtDays.length;
+            const mult = catchesIn7d >= 2 ? 2 : catchesIn7d >= 1 ? 1.5 : 1;
+            nextCaughtDays.push(state.day);
+            const sevRoll = rng();
+            if (sevRoll < 0.45) {
+              catchFine = Math.round((80 + Math.floor(rng() * 121)) * mult);
+              catchRep = -Math.round((5 + Math.floor(rng() * 8)) * mult);
+              inspectionParts.push(`轻度：罚${catchFine}文`);
+            } else if (sevRoll < 0.8) {
+              const banDays = 2 + Math.floor(rng() * 3);
+              newBanUntil = state.day + banDays;
+              catchRep = -Math.round((10 + Math.floor(rng() * 11)) * mult);
+              inspectionParts.push(`中度：禁赛${banDays}天`);
+            } else {
+              catchFine = Math.round((40 + Math.floor(rng() * 61)) * mult);
+              catchRep = -Math.round((20 + Math.floor(rng() * 21)) * mult);
+              dopingHeavyInjuryDays = 3 + Math.floor(rng() * 3);
+              inspectionParts.push(`重度：罚${catchFine}文、强制休养${dopingHeavyInjuryDays}天`);
+            }
+            if (catchesIn7d >= 2) {
+              boosterLockUntil = state.day + 5;
+              inspectionParts.push('累犯：药商锁定数日');
+            }
+            reward = { money: 0, reputation: 0 };
+          }
+        }
+
         const riskMod = getWeatherRaceRiskModifier(state.weather);
         let newCondition: import('@/types/game').PigeonCondition = pigeon.condition;
-        let injuredDaysLeft: number | undefined;
+        let injuredDaysLeft: number | undefined = pigeon.injuredDaysLeft;
         let riskMsg = '';
-        const lostRoll = Math.random();
-        const injRoll  = Math.random();
-        if (lostRoll < riskMod.lostBonus) {
+        const lostRoll = rng();
+        const injRoll = rng();
+        if (!dopingCaught && lostRoll < riskMod.lostBonus) {
           newCondition = 'lost';
           riskMsg = `${pigeon.name} 在归途迷失，下落不明！`;
-        } else if (injRoll < riskMod.injuryBonus) {
+        } else if (
+          !dopingCaught &&
+          injRoll <
+          riskMod.injuryBonus + (boosterTier === 3 ? 0.2 : 0)
+        ) {
           newCondition = 'injured';
-          injuredDaysLeft = 1 + Math.floor(Math.random() * 2);
+          injuredDaysLeft = 1 + Math.floor(rng() * 2);
           riskMsg = `${pigeon.name} 比赛中受伤，需要 ${injuredDaysLeft} 天恢复。`;
         }
+        if (dopingCaught && dopingHeavyInjuryDays != null) {
+          newCondition = 'injured';
+          injuredDaysLeft = dopingHeavyInjuryDays;
+          riskMsg = `${pigeon.name} 赛后抽检风波中身心俱疲，需休养 ${dopingHeavyInjuryDays} 天。`;
+        }
+
+        const fatigueRace = 20;
+        const fatigueDoping = dopingCfg?.postFatigue ?? 0;
+        const metabolicDamage = Math.min(100, (pigeon.metabolicDamage ?? 0) + (dopingCfg?.metabolicAdd ?? 0));
+
+        let speedDebuffDaysLeft = pigeon.speedDebuffDaysLeft;
+        let speedDebuffAmount = pigeon.speedDebuffAmount;
+        let trainEfficiencyDebuffDaysLeft = pigeon.trainEfficiencyDebuffDaysLeft;
+        let raceBannedUntilDay = pigeon.raceBannedUntilDay;
+
+        let nextPigeonStats = { ...pigeon.stats };
+        if (boosterTier === 1) {
+          speedDebuffDaysLeft = 1;
+          speedDebuffAmount = 2;
+        } else if (boosterTier === 2) {
+          trainEfficiencyDebuffDaysLeft = 2;
+        } else if (boosterTier === 3 && !dopingCaught) {
+          const statKeys = ['speed', 'endurance', 'homing', 'courage'] as const;
+          const pick = statKeys[Math.floor(rng() * statKeys.length)];
+          const drop = 1 + Math.floor(rng() * 3);
+          nextPigeonStats = { ...nextPigeonStats, [pick]: clampStat(nextPigeonStats[pick] - drop) };
+        }
+
+        if (newBanUntil != null) raceBannedUntilDay = newBanUntil;
+
+        let nextClean = state.pigeonCleanWinStreak ?? 0;
+        if (boosterTier) nextClean = 0;
+        else if (rank === 1) nextClean += 1;
+        else nextClean = 0;
 
         const weatherNames: Record<string, string> = {
           sunny: '晴', cloudy: '阴', rain_light: '小雨',
           rain_heavy: '大雨', snow_light: '小雪', snow_heavy: '大雪'
         };
         const raceNames = { sprint: '短程飞行赛', endurance: '长程耐力赛' };
-        const rankText = rank <= 3 ? `第 ${rank} 名` : `第 ${rank} 名（未获奖）`;
+        let rankText = rank <= 3 ? `第 ${rank} 名` : `第 ${rank} 名（未获奖）`;
+        if (dopingCaught) rankText = '成绩取消（抽检异常）';
+
+        const dopingNote = boosterTier
+          ? dopingCaught
+            ? `【灰市】赛后抽检异常：${inspectionParts.join('，')}。`
+            : `【灰市】未检出异常（${inspectionParts.join('，')}）。鸽子状态亢奋，呼吸偏促。`
+          : '';
+        const sequelaeNote =
+          boosterTier && !dopingCaught
+            ? metabolicDamage >= 40
+              ? ' 鸽子出现持续性代谢紊乱迹象，宜减少用药、多加休养。'
+              : ''
+            : '';
 
         const record: PigeonRaceRecord = {
           day: state.day,
           pigeonId: id,
           raceType,
-          rank,
+          rank: dopingCaught ? 0 : rank,
           score: Math.round(score),
           rewardMoney: reward.money,
           rewardReputation: reward.reputation,
           weather: state.weather,
-          note: riskMsg || undefined,
+          note: [riskMsg, dopingNote].filter(Boolean).join(' ') || undefined,
+          dopingTier: boosterTier,
+          dopingCaught,
+          dopingInspectionNote: boosterTier ? inspectionParts.join('；') : undefined,
         };
+
+        const finalMoney =
+          state.playerStats.money -
+          entryFee +
+          reward.money -
+          catchFine;
+        const finalRep = Math.max(0, state.playerStats.reputation + reward.reputation + catchRep);
 
         set(s => ({
           playerStats: {
             ...s.playerStats,
-            money:      s.playerStats.money - entryFee + reward.money,
-            reputation: Math.max(0, s.playerStats.reputation + reward.reputation),
-            health:     s.playerStats.health - 5,
+            money: finalMoney,
+            reputation: finalRep,
+            health: s.playerStats.health - 5,
           },
-          pigeons: s.pigeons.map(p => p.id === id
-            ? {
-                ...p,
-                condition: newCondition,
-                injuredDaysLeft,
-                fatigue: Math.min(100, p.fatigue + 20),
-                winCount:  rank === 1 ? p.winCount + 1 : p.winCount,
-                raceCount: p.raceCount + 1,
-              }
-            : p
-          ),
+          pigeons: s.pigeons.map(p => {
+            if (p.id !== id) return p;
+            return {
+              ...p,
+              stats: nextPigeonStats,
+              condition: newCondition,
+              injuredDaysLeft,
+              fatigue: Math.min(100, p.fatigue + fatigueRace + fatigueDoping),
+              metabolicDamage,
+              winCount: !dopingCaught && rank === 1 ? p.winCount + 1 : p.winCount,
+              raceCount: p.raceCount + 1,
+              speedDebuffDaysLeft,
+              speedDebuffAmount,
+              trainEfficiencyDebuffDaysLeft,
+              raceBannedUntilDay,
+            };
+          }),
           pigeonRaceHistory: [record, ...(s.pigeonRaceHistory || [])].slice(0, 500),
           dailyCounts: { ...s.dailyCounts, pigeonRace: (s.dailyCounts.pigeonRace || 0) + 1 },
+          pendingDoping: null,
+          pigeonDopingCaughtDays: nextCaughtDays,
+          pigeonBoosterLockUntilDay: boosterLockUntil,
+          pigeonCleanWinStreak: nextClean,
         }));
 
-        const rewardText = reward.money > 0
-          ? `获得 ${reward.money} 文、${reward.reputation} 声望`
-          : '无奖励';
+        const rewardText = dopingCaught
+          ? '成绩取消，无奖金'
+          : reward.money > 0
+            ? `获得 ${reward.money} 文、${reward.reputation} 声望`
+            : '无奖励';
         get().addLog(
           `【赛鸽·${raceNames[raceType]}】${pigeon.name} 在${weatherNames[state.weather]}天气中出赛，` +
-          `得分 ${Math.round(score)}，${rankText}。${rewardText}。${riskMsg}`
+            `得分 ${Math.round(score)}，${rankText}。${rewardText}。${riskMsg}${dopingNote ? ' ' + dopingNote : ''}${sequelaeNote}`
         );
+        if (catchFine > 0 || catchRep < 0) {
+          get().addLog(
+            `【赛鸽·灰市】处罚：${catchFine > 0 ? `罚${catchFine}文 ` : ''}${catchRep < 0 ? `声望${catchRep}` : ''}`
+          );
+        }
         setTimeout(() => get().checkAchievements(), 0);
       },
 
@@ -3324,7 +3609,8 @@ export const useGameStore = create<GameStore>()(
               flags: newFlags,
               eventQueue: nextEventQueue,
               currentEvent: null,
-              isMoGuRenaming: isMoGuRenaming
+              isMoGuRenaming: isMoGuRenaming,
+              pigeonBoosterUnlocked: !!newFlags.pigeon_booster_unlocked || !!state.pigeonBoosterUnlocked,
             };
           });
           // Check task completion after state update
@@ -3465,7 +3751,7 @@ export const useGameStore = create<GameStore>()(
           currentEvent: null,
           isGameOver: false,
           currentTaskId: undefined,
-          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, extraDefenseCount: 0 },
+          dailyCounts: { work: 0, rest: 0, chatTotal: 0, fortune: 0, explore: 0, caveFilled: false, pigeonRace: 0, pigeonBooster: 0, extraDefenseCount: 0 },
           hasInteractedToday: false,
           equippedApparel: {},
           equippedAccessories: [],
@@ -3475,6 +3761,13 @@ export const useGameStore = create<GameStore>()(
           pigeons: [],
           pigeonRaceHistory: [],
           selectedPigeonId: undefined,
+          pigeonBoosterUnlocked: false,
+          pendingDoping: null,
+          dopingStreak: 0,
+          lastPlayerDopingDay: 0,
+          pigeonDopingCaughtDays: [],
+          pigeonBoosterLockUntilDay: undefined,
+          pigeonCleanWinStreak: 0,
         });
       },
 
@@ -4425,6 +4718,12 @@ export const useGameStore = create<GameStore>()(
             uniqueItems: Object.keys(migratedInventory).length,
           };
         }
+        const mergedDaily = {
+          ...currentState.dailyCounts,
+          ...(persisted.dailyCounts || {}),
+        };
+        mergedDaily.pigeonBooster = mergedDaily.pigeonBooster ?? 0;
+
         return {
           ...currentState,
           ...persisted,
@@ -4432,6 +4731,16 @@ export const useGameStore = create<GameStore>()(
           activeDebuffs: persisted.activeDebuffs ?? [],
           lastDebuffCheckDay: persisted.lastDebuffCheckDay ?? 0,
           dismissedActivities: persisted.dismissedActivities ?? {},
+          dailyCounts: mergedDaily,
+          pendingDoping: (persisted as Partial<GameState>).pendingDoping ?? null,
+          pigeonBoosterUnlocked:
+            !!(persisted as Partial<GameState>).pigeonBoosterUnlocked ||
+            !!(persisted as Partial<GameState>).flags?.pigeon_booster_unlocked,
+          dopingStreak: (persisted as Partial<GameState>).dopingStreak ?? 0,
+          lastPlayerDopingDay: (persisted as Partial<GameState>).lastPlayerDopingDay ?? 0,
+          pigeonDopingCaughtDays: (persisted as Partial<GameState>).pigeonDopingCaughtDays ?? [],
+          pigeonBoosterLockUntilDay: (persisted as Partial<GameState>).pigeonBoosterLockUntilDay,
+          pigeonCleanWinStreak: (persisted as Partial<GameState>).pigeonCleanWinStreak ?? 0,
         };
       },
       partialize: (state) => ({
@@ -4486,6 +4795,13 @@ export const useGameStore = create<GameStore>()(
         pigeons: state.pigeons,
         pigeonRaceHistory: state.pigeonRaceHistory,
         selectedPigeonId: state.selectedPigeonId,
+        pigeonBoosterUnlocked: state.pigeonBoosterUnlocked,
+        pendingDoping: state.pendingDoping,
+        dopingStreak: state.dopingStreak,
+        lastPlayerDopingDay: state.lastPlayerDopingDay,
+        pigeonDopingCaughtDays: state.pigeonDopingCaughtDays,
+        pigeonBoosterLockUntilDay: state.pigeonBoosterLockUntilDay,
+        pigeonCleanWinStreak: state.pigeonCleanWinStreak,
         // Debuff 系统持久化
         activeDebuffs: state.activeDebuffs,
         lastDebuffCheckDay: state.lastDebuffCheckDay,
