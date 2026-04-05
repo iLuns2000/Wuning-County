@@ -185,7 +185,7 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
           <div className="flex justify-center">
             <span className="text-xs text-amber-500/60 flex items-center gap-1">
               <Gem size={12} />
-              珍宝并无实际用途，仅为收藏与身份象征
+              多数珍宝用于收藏；建材令与稀有石料可用于官邸升级
             </span>
           </div>
         </div>

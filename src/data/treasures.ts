@@ -47,10 +47,16 @@ export const treasures: Item[] = [
     description: '纯金打造的浑天仪模型，虽然不能用来观测天象，但用来观测你的财富绰绰有余。',
     type: 'treasure',
   },
-   {
+  {
     id: 'construction_order',
     name: '建材令',
     description: '用于建造建筑的指令，每个指令的价值都是1000000。',
+    type: 'treasure',
+  },
+  {
+    id: 'rare_stone',
+    name: '稀有石料',
+    description: '质地致密、纹理稳定的高阶石料，可用于官邸后期修缮。',
     type: 'treasure',
   },
   {
@@ -69,5 +75,6 @@ export const treasurePrices: Record<string, number> = {
   'ivory_tower': 300000,
   'celestial_globe': 1000000,
   'construction_order': 1000000,
+  'rare_stone': 1800000,
   'xiao_he_tie': 520,
 };
