@@ -4,7 +4,7 @@ import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug, Truck } from 'lucide-react';
+import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug, Truck, Megaphone } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
 import { PolicyModal } from '@/components/PolicyModal';
@@ -971,6 +971,20 @@ export const Game: React.FC = () => {
                 <Utensils size={18} />
               </div>
               <span className="text-sm font-medium">小吃街</span>
+            </button>
+
+            <button
+              onClick={() => {
+                vibrate(VIBRATION_PATTERNS.LIGHT);
+                navigate('/announcements');
+              }}
+              disabled={!!currentEvent}
+              className={`flex gap-3 items-center p-3 rounded-xl border shadow-sm transition-all group hover:shadow hover:border-primary/30 hover:bg-accent/50 active:scale-95 disabled:opacity-50 ${getGlassClass()}`}
+            >
+              <div className="p-2 text-sky-600 bg-sky-100 rounded-lg transition-transform dark:bg-sky-950/40 dark:text-sky-400 group-hover:scale-110">
+                <Megaphone size={18} />
+              </div>
+              <span className="text-sm font-medium">公告栏</span>
             </button>
 
             <button 

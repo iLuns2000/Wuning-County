@@ -146,6 +146,14 @@ export const ActivityModal: React.FC<ActivityModalProps> = ({
               </div>
             )}
           </div>
+
+          <p className="px-6 py-3 text-center text-xs text-muted-foreground border-t border-border/40">
+            关闭后可在游戏内
+            <a href="#/announcements" className="text-primary underline-offset-2 hover:underline mx-0.5">
+              公告栏
+            </a>
+            随时查看
+          </p>
         </div>
       </div>
     </div>

@@ -39,6 +39,7 @@ const PigeonRace = lazy(() => import('@/pages/PigeonRace').then(m => ({ default:
 const GameManual = lazy(() => import('@/pages/GameManual').then(m => ({ default: m.GameManual })));
 const Leaderboard = lazy(() => import('@/pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const BugReport = lazy(() => import('@/pages/BugReport').then(m => ({ default: m.BugReport })));
+const Announcements = lazy(() => import('@/pages/Announcements').then(m => ({ default: m.Announcements })));
 
 // 加载中组件
 const PageLoader = () => (
@@ -230,6 +231,8 @@ function App() {
         <Route path="/manual" element={<Suspense fallback={<PageLoader />}><GameManual /></Suspense>} />
         <Route path="/leaderboard" element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
         <Route path="/bug-report" element={<Suspense fallback={<PageLoader />}><BugReport /></Suspense>} />
+        <Route path="/announcements/:announcementId" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
+        <Route path="/announcements" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
       </Routes>
       <NewYearCountdownBanner />
       <FireworksSplash />
