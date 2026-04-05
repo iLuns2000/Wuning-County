@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Bird, Dumbbell, Flag, Trophy, AlertTriangle, Clock, Pencil, Check } from 'lucide-react';
+import { X, Bird, Coins, Dumbbell, Flag, Soup, Trophy, AlertTriangle, Clock, Pencil, Check } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { Pigeon, PigeonCondition, PigeonRaceType } from '@/types/game';
 
@@ -57,6 +57,7 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
     trainPigeon,
     enterPigeonRace,
     selectPigeon,
+    releasePigeon,
   } = useGameStore();
 
   const [pendingAction, setPendingAction] = useState(false);
@@ -93,6 +94,11 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
   const handleEnterRace = (type: PigeonRaceType) => {
     if (!selectedPigeon) return;
     withDebounce(() => enterPigeonRace(selectedPigeon.id, type));
+  };
+
+  const handleReleasePigeon = (mode: 'soup' | 'sell' | 'free') => {
+    if (!selectedPigeon) return;
+    withDebounce(() => releasePigeon(selectedPigeon.id, mode));
   };
 
   const handleStartRename = (p: Pigeon) => {
@@ -293,6 +299,48 @@ export const PigeonRaceModal: React.FC<PigeonRaceModalProps> = ({ onClose }) => 
                         <span className="text-xs text-muted-foreground">{cost}</span>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* 放生与处置 */}
+                <div className="p-3 rounded-lg border border-amber-200/80 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/15 space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Bird size={12} className="text-amber-700 dark:text-amber-500" /> 放生与处置
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    鸽子将离开鸽舍：炖汤得物品、卖 100 文、或免费放生。
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleReleasePigeon('soup')}
+                      disabled={isDisabled || selectedPigeon.condition === 'lost'}
+                      className="flex flex-col items-center gap-0.5 p-2 rounded-lg border border-amber-200 bg-card hover:bg-amber-100/70 dark:border-amber-800 dark:hover:bg-amber-950/40 disabled:opacity-50 transition-all text-center"
+                    >
+                      <Soup size={14} className="text-amber-800 dark:text-amber-400" />
+                      <span className="text-xs font-medium">炖汤</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">鸽子汤×1</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReleasePigeon('sell')}
+                      disabled={isDisabled || selectedPigeon.condition === 'lost'}
+                      className="flex flex-col items-center gap-0.5 p-2 rounded-lg border border-amber-200 bg-card hover:bg-amber-100/70 dark:border-amber-800 dark:hover:bg-amber-950/40 disabled:opacity-50 transition-all text-center"
+                    >
+                      <Coins size={14} className="text-amber-800 dark:text-amber-400" />
+                      <span className="text-xs font-medium">售卖</span>
+                      <span className="text-[10px] text-muted-foreground">100 文</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReleasePigeon('free')}
+                      disabled={isDisabled || selectedPigeon.condition === 'lost'}
+                      className="flex flex-col items-center gap-0.5 p-2 rounded-lg border border-amber-200 bg-card hover:bg-amber-100/70 dark:border-amber-800 dark:hover:bg-amber-950/40 disabled:opacity-50 transition-all text-center"
+                    >
+                      <Bird size={14} className="text-amber-800 dark:text-amber-400" />
+                      <span className="text-xs font-medium">放生</span>
+                      <span className="text-[10px] text-muted-foreground">免费</span>
+                    </button>
                   </div>
                 </div>
 

@@ -96,6 +96,16 @@ export const items: Item[] = [
     }
   },
   {
+    id: 'pigeon_soup',
+    name: '美味的鸽子汤',
+    description: '文火慢炖的鸽子汤，汤色清亮，鲜香暖胃。',
+    type: 'consumable',
+    effect: {
+      health: 15,
+      reputation: 1
+    }
+  },
+  {
     id: 'wonton_72_transformations',
     name: '馄饨的七十二变',
     description: '云吞吞亲手撰写的馄饨制作秘籍，记载了七十二种馄饨的包法和馅料配方。',

@@ -158,14 +158,28 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
                     {snack.description}
                   </p>
 
-                  {/* 效果标签 */}
+                  {/* 效果标签：体力/文化/能力/声望，负数显示为「-N」 */}
                   {snack.effect && (
                     <div className="flex flex-wrap gap-1 mb-4">
-                      {snack.effect.health && (
-                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-red-100 text-red-700' : 'bg-red-500/20 text-red-300'}`}>体力+{snack.effect.health}</span>
+                      {typeof snack.effect.health === 'number' && snack.effect.health !== 0 && (
+                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-red-100 text-red-700' : 'bg-red-500/20 text-red-300'}`}>
+                          体力{snack.effect.health > 0 ? '+' : ''}{snack.effect.health}
+                        </span>
                       )}
-                      {snack.effect.culture && (
-                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-pink-100 text-pink-700' : 'bg-pink-500/20 text-pink-300'}`}>文化+{snack.effect.culture}</span>
+                      {typeof snack.effect.culture === 'number' && snack.effect.culture !== 0 && (
+                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-pink-100 text-pink-700' : 'bg-pink-500/20 text-pink-300'}`}>
+                          文化{snack.effect.culture > 0 ? '+' : ''}{snack.effect.culture}
+                        </span>
+                      )}
+                      {typeof snack.effect.ability === 'number' && snack.effect.ability !== 0 && (
+                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-sky-100 text-sky-800' : 'bg-sky-500/20 text-sky-300'}`}>
+                          能力{snack.effect.ability > 0 ? '+' : ''}{snack.effect.ability}
+                        </span>
+                      )}
+                      {typeof snack.effect.reputation === 'number' && snack.effect.reputation !== 0 && (
+                        <span className={`px-2 py-0.5 text-xs rounded ${isLightMode ? 'bg-emerald-100 text-emerald-800' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                          声望{snack.effect.reputation > 0 ? '+' : ''}{snack.effect.reputation}
+                        </span>
                       )}
                     </div>
                   )}

@@ -553,6 +553,8 @@ interface GameStore extends GameState {
   trainPigeon: (id: string, mode: 'speed' | 'endurance' | 'homing') => void;
   enterPigeonRace: (id: string, raceType: PigeonRaceType) => void;
   selectPigeon: (id?: string) => void;
+  /** 处置鸽舍中的鸽子：炖汤得物品 / 售卖 100 文 / 免费放生 */
+  releasePigeon: (id: string, mode: 'soup' | 'sell' | 'free') => void;
   dismissRaidAlert: () => void;
 
   // Debuff 系统
@@ -2967,6 +2969,44 @@ export const useGameStore = create<GameStore>()(
 
       selectPigeon: (id) => {
         set({ selectedPigeonId: id });
+      },
+
+      releasePigeon: (id, mode) => {
+        const state = get();
+        const pigeon = (state.pigeons || []).find(p => p.id === id);
+        if (!pigeon) {
+          get().addLog('【赛鸽】处置失败：未找到指定信鸽。');
+          return;
+        }
+        if (pigeon.condition === 'lost') {
+          get().addLog(`【赛鸽】${pigeon.name} 尚未归巢，无法在鸽舍中处置。`);
+          return;
+        }
+
+        const SELL_PRICE = 100;
+        const nextPigeons = state.pigeons.filter(p => p.id !== id);
+        const nextSelected =
+          state.selectedPigeonId === id ? (nextPigeons[0]?.id ?? undefined) : state.selectedPigeonId;
+
+        if (mode === 'soup') {
+          set(s => ({
+            pigeons: nextPigeons,
+            selectedPigeonId: nextSelected,
+            inventory: invAdd(s.inventory, 'pigeon_soup', 1),
+          }));
+          get().addLog(`【赛鸽】你将「${pigeon.name}」炖成汤，获得美味的鸽子汤一份。`);
+        } else if (mode === 'sell') {
+          set(s => ({
+            pigeons: nextPigeons,
+            selectedPigeonId: nextSelected,
+            playerStats: { ...s.playerStats, money: s.playerStats.money + SELL_PRICE },
+          }));
+          get().addLog(`【赛鸽】「${pigeon.name}」已作价 ${SELL_PRICE} 文售出。`);
+        } else {
+          set({ pigeons: nextPigeons, selectedPigeonId: nextSelected });
+          get().addLog(`【赛鸽】你将「${pigeon.name}」放归蓝天，分文不取。`);
+        }
+        setTimeout(() => get().checkAchievements(), 0);
       },
       // ─────────────────────────────────────────────────────────
 

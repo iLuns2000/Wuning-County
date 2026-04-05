@@ -196,5 +196,12 @@ export const snacks: Item[] = [
     description: '奶油浓郁，蘑菇鲜香，醇厚的汤底令人回味无穷，与墨骨大人无关联。',
     type: 'consumable',
     effect: { health: 5, culture: 1 }
+  },
+  {
+    id: 'snack_jianghu_latang',
+    name: '江湖辣汤',
+    description: '红油浮面，椒香扑鼻，一口下去浑身发汗，颇有几分走镖赶路的痛快。',
+    type: 'consumable',
+    effect: { health: 7, reputation: 1 }
   }
 ];
