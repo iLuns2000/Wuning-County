@@ -103,6 +103,15 @@
   * {
     @apply select-none border-border;
   }
+
+  /* 全局 select-none 会作用到表单控件；旧版 iOS Safari（如 14.x）上可导致 input/textarea 无法获得焦点或无法输入 */
+  input,
+  textarea,
+  select,
+  [contenteditable='true'] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
   
   html {
     @apply scroll-smooth;
