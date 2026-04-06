@@ -763,4 +763,11 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rarity: 'epic',
     condition: (state) => (state.leekGardenStats?.maxQualityAtHarvest || 0) >= 100,
   },
+  {
+    id: 'tuyumen_tai_kao_kao',
+    name: '太可铐了',
+    description: '累计十次听惊天八卦时撞破秘闻、被衙役带走并以贿赂脱身。',
+    rewardExp: 80,
+    condition: (state) => (state.flags['tuyumen_xiada_gossip_caught'] || 0) >= 10,
+  },
 ];

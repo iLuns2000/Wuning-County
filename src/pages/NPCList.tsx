@@ -331,6 +331,61 @@ export const NPCList: React.FC = () => {
       }
     }
 
+    // 土御门夏达：普通八卦 / 惊天八卦 / 投喂愿愿
+    if (eventId === 'tuyumen_xiada_chat') {
+      const relXiada = npcRelations['tuyumen_xiada'] || 0;
+      if (option.label === '投10文打听普通八卦') {
+        if (playerStats.money < 10) {
+          addLog('银两不足（需 10 文）。');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        const deltaGossip = 1 + Math.floor(Math.random() * 3);
+        handleEventOption(
+          { money: -10, relationChange: { tuyumen_xiada: deltaGossip } },
+          '土御门凑近嘀咕了一通街坊琐事，愿愿在一旁伸了个懒腰。'
+        );
+        return;
+      }
+      if (option.label === '投100文听惊天八卦（好感≥20解锁）') {
+        if (relXiada < 20) {
+          addLog('土御门摇摇头：「这等事，得等你我熟些再说。」（需好感≥20）');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        if (playerStats.money < 150) {
+          addLog('土御门低声道：「这等秘闻听了，万一撞见官差，少说还得五十文打点——你身上银钱不够稳妥，改日再来。」');
+          vibrate(VIBRATION_PATTERNS.ERROR);
+          return;
+        }
+        if (Math.random() < 0.7) {
+          handleEventOption(
+            { money: -100, experience: 2, relationChange: { tuyumen_xiada: 10 } },
+            '土御门面露得色，将前因后果娓娓道来，你只觉眼界大开。'
+          );
+        } else {
+          handleEventOption(
+            {
+              money: -150,
+              health: -2,
+              relationChange: { tuyumen_xiada: 5 },
+              flagsIncrement: ['tuyumen_xiada_gossip_caught']
+            },
+            '你听得入了神，不料隔墙有耳——衙役以「刺探不该听的」将你带走。好说歹说塞了五十文贿赂才被放出来，难免腰酸腿软。'
+          );
+        }
+        return;
+      }
+      if (option.label === '投喂愿愿（猫猫）') {
+        const deltaCat = 1 + Math.floor(Math.random() * 3);
+        handleEventOption(
+          { relationChange: { tuyumen_xiada: deltaCat } },
+          '你从袖里摸出点吃食，愿愿蹭过来吃得香甜，土御门在一旁轻笑。'
+        );
+        return;
+      }
+    }
+
     // 诩小溪比武挑战特殊处理
     if (eventId === 'xu_xiaoxi_wudao' && option.label === '挑战') {
       handleXuXiaoxiWudao();
@@ -815,7 +870,11 @@ export const NPCList: React.FC = () => {
                           className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 min-w-[80px]"
                           title="西林医馆 - 与小啾、互动"
                         >
-                          <span className="text-base">🏥</span>
+                          <img
+                            src="/images/xlyg.jpg"
+                            alt=""
+                            className="object-cover rounded shrink-0 size-3.5"
+                          />
                           <span>医馆</span>
                         </button>
                       )}

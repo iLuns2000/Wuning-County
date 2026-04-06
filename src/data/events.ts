@@ -1147,6 +1147,32 @@ export const npcEvents: GameEvent[] = [
     ]
   },
   {
+    id: 'tuyumen_xiada_chat',
+    title: '聊八卦',
+    description:
+      '后勤角落堆着酒坛与账本，土御门从册页间抬头；脚边蜷着愿愿，猫瞳懒洋洋扫你一眼。',
+    type: 'npc',
+    triggerCondition: { probability: 0 },
+    options: [
+      {
+        label: '投10文打听普通八卦',
+        message: '土御门压低了声音，与你分享道听途说。',
+        effect: { money: -10 }
+      },
+      {
+        label: '投100文听惊天八卦（好感≥20解锁）',
+        description: '打听需一百文；若摊上衙役刁难，另需五十文打点，请备足一百五十文。',
+        message: '一桩无宁县的旧事从你耳边擦过……',
+        effect: { money: -150 }
+      },
+      {
+        label: '投喂愿愿（猫猫）',
+        message: '愿愿蹭了蹭你的手。',
+        effect: {}
+      }
+    ]
+  },
+  {
     id: 'lingyin_enter',
     title: '进入乐坊',
     description: '泠音从帘后探身看了你一眼：「……请进。」台前乐架空空，倒还清静。',

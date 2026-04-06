@@ -171,7 +171,11 @@ export const ClinicAnimalModal: React.FC<ClinicAnimalModalProps> = ({ onClose })
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🏥</span>
+            <img
+              src="/images/xlyg.jpg"
+              alt=""
+              className="object-cover rounded-md shrink-0 size-6"
+            />
             <h3 className="text-lg font-bold">西林医馆 · 动物互动</h3>
           </div>
           <button

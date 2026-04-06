@@ -1,3 +1,13 @@
+/*
+ * @Author: xyZhan
+ * @Date: 2026-03-25 07:16:18
+ * @LastEditors: xyZhan
+ * @LastEditTime: 2026-04-06 11:22:37
+ * @FilePath: \textgame\src\data\npcs.ts
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by , All Rights Reserved. 
+ */
 import { NPC } from "@/types/game";
 
 export const npcs: NPC[] = [
@@ -2173,16 +2183,18 @@ export const npcs: NPC[] = [
     dailyLife: "在某个无人在意的角落观察无宁县居民的日常生活，除非大型活动需要物资保障或者发饷日，一般不会出现在大家的视线里。在工位上当值的基本上是土老师捡来的猫猫愿愿。",
     chatDialogues: {
       high: [
-        "无宁县来酒馆吃饭的人越来越多，上班都不能摸鱼了……啊！"
+        "无宁县来酒馆吃饭的人越来越多，上班都不能摸鱼了……啊！",
+        "为啥每次都认不出我？其实我的分身很多，比如某个红衣小菇娘、某块萌姜、还有某只狐狸？"
       ],
       medium: [
         "猫猫酒馆竭诚为您服务！",
         "我和你说，隔壁老李家的猫昨夜狂奔三里地揍了老张家大鹅，因为鹅啄了豆豆"
       ],
       low: [
-        "阳羡茶、花雕酒消耗怎么这么快，搬不过来了……"
+        "阳羡茶、花雕酒消耗怎么这么快，搬不过来了……",
+        "猫猫酒馆竭诚为您服务！"
       ]
     },
-    interactionEventIds: ["tuyumen_xiada_gossip", "tuyumen_xiada_feed_cat"]
+    interactionEventIds: ["tuyumen_xiada_chat"]
   }
 ];
