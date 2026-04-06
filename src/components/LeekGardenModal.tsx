@@ -3,17 +3,35 @@ import { X, Leaf, Droplets, FlaskConical, Scissors, Coins, Hammer, Utensils, Cli
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { LeekGardenHelpModal } from './LeekGardenHelpModal';
+import {
+  LEEK_MAX_COLD_STORAGE_LEVEL,
+  coldStorageExpansionCost,
+  getEffectiveLeekColdStorageLevel,
+  leekStockCap,
+  leekBoxStockCap,
+  LEEK_SKYSCRAPER_PLOT_ID,
+  LEEK_SKYSCRAPER_VARIETY_ID,
+} from '@/data/leekGardenConstants';
 
 interface LeekGardenModalProps {
   onClose: () => void;
 }
 
-const VARIETIES = [
+const STANDARD_VARIETIES = [
   { id: 'regular', name: '常规韭菜', growthTicks: 3, baseYield: 3, baseQuality: 60 },
   { id: 'fast', name: '快熟韭菜', growthTicks: 2, baseYield: 2, baseQuality: 55 },
   { id: 'fragrant', name: '高香韭菜', growthTicks: 2, baseYield: 5, baseQuality: 75, toughness: 55 },
   { id: 'cold_resistant', name: '耐寒韭菜', growthTicks: 2, baseYield: 6, baseQuality: 60, toughness: 80 },
 ];
+
+/** 摩天大土：约 60 游戏日成熟，单次收获固定 2000 把（见 gameStore） */
+const SKYSCRAPER_VARIETY = {
+  id: LEEK_SKYSCRAPER_VARIETY_ID,
+  name: '摩天大土',
+  growthTicks: 60,
+  baseYield: 2000,
+  baseQuality: 60,
+};
 
 const FACILITIES = [
   { id: 'drip_irrigation', name: '滴灌系统', cost: 200, desc: '自动浇水，稳定提升品质', icon: Droplets },
@@ -27,13 +45,19 @@ const FACILITIES = [
 export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => {
   const vibrate = useGameVibrate();
   const { 
-    leekPlots, ownedGoods, playerStats, leekFacilities, leekOrders,
+    leekPlots, ownedGoods, playerStats, leekFacilities, leekOrders, leekColdStorageLevel,
+    marketPrices,
     plantLeek, waterLeek, fertilizeLeek, harvestLeek, sellGood, 
     buyLeekFacility, processLeek, submitLeekOrder
   } = useGameStore();
 
+  const leekBoxDisplayPrice = marketPrices?.['leek_box'] ?? 40;
+
   const owned = ownedGoods['leek'] || 0;
   const ownedBox = ownedGoods['leek_box'] || 0;
+  const coldEff = getEffectiveLeekColdStorageLevel({ leekFacilities, leekColdStorageLevel });
+  const leekCap = coldEff > 0 ? leekStockCap(coldEff) : null;
+  const boxCap = coldEff > 0 ? leekBoxStockCap(coldEff) : null;
 
   const [activeTab, setActiveTab] = React.useState<'plots' | 'process' | 'orders'>('plots');
   const [showHelp, setShowHelp] = React.useState(false);
@@ -67,7 +91,11 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                 <Coins className="w-4 h-4" />
                 <span className="font-bold">资金: {playerStats.money}</span>
              </div>
-             <div className="text-sm text-emerald-700 dark:text-emerald-300">鲜韭: {owned} | 盒子: {ownedBox}</div>
+             <div className="text-sm text-emerald-700 dark:text-emerald-300">
+               鲜韭: {owned}
+               {leekCap != null ? ` / ${leekCap}` : ''} | 盒子: {ownedBox}
+               {boxCap != null ? ` / ${boxCap}` : ''}
+             </div>
           </div>
           <div className="flex gap-2 text-sm">
              <button 
@@ -103,6 +131,10 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                     {FACILITIES.map(f => {
                        const isOwned = leekFacilities?.[f.id];
                        const Icon = f.icon;
+                       const isCold = f.id === 'cold_storage';
+                       const coldMaxed = isCold && isOwned && coldEff >= LEEK_MAX_COLD_STORAGE_LEVEL;
+                       const expandCost = isCold && isOwned && !coldMaxed ? coldStorageExpansionCost(coldEff) : f.cost;
+
                        return (
                          <div key={f.id} className="flex justify-between items-center p-3 rounded border bg-muted/30 border-border">
                             <div className="flex gap-3 items-center">
@@ -110,11 +142,24 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                                   <Icon className="w-5 h-5" />
                                </div>
                                <div>
-                                  <div className="text-sm font-bold text-foreground">{f.name}</div>
+                                  <div className="text-sm font-bold text-foreground">
+                                    {f.name}
+                                    {isCold && isOwned ? ` Lv.${coldEff}/${LEEK_MAX_COLD_STORAGE_LEVEL}` : ''}
+                                  </div>
                                   <div className="text-xs text-muted-foreground">{f.desc}</div>
                                </div>
                             </div>
-                            {isOwned ? (
+                            {isCold && isOwned && coldMaxed ? (
+                                <span className="px-2 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded">已达最大</span>
+                            ) : isCold && isOwned ? (
+                                <button
+                                   onClick={() => { vibrate(VIBRATION_PATTERNS.MEDIUM); buyLeekFacility('cold_storage'); }}
+                                   className="px-3 py-1 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700 disabled:opacity-50"
+                                   disabled={playerStats.money < expandCost}
+                                >
+                                   扩建 ({expandCost})
+                                </button>
+                            ) : isOwned ? (
                                 <span className="px-2 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded">已拥有</span>
                             ) : (
                                 <button
@@ -132,7 +177,7 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                </div>
 
                {/* Plots */}
-               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {(leekPlots || []).map(plot => {
                   const ready = plot.ready;
                   const planted = !!plot.varietyId;
@@ -141,9 +186,11 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                   const gp = plot.growthProgress || 0;
                   const gt = plot.growthTarget || 3;
                   const fertility = plot.fertility || 0;
+                  const isSkyPlot = plot.id === LEEK_SKYSCRAPER_PLOT_ID;
+                  const varietiesForPlot = isSkyPlot ? [SKYSCRAPER_VARIETY] : STANDARD_VARIETIES;
                   
                   return (
-                    <div key={plot.id} className="overflow-hidden relative p-4 bg-card rounded-lg border border-emerald-200 dark:border-emerald-900/50 shadow-sm">
+                    <div key={plot.id} className={`overflow-hidden relative p-4 bg-card rounded-lg border shadow-sm ${isSkyPlot ? 'border-amber-300 dark:border-amber-800/60 ring-1 ring-amber-200/50 dark:ring-amber-900/40' : 'border-emerald-200 dark:border-emerald-900/50'}`}>
                       {/* Fertility Bar Background */}
                       <div className="absolute right-0 bottom-0 left-0 h-1 bg-muted">
                          <div 
@@ -154,8 +201,13 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
 
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="text-lg font-bold text-foreground">地块 {plot.id}</h3>
+                          <h3 className="text-lg font-bold text-foreground">
+                            {isSkyPlot ? '摩天大土' : `地块 ${plot.id}`}
+                          </h3>
                           <p className="text-sm text-muted-foreground">{planted ? '生长中' : '空置'}</p>
+                          {isSkyPlot && (
+                            <p className="text-xs text-amber-700 dark:text-amber-400/90 mt-1">单次可收 2000 把，收获后肥力耗尽需长期休耕</p>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-xs text-muted-foreground/70">肥力 {fertility}</div>
@@ -167,15 +219,16 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                       {!planted && (
                         <div className="flex flex-col gap-2">
                           <div className="mb-1 text-xs text-muted-foreground/70">选择品种种植:</div>
-                          <div className="flex gap-2">
-                              {VARIETIES.map(v => (
+                          <div className={`flex gap-2 ${isSkyPlot ? 'flex-col' : 'flex-wrap'}`}>
+                              {varietiesForPlot.map(v => (
                                 <button
                                   key={v.id}
                                   onClick={() => { vibrate(VIBRATION_PATTERNS.LIGHT); plantLeek(plot.id, v); }}
                                   disabled={fertility <= 0}
-                                  className="flex-1 px-2 py-2 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 disabled:opacity-50"
+                                  className={`flex-1 px-2 py-2 text-xs font-medium text-white rounded disabled:opacity-50 ${isSkyPlot ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                                 >
                                   {v.name}
+                                  {isSkyPlot && <span className="block mt-0.5 font-normal opacity-90">约 {v.growthTicks} 日成熟</span>}
                                 </button>
                               ))}
                           </div>
@@ -239,7 +292,7 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                     <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-900/50">
                         <div className="font-bold text-emerald-700 dark:text-emerald-300">产物</div>
                         <div className="text-sm text-emerald-600 dark:text-emerald-400">韭菜盒子 x 1</div>
-                        <div className="text-sm text-emerald-600 dark:text-emerald-400">售价 ~10 文</div>
+                        <div className="text-sm text-emerald-600 dark:text-emerald-400">市价约 {leekBoxDisplayPrice} 文</div>
                     </div>
                  </div>
 
@@ -260,7 +313,7 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
                            disabled={ownedBox < 1}
                            className="px-4 py-2 text-sm font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/50 rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/70 disabled:opacity-50"
                         >
-                           卖出 (10文)
+                           卖出（市价）
                         </button>
                     </div>
                  </div>

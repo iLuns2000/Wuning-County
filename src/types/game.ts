@@ -245,6 +245,9 @@ export interface GameState {
   leekPlots?: LeekPlot[];
   leekFacilities?: Record<string, boolean>; // id -> owned
   leekOrders?: LeekOrder[];
+  /** 冷库扩建等级 1–3；需已拥有 cold_storage。旧存档仅有 boolean 时按 1 处理 */
+  leekColdStorageLevel?: number;
+  leekGardenStats?: LeekGardenStats;
 
   // Disaster State
   disasterState: DisasterState;
@@ -271,6 +274,9 @@ export interface GameState {
   pigeonBoosterLockUntilDay?: number;
   /** 连续无补剂夺冠场次（清白冠军成就） */
   pigeonCleanWinStreak?: number;
+
+  /** 降税令：剩余游戏日内官府阶梯财产税减半（每日过日后递减） */
+  propertyTaxHalvingDaysLeft?: number;
 
   // 战火警报
   raidAlert?: boolean; // 当日发生山贼夜袭时为 true，展示警报动画后清除
@@ -307,6 +313,15 @@ export interface OfficeState {
   upgradeEndTime?: number;
   isUpgrading: boolean;
   autoPatrolDaysLeft?: number;
+}
+
+export interface LeekGardenStats {
+  totalHarvestedLeek: number;
+  totalSoldLeekUnits: number;
+  leekRevenueToday: number;
+  bestLeekRevenueOneDay: number;
+  maxQualityAtHarvest: number;
+  anyFacilityPurchased: boolean;
 }
 
 export interface LeekOrder {

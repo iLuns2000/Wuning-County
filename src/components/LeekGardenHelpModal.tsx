@@ -46,6 +46,7 @@ export const LeekGardenHelpModal: React.FC<LeekGardenHelpModalProps> = ({ onClos
               <Hammer className="w-5 h-5" /> 设施与管理
             </h3>
             <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground pl-2">
+              <li><span className="font-bold text-foreground">冷库</span>：显著降低鲜韭与盒子的腐损；首次建造后可继续<span className="font-bold text-foreground">扩建</span>至 3 级，等级越高保鲜越好，界面上的库容上限（鲜韭/盒子）也会提高。</li>
               <li><span className="font-bold text-foreground">滴灌系统</span>：每晚自动浇水，无需手动操作，稳定提升次日品质。</li>
               <li><span className="font-bold text-foreground">杀虫灯</span>：将虫害爆发率从 30% 降低至 5%，大幅保护收成。</li>
               <li><span className="font-bold text-foreground">手动操作</span>：未安装设施时，每日手动浇水可提升品质；手动施肥可加速生长（进度+1）。</li>
@@ -64,7 +65,7 @@ export const LeekGardenHelpModal: React.FC<LeekGardenHelpModalProps> = ({ onClos
               <span>+</span>
               <span>2 文钱</span>
               <span>➜</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">韭菜盒子 x1 (售价约 10 文)</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400">韭菜盒子 x1（基准约 40 文，随市价波动）</span>
             </div>
           </section>
 

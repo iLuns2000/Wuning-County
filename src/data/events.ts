@@ -1204,19 +1204,19 @@ export const npcEvents: GameEvent[] = [
     triggerCondition: { probability: 0 },
     options: [
       {
-        label: '喜欢小鸟（自愿给云雀50文）',
+        label: '喜欢小鸟',
         message:
           '你掏出五十文搁在她手边小几上。云雀眼睛一亮，合掌轻笑：「识相——小鸟记住你啦。」',
         effect: { money: -50, relationChange: { yun_que: 10 } }
       },
       {
-        label: '不喜欢：一不留神掉进洞里了',
+        label: '不喜欢',
         message:
           '你嘴硬说不想搭理这只「小鸟」，转身没留神，地面竟有个浅坑（还是她脚边狸猫刨的？），结结实实摔了一跤。',
         effect: { health: -10 }
       },
       {
-        label: '不喜欢：甘愿给100文精神损失费',
+        label: '不喜欢',
         message:
           '你撇撇嘴说没兴趣，又不愿吃皮肉苦，只好黑着脸数出一百文：「算我倒霉。」云雀接过铜钱，哼了一声：「行吧，精神损失结了。下次记得带糕点。」',
         effect: { money: -100 }

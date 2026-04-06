@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, PigeonDopingTier, CountyDevelopmentPathId, ActiveDebuff } from '@/types/game';
+import { GameState, RoleType, GameEvent, Effect, PlayerProfile, WeatherType, ApparelSlot, Pigeon, PigeonRaceType, PigeonRaceRecord, PigeonDopingTier, CountyDevelopmentPathId, ActiveDebuff, LeekGardenStats } from '@/types/game';
 import { roles } from '@/data/roles';
 import { randomEvents, npcEvents } from '@/data/events';
 import { tasks } from '@/data/tasks';
@@ -12,9 +12,18 @@ import { npcs } from '@/data/npcs';
 import { goods } from '@/data/goods';
 import { facilities } from '@/data/facilities';
 import { leekFacilities } from '@/data/leekFacilities';
+import {
+  LEEK_MAX_COLD_STORAGE_LEVEL,
+  coldStorageExpansionCost,
+  leekColdSpoilageMultiplier,
+  getEffectiveLeekColdStorageLevel,
+  ensureLeekSkyscraperPlot,
+  LEEK_SKYSCRAPER_PLOT_ID,
+  LEEK_SKYSCRAPER_VARIETY_ID,
+} from '@/data/leekGardenConstants';
 import { items, hairstyleItemIds, barberExclusiveHairItemIds } from '@/data/items';
 import { snacks } from '@/data/snacks';
-import { treasurePrices } from '@/data/treasures';
+import { treasurePrices, TAX_RELIEF_EDICT_ID, PROPERTY_TAX_HALVING_GAME_DAYS } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
@@ -73,6 +82,15 @@ const invRemoveN = (inv: Record<string, number>, itemId: string, count: number):
 
 // 辅助函数：检查 inventory 中是否有某物品
 const invHas = (inv: Record<string, number>, itemId: string): boolean => (inv[itemId] || 0) > 0;
+
+const defaultLeekGardenStats = (): LeekGardenStats => ({
+  totalHarvestedLeek: 0,
+  totalSoldLeekUnits: 0,
+  leekRevenueToday: 0,
+  bestLeekRevenueOneDay: 0,
+  maxQualityAtHarvest: 0,
+  anyFacilityPurchased: false,
+});
 
 // 数据迁移辅助函数：将旧格式 inventory (string[]) 转换为新格式 (Record<string, number>)
 // 返回 null 表示无需迁移（已是新格式）
@@ -670,9 +688,12 @@ export const useGameStore = create<GameStore>()(
         { id: 1, pest: 0, ready: false, fertility: 100 },
         { id: 2, pest: 0, ready: false, fertility: 100 },
         { id: 3, pest: 0, ready: false, fertility: 100 },
+        { id: LEEK_SKYSCRAPER_PLOT_ID, pest: 0, ready: false, fertility: 100 },
       ],
       leekFacilities: {},
       leekOrders: [],
+      leekColdStorageLevel: 0,
+      leekGardenStats: defaultLeekGardenStats(),
       disasterState: { type: 'none', active: false, duration: 0, lastTriggerDay: 0 },
       // 赛鸽系统初始状态
       pigeons: [],
@@ -685,6 +706,7 @@ export const useGameStore = create<GameStore>()(
       pigeonDopingCaughtDays: [],
       pigeonBoosterLockUntilDay: undefined,
       pigeonCleanWinStreak: 0,
+      propertyTaxHalvingDaysLeft: undefined,
 
       // Debuff 系统初始状态
       activeDebuffs: [],
@@ -923,14 +945,34 @@ export const useGameStore = create<GameStore>()(
         }
         const earnings = price * quantity;
 
-        set(state => ({
-          playerStats: { ...state.playerStats, money: state.playerStats.money + earnings },
-          ownedGoods: {
-            ...state.ownedGoods,
-            [goodId]: currentQty - quantity
+        set(state => {
+          const base = state.leekGardenStats ?? defaultLeekGardenStats();
+          let leekGardenStats = base;
+          if (goodId === 'leek') {
+            leekGardenStats = {
+              ...base,
+              totalSoldLeekUnits: base.totalSoldLeekUnits + quantity,
+              leekRevenueToday: base.leekRevenueToday + earnings,
+            };
+          } else if (goodId === 'leek_box') {
+            leekGardenStats = {
+              ...base,
+              leekRevenueToday: base.leekRevenueToday + earnings,
+            };
           }
-        }));
+          return {
+            playerStats: { ...state.playerStats, money: state.playerStats.money + earnings },
+            ownedGoods: {
+              ...state.ownedGoods,
+              [goodId]: currentQty - quantity,
+            },
+            leekGardenStats,
+          };
+        });
         get().addLog(`【市集】出售 ${quantity} 个${goods.find(g => g.id === goodId)?.name}，获得 ${earnings} 文。`);
+        if (goodId === 'leek' || goodId === 'leek_box') {
+          get().checkAchievements();
+        }
       },
 
       buyFacility: (facilityId) => {
@@ -992,20 +1034,63 @@ export const useGameStore = create<GameStore>()(
 
       buyLeekFacility: (id, cost) => {
         const state = get();
-        let finalCost = cost ?? (leekFacilities.find(f => f.id === id)?.cost ?? 0);
-        if (state.playerStats.money < finalCost) {
-          state.addLog('资金不足。');
+        const def = leekFacilities.find(f => f.id === id);
+        let finalCost = cost ?? (def?.cost ?? 0);
+
+        if (id === 'cold_storage') {
+          const hasCold = !!state.leekFacilities?.['cold_storage'];
+          const level = getEffectiveLeekColdStorageLevel(state);
+          if (hasCold && level >= LEEK_MAX_COLD_STORAGE_LEVEL) {
+            get().addLog('冷库已达最大规模。');
+            return;
+          }
+          if (hasCold) {
+            finalCost = coldStorageExpansionCost(level);
+          }
+          if (state.playerStats.money < finalCost) {
+            state.addLog('资金不足。');
+            return;
+          }
+          if (!hasCold) {
+            set(s => ({
+              playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
+              leekFacilities: { ...s.leekFacilities, cold_storage: true },
+              leekColdStorageLevel: 1,
+              leekGardenStats: {
+                ...(s.leekGardenStats ?? defaultLeekGardenStats()),
+                anyFacilityPurchased: true,
+              },
+            }));
+            get().addLog('【韭菜园】成功添置设施。');
+          } else {
+            set(s => ({
+              playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
+              leekColdStorageLevel: level + 1,
+            }));
+            get().addLog(`【韭菜园】冷库扩建完成（${level + 1}/${LEEK_MAX_COLD_STORAGE_LEVEL} 级）。`);
+          }
+          get().checkAchievements();
           return;
         }
+
         if (state.leekFacilities?.[id]) {
           state.addLog('你已经拥有此设施。');
           return;
         }
+        if (state.playerStats.money < finalCost) {
+          state.addLog('资金不足。');
+          return;
+        }
         set(s => ({
           playerStats: { ...s.playerStats, money: s.playerStats.money - finalCost },
-          leekFacilities: { ...s.leekFacilities, [id]: true }
+          leekFacilities: { ...s.leekFacilities, [id]: true },
+          leekGardenStats: {
+            ...(s.leekGardenStats ?? defaultLeekGardenStats()),
+            anyFacilityPurchased: true,
+          },
         }));
         get().addLog('【韭菜园】成功添置设施。');
+        get().checkAchievements();
       },
 
       loan: (amount) => {
@@ -1042,6 +1127,14 @@ export const useGameStore = create<GameStore>()(
       },
 
       plantLeek: (plotId, variety) => {
+        if (variety.id === LEEK_SKYSCRAPER_VARIETY_ID && plotId !== LEEK_SKYSCRAPER_PLOT_ID) {
+          get().addLog('【韭菜园】摩天大土品种仅可在摩天大土地块种植。');
+          return;
+        }
+        if (plotId === LEEK_SKYSCRAPER_PLOT_ID && variety.id !== LEEK_SKYSCRAPER_VARIETY_ID) {
+          get().addLog('【韭菜园】该地块仅可种植摩天大土品种。');
+          return;
+        }
         set(state => {
           const plots = (state.leekPlots || []).map(p => {
             if (p.id === plotId) {
@@ -1088,23 +1181,42 @@ export const useGameStore = create<GameStore>()(
         const plot = (state.leekPlots || []).find(p => p.id === plotId);
         if (!plot || !plot.ready || !plot.varietyId) return;
 
-        // Fertility penalty
         const currentFertility = plot.fertility || 100;
-        let baseYield = Math.max(1, (plot as any).baseYield || plot.growthTarget || 3);
-        if (currentFertility < 30) {
-          baseYield = Math.max(1, Math.floor(baseYield * 0.5));
-          get().addLog('【韭菜园】土地贫瘠，收成大减。');
+        const plotQuality = plot.quality || 0;
+        const isSkyscraper = plot.varietyId === LEEK_SKYSCRAPER_VARIETY_ID;
+
+        let qty: number;
+        let nextFertility: number;
+
+        if (isSkyscraper) {
+          qty = 2000;
+          nextFertility = 0;
+        } else {
+          let baseYield = Math.max(1, (plot as any).baseYield || plot.growthTarget || 3);
+          if (currentFertility < 30) {
+            baseYield = Math.max(1, Math.floor(baseYield * 0.5));
+            get().addLog('【韭菜园】土地贫瘠，收成大减。');
+          }
+          const qualityBonus = Math.floor((plot.quality || 0) / 10);
+          const pestPenalty = Math.floor((plot.pest || 0) / 20);
+          qty = Math.max(1, baseYield + qualityBonus - pestPenalty);
+          nextFertility = Math.max(0, currentFertility - 10);
         }
 
-        const qualityBonus = Math.floor((plot.quality || 0) / 10);
-        const pestPenalty = Math.floor((plot.pest || 0) / 20);
-        const qty = Math.max(1, baseYield + qualityBonus - pestPenalty);
-
-        set(s => ({
-          ownedGoods: { ...s.ownedGoods, leek: (s.ownedGoods['leek'] || 0) + qty },
-          leekPlots: (s.leekPlots || []).map(p => p.id === plotId ? { id: plotId, pest: 0, ready: false, fertility: Math.max(0, currentFertility - 10) } : p),
-        }));
+        set(s => {
+          const base = s.leekGardenStats ?? defaultLeekGardenStats();
+          return {
+            ownedGoods: { ...s.ownedGoods, leek: (s.ownedGoods['leek'] || 0) + qty },
+            leekPlots: (s.leekPlots || []).map(p => p.id === plotId ? { id: plotId, pest: 0, ready: false, fertility: nextFertility } : p),
+            leekGardenStats: {
+              ...base,
+              totalHarvestedLeek: base.totalHarvestedLeek + qty,
+              maxQualityAtHarvest: Math.max(base.maxQualityAtHarvest, plotQuality),
+            },
+          };
+        });
         get().addLog(`【韭菜园】收获鲜韭 ${qty} 把。`);
+        get().checkAchievements();
       },
       processLeek: () => {
         const state = get();
@@ -1153,12 +1265,21 @@ export const useGameStore = create<GameStore>()(
         const basePrice = goods.find(g => g.id === 'leek')?.basePrice || 3;
         const totalReward = Math.floor(basePrice * order.quantity * order.priceMultiplier);
 
-        set(s => ({
-          ownedGoods: { ...s.ownedGoods, leek: currentQty - order.quantity },
-          playerStats: { ...s.playerStats, money: s.playerStats.money + totalReward },
-          leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId)
-        }));
+        set(s => {
+          const base = s.leekGardenStats ?? defaultLeekGardenStats();
+          return {
+            ownedGoods: { ...s.ownedGoods, leek: currentQty - order.quantity },
+            playerStats: { ...s.playerStats, money: s.playerStats.money + totalReward },
+            leekOrders: (s.leekOrders || []).filter(o => o.id !== orderId),
+            leekGardenStats: {
+              ...base,
+              totalSoldLeekUnits: base.totalSoldLeekUnits + order.quantity,
+              leekRevenueToday: base.leekRevenueToday + totalReward,
+            },
+          };
+        });
         get().addLog(`【订单】交付订单，获得 ${totalReward} 文。`);
+        get().checkAchievements();
       },
 
       buyItem: (itemId, cost) => {
@@ -1185,6 +1306,25 @@ export const useGameStore = create<GameStore>()(
           get().addLog('资金不足，无法购买此珍宝。');
           return;
         }
+
+        if (treasureId === TAX_RELIEF_EDICT_ID) {
+          if ((state.propertyTaxHalvingDaysLeft ?? 0) > 0) {
+            get().addLog('【珍宝阁】降税令仍在生效，暂不可重复购买。');
+            return;
+          }
+          const treasure = items.find(i => i.id === treasureId);
+          if (!treasure) return;
+          set(s => ({
+            playerStats: { ...s.playerStats, money: s.playerStats.money - cost },
+            propertyTaxHalvingDaysLeft: PROPERTY_TAX_HALVING_GAME_DAYS,
+          }));
+          get().addLog(
+            `【珍宝阁】花费 ${cost} 文购得【${treasure.name}】，文书已呈官府备案，即日起连续 ${PROPERTY_TAX_HALVING_GAME_DAYS} 个游戏日内财产税减半。`
+          );
+          get().handleEventOption({ reputation: 5, culture: 2 }, '');
+          return;
+        }
+
         // construction_order 是一个特殊的珍宝，可以重复购买
         if (invHas(state.inventory, treasureId) && treasureId !== 'construction_order') {
           get().addLog('你已经拥有此珍宝了。');
@@ -1493,6 +1633,7 @@ export const useGameStore = create<GameStore>()(
           pigeonDopingCaughtDays: [],
           pigeonBoosterLockUntilDay: undefined,
           pigeonCleanWinStreak: 0,
+          propertyTaxHalvingDaysLeft: undefined,
           countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
           externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
         });
@@ -2388,6 +2529,7 @@ export const useGameStore = create<GameStore>()(
           const hasMower = state.leekFacilities?.['mower'];
           const mowerHarvestedPlots = new Set<number>();
           let mowerHarvestCount = 0;
+          let leekQuality100FromMower = false;
 
           if (hasMower) {
             (state.leekPlots || []).forEach(p => {
@@ -2395,9 +2537,13 @@ export const useGameStore = create<GameStore>()(
               if (p.varietyId && ((p.ready) || ((p.growthProgress || 0) >= target))) {
                 const quality = p.quality || 0;
                 const base = (p as any).baseYield || 3;
-                const yieldAmount = base + Math.floor(quality / 25);
+                const yieldAmount =
+                  p.varietyId === LEEK_SKYSCRAPER_VARIETY_ID
+                    ? 2000
+                    : base + Math.floor(quality / 25);
                 mowerHarvestCount += yieldAmount;
                 mowerHarvestedPlots.add(p.id);
+                if (quality >= 100) leekQuality100FromMower = true;
               }
             });
           }
@@ -2411,14 +2557,14 @@ export const useGameStore = create<GameStore>()(
           let spoilageMessage = '';
           const spoiledItems: string[] = [];
 
-          const hasColdStorage = state.leekFacilities?.['cold_storage'];
+          const coldLevel = getEffectiveLeekColdStorageLevel(state);
           const hasProcessingTable = state.leekFacilities?.['processing_table'];
 
           goods.forEach(good => {
             const count = newOwnedGoods[good.id] || 0;
             if (count > 0 && good.spoilageRate && good.spoilageRate > 0) {
               let rate = good.spoilageRate;
-              if (hasColdStorage) rate *= 0.5;
+              if (coldLevel > 0) rate *= leekColdSpoilageMultiplier(coldLevel);
               if (good.id === 'leek_box' && hasProcessingTable) rate = 0.01; // Minimal spoilage
 
               const exactSpoilage = count * rate;
@@ -2444,30 +2590,35 @@ export const useGameStore = create<GameStore>()(
             newPlayerStats.debt += interest;
           }
 
-          // Tax Mechanism: Progressive property tax
+          // Tax Mechanism: Progressive property tax（降税令：剩余天数内实际税率减半，每日过日递减一天）
+          const prevTaxHalvingLeft = state.propertyTaxHalvingDaysLeft ?? 0;
+          const taxHalvingActive = prevTaxHalvingLeft > 0;
           let taxMessage = '';
           let taxRate = 0;
+          let taxBracketReason = '';
           if (newPlayerStats.money > 6000000) {
             taxRate = 0.5;
-            const tax = Math.floor(newPlayerStats.money * taxRate);
-            newPlayerStats.money -= tax;
-            taxMessage = `【税收】由于家产过盛（超过600万文），官府强制征收了 50% 的财产税，扣除 ${tax} 文。`;
+            taxBracketReason = '由于家产过盛（超过600万文）';
           } else if (newPlayerStats.money > 3000000) {
             taxRate = 0.3;
-            const tax = Math.floor(newPlayerStats.money * taxRate);
-            newPlayerStats.money -= tax;
-            taxMessage = `【税收】由于家产丰厚（超过300万文），官府强制征收了 30% 的财产税，扣除 ${tax} 文。`;
+            taxBracketReason = '由于家产丰厚（超过300万文）';
           } else if (newPlayerStats.money > 2000000) {
             taxRate = 0.2;
-            const tax = Math.floor(newPlayerStats.money * taxRate);
-            newPlayerStats.money -= tax;
-            taxMessage = `【税收】由于家产殷实（超过200万文），官府强制征收了 20% 的财产税，扣除 ${tax} 文。`;
+            taxBracketReason = '由于家产殷实（超过200万文）';
           } else if (newPlayerStats.money > 1000000) {
             taxRate = 0.1;
-            const tax = Math.floor(newPlayerStats.money * taxRate);
-            newPlayerStats.money -= tax;
-            taxMessage = `【税收】由于家产丰厚（超过100万文），官府强制征收了 10% 的财产税，扣除 ${tax} 文。`;
+            taxBracketReason = '由于家产丰厚（超过100万文）';
           }
+          if (taxRate > 0) {
+            const effectiveRate = taxHalvingActive ? taxRate * 0.5 : taxRate;
+            const tax = Math.floor(newPlayerStats.money * effectiveRate);
+            newPlayerStats.money -= tax;
+            const pctLabel = Math.round(effectiveRate * 100);
+            const halvingNote = taxHalvingActive ? '（降税令生效）' : '';
+            taxMessage = `【税收】${taxBracketReason}，官府强制征收了 ${pctLabel}% 的财产税，扣除 ${tax} 文${halvingNote}。`;
+          }
+          const nextPropertyTaxHalvingDaysLeft =
+            taxHalvingActive ? prevTaxHalvingLeft - 1 : prevTaxHalvingLeft;
 
           // Weather Generation
           const nextDayVal = state.day + 1;
@@ -2693,12 +2844,23 @@ export const useGameStore = create<GameStore>()(
           logs.unshift(`【天气】今日天气：${weatherNames[nextWeather]}`);
           logs.unshift('获得 10 点阅历。');
 
+          const prevLg = state.leekGardenStats ?? defaultLeekGardenStats();
+          const nextLeekGardenStats: LeekGardenStats = {
+            ...prevLg,
+            totalHarvestedLeek: prevLg.totalHarvestedLeek + mowerHarvestCount,
+            maxQualityAtHarvest: Math.max(prevLg.maxQualityAtHarvest, leekQuality100FromMower ? 100 : 0),
+            bestLeekRevenueOneDay: Math.max(prevLg.bestLeekRevenueOneDay, prevLg.leekRevenueToday),
+            leekRevenueToday: 0,
+          };
+
           return {
             day: state.day + 1,
             weather: nextWeather,
             disasterState: nextDisasterState,
             externalThreat: nextExternalThreat,
             isGameOver,
+            propertyTaxHalvingDaysLeft:
+              nextPropertyTaxHalvingDaysLeft > 0 ? nextPropertyTaxHalvingDaysLeft : undefined,
             raidAlert: raidOccurred || undefined,
             marketState: newMarketState,
             marketPrices: newMarketPrices,
@@ -2724,12 +2886,14 @@ export const useGameStore = create<GameStore>()(
             fortuneLevel: undefined, // Reset daily fortune
             flags: newFlags, // Apply reset flags
             ownedGoods: newOwnedGoods, // Apply spoilage & harvest
+            leekGardenStats: nextLeekGardenStats,
             pigeons: newPigeons, // 赛鸽日结算
             pendingDoping: null,
             pigeonBoosterUnlocked: !!newFlags.pigeon_booster_unlocked || !!state.pigeonBoosterUnlocked,
             leekPlots: (state.leekPlots || []).map(p => {
               // 0. Handle Mower Reset
               if (mowerHarvestedPlots.has(p.id)) {
+                const wasSky = p.varietyId === LEEK_SKYSCRAPER_VARIETY_ID;
                 return {
                   ...p,
                   varietyId: undefined,
@@ -2739,7 +2903,7 @@ export const useGameStore = create<GameStore>()(
                   pest: 0,
                   quality: 0,
                   ready: false,
-                  fertility: Math.max(0, (p.fertility || 100) - 5)
+                  fertility: wasSky ? 0 : Math.max(0, (p.fertility || 100) - 5)
                 };
               }
 
@@ -3768,6 +3932,7 @@ export const useGameStore = create<GameStore>()(
           pigeonDopingCaughtDays: [],
           pigeonBoosterLockUntilDay: undefined,
           pigeonCleanWinStreak: 0,
+          propertyTaxHalvingDaysLeft: undefined,
         });
       },
 
@@ -3892,6 +4057,8 @@ export const useGameStore = create<GameStore>()(
           soundEnabled: state.soundEnabled,
           volume: state.volume,
           vibrationEnabled: state.vibrationEnabled,
+          showBackgroundImage: state.showBackgroundImage,
+          glassEffectEnabled: state.glassEffectEnabled,
           officeState: state.officeState,
           countyDevelopment: state.countyDevelopment,
           externalThreat: state.externalThreat,
@@ -3909,6 +4076,9 @@ export const useGameStore = create<GameStore>()(
           leekPlots: state.leekPlots,
           leekFacilities: state.leekFacilities,
           leekOrders: state.leekOrders,
+          leekColdStorageLevel: state.leekColdStorageLevel,
+          leekGardenStats: state.leekGardenStats,
+          propertyTaxHalvingDaysLeft: state.propertyTaxHalvingDaysLeft,
           timestamp: Date.now(),
           version: '1.0.0'
         };
@@ -3957,6 +4127,8 @@ export const useGameStore = create<GameStore>()(
             'soundEnabled',
             'volume',
             'vibrationEnabled',
+            'showBackgroundImage',
+            'glassEffectEnabled',
             'officeState',
             'countyDevelopment',
             'externalThreat',
@@ -3974,6 +4146,9 @@ export const useGameStore = create<GameStore>()(
             'leekPlots',
             'leekFacilities',
             'leekOrders',
+            'leekColdStorageLevel',
+            'leekGardenStats',
+            'propertyTaxHalvingDaysLeft',
           ] as const;
 
           const nextState: Partial<GameStore> = {};
@@ -3986,6 +4161,9 @@ export const useGameStore = create<GameStore>()(
           if ((nextState as any).inventory !== undefined) {
             const { result } = migrateInventoryToRecord((nextState as any).inventory);
             (nextState as any).inventory = result;
+          }
+          if ((nextState as any).leekPlots !== undefined) {
+            (nextState as any).leekPlots = ensureLeekSkyscraperPlot((nextState as any).leekPlots);
           }
 
           set(state => ({
@@ -4741,6 +4919,12 @@ export const useGameStore = create<GameStore>()(
           pigeonDopingCaughtDays: (persisted as Partial<GameState>).pigeonDopingCaughtDays ?? [],
           pigeonBoosterLockUntilDay: (persisted as Partial<GameState>).pigeonBoosterLockUntilDay,
           pigeonCleanWinStreak: (persisted as Partial<GameState>).pigeonCleanWinStreak ?? 0,
+          propertyTaxHalvingDaysLeft: (persisted as Partial<GameState>).propertyTaxHalvingDaysLeft,
+          leekColdStorageLevel: (persisted as Partial<GameState>).leekColdStorageLevel ?? 0,
+          leekGardenStats: (persisted as Partial<GameState>).leekGardenStats ?? defaultLeekGardenStats(),
+          leekPlots: ensureLeekSkyscraperPlot(
+            (persisted as Partial<GameState>).leekPlots ?? currentState.leekPlots
+          ),
         };
       },
       partialize: (state) => ({
@@ -4783,9 +4967,13 @@ export const useGameStore = create<GameStore>()(
         soundEnabled: state.soundEnabled,
         volume: state.volume,
         vibrationEnabled: state.vibrationEnabled,
+        showBackgroundImage: state.showBackgroundImage,
+        glassEffectEnabled: state.glassEffectEnabled,
         leekPlots: state.leekPlots,
         leekFacilities: state.leekFacilities,
         leekOrders: state.leekOrders,
+        leekColdStorageLevel: state.leekColdStorageLevel,
+        leekGardenStats: state.leekGardenStats,
         disasterState: state.disasterState,
         isExploring: state.isExploring,
         exploreResult: state.exploreResult,
@@ -4802,6 +4990,7 @@ export const useGameStore = create<GameStore>()(
         pigeonDopingCaughtDays: state.pigeonDopingCaughtDays,
         pigeonBoosterLockUntilDay: state.pigeonBoosterLockUntilDay,
         pigeonCleanWinStreak: state.pigeonCleanWinStreak,
+        propertyTaxHalvingDaysLeft: state.propertyTaxHalvingDaysLeft,
         // Debuff 系统持久化
         activeDebuffs: state.activeDebuffs,
         lastDebuffCheckDay: state.lastDebuffCheckDay,

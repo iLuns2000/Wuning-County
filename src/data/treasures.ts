@@ -10,6 +10,11 @@
  */
 import { Item } from '@/types/game';
 
+/** 珍宝阁「降税令」id，与 gameStore 购买/税收逻辑共用 */
+export const TAX_RELIEF_EDICT_ID = 'tax_relief_edict';
+/** 购买后生效的游戏日数 */
+export const PROPERTY_TAX_HALVING_GAME_DAYS = 15;
+
 export const treasures: Item[] = [
   {
     id: 'jade_seal',
@@ -65,6 +70,14 @@ export const treasures: Item[] = [
     description: '印有小鹤憧憬的楼县令水墨风头像的领带，也可当小发带。',
     type: 'treasure',
   },
+  {
+    id: TAX_RELIEF_EDICT_ID,
+    name: '降税令',
+    description:
+      '官府认可的减免文书。购得后立即生效：连续十五个游戏日内，按家产阶梯征收的财产税减半；生效期间不可重复购买。',
+    type: 'treasure',
+    rarity: 'epic',
+  },
 ];
 
 export const treasurePrices: Record<string, number> = {
@@ -77,4 +90,5 @@ export const treasurePrices: Record<string, number> = {
   'construction_order': 1000000,
   'rare_stone': 1800000,
   'xiao_he_tie': 520,
+  [TAX_RELIEF_EDICT_ID]: 999900,
 };

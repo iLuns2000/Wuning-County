@@ -43,7 +43,7 @@ export const goods: Good[] = [
     id: 'leek_box',
     name: '韭菜盒子',
     description: '香喷喷的韭菜盒子，深受欢迎。',
-    basePrice: 10,
+    basePrice: 40,
     volatility: 0.1,
     spoilageRate: 0.1,
   },

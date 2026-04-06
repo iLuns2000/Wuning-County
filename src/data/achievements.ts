@@ -1,4 +1,10 @@
 import { Achievement, GameState } from '@/types/game';
+import {
+  LEEK_MAX_COLD_STORAGE_LEVEL,
+  getEffectiveLeekColdStorageLevel,
+  leekStockCap,
+  leekBoxStockCap,
+} from '@/data/leekGardenConstants';
 
 export const achievements: (Achievement & { condition: (state: GameState) => boolean })[] = [
   {
@@ -673,5 +679,88 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     description: '你获得了故事集',
     rewardExp: 1001,
     condition: (state) => (state.flags['story_count'] || 0) >= 101
-  }
+  },
+  // ── 韭菜园成就 ─────────────────────────────────────────────
+  {
+    id: 'leek_first_facility',
+    name: '初入韭门',
+    description: '首次建造韭菜园设施',
+    rewardExp: 50,
+    rarity: 'common',
+    condition: (state) =>
+      !!(state.leekGardenStats?.anyFacilityPurchased) ||
+      Object.values(state.leekFacilities || {}).some(Boolean),
+  },
+  {
+    id: 'leek_first_harvest',
+    name: '韭韭无名',
+    description: '收获第一批韭菜',
+    rewardExp: 50,
+    rarity: 'common',
+    condition: (state) => (state.leekGardenStats?.totalHarvestedLeek || 0) >= 1,
+  },
+  {
+    id: 'leek_cold_storage_full',
+    name: '韭满为患',
+    description: '冷库存满（鲜韭达到当前冷库库容）',
+    rewardExp: 100,
+    rarity: 'rare',
+    condition: (state) => {
+      const lvl = getEffectiveLeekColdStorageLevel(state);
+      if (lvl <= 0) return false;
+      return (state.ownedGoods?.['leek'] || 0) >= leekStockCap(lvl);
+    },
+  },
+  {
+    id: 'leek_sold_20',
+    name: '割韭为乐',
+    description: '累计卖出 20 把鲜韭（市集或订单）',
+    rewardExp: 100,
+    rarity: 'rare',
+    condition: (state) => (state.leekGardenStats?.totalSoldLeekUnits || 0) >= 20,
+  },
+  {
+    id: 'leek_daily_revenue_1000',
+    name: '韭农本色',
+    description: '单日韭类经营收入超过 1000 文',
+    rewardExp: 100,
+    rarity: 'rare',
+    condition: (state) => {
+      const g = state.leekGardenStats;
+      const today = g?.leekRevenueToday || 0;
+      const best = g?.bestLeekRevenueOneDay || 0;
+      return Math.max(today, best) >= 1000;
+    },
+  },
+  {
+    id: 'leek_cold_storage_max',
+    name: '韭霸',
+    description: '冷库扩建至最大规模',
+    rewardExp: 200,
+    rarity: 'epic',
+    condition: (state) => getEffectiveLeekColdStorageLevel(state) >= LEEK_MAX_COLD_STORAGE_LEVEL,
+  },
+  {
+    id: 'leek_full_stock_and_warehouse',
+    name: '功德韭满',
+    description: '冷库满级且鲜韭与韭菜盒子均达到满库',
+    rewardExp: 220,
+    rarity: 'epic',
+    condition: (state) => {
+      const lvl = getEffectiveLeekColdStorageLevel(state);
+      if (lvl < LEEK_MAX_COLD_STORAGE_LEVEL) return false;
+      return (
+        (state.ownedGoods?.['leek'] || 0) >= leekStockCap(lvl) &&
+        (state.ownedGoods?.['leek_box'] || 0) >= leekBoxStockCap(lvl)
+      );
+    },
+  },
+  {
+    id: 'leek_quality_max',
+    name: '韭神之境',
+    description: '韭菜品质达到最高级（收获时品质 100）',
+    rewardExp: 200,
+    rarity: 'epic',
+    condition: (state) => (state.leekGardenStats?.maxQualityAtHarvest || 0) >= 100,
+  },
 ];

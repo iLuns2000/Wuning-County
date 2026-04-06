@@ -5,7 +5,7 @@
 import React from 'react';
 import { X, Gem, Coins, Sparkles, Crown } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { treasures, treasurePrices } from '@/data/treasures';
+import { treasures, treasurePrices, TAX_RELIEF_EDICT_ID } from '@/data/treasures';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -22,7 +22,7 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
 };
 
 export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
-  const { inventory, playerStats, buyTreasure } = useGameStore();
+  const { inventory, playerStats, buyTreasure, propertyTaxHalvingDaysLeft } = useGameStore();
   const vibrate = useGameVibrate();
   const { theme } = useTheme();
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -100,7 +100,11 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
           {treasures.map((treasure, index) => {
             const price = treasurePrices[treasure.id];
             const owned = getOwnedCount(treasure.id);
-            const canBuy = playerStats.money >= price;
+            const isTaxEdict = treasure.id === TAX_RELIEF_EDICT_ID;
+            const taxHalvingLeft = propertyTaxHalvingDaysLeft ?? 0;
+            const taxEdictActive = isTaxEdict && taxHalvingLeft > 0;
+            const canAfford = playerStats.money >= price;
+            const canBuy = canAfford && !taxEdictActive;
             const rarity = treasure.rarity || 'common';
             const rarityStyle = rarityColors[rarity] || rarityColors.common;
             
@@ -129,11 +133,17 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                   </span>
                 </div>
 
-                {/* 已有数量 */}
-                {owned > 0 && (
+                {/* 已有数量（降税令不入背包，改显示生效天数） */}
+                {!isTaxEdict && owned > 0 && (
                   <div className="absolute -top-1 -left-1 w-8 h-8 flex items-center justify-center 
                                 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-full shadow-lg">
                     <span className="text-sm font-bold text-white">×{owned}</span>
+                  </div>
+                )}
+                {taxEdictActive && (
+                  <div className="absolute -top-1 -left-1 px-2 py-0.5 flex items-center justify-center 
+                                bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg shadow-lg border border-emerald-400/40">
+                    <span className="text-[10px] sm:text-xs font-bold text-white whitespace-nowrap">剩余{taxHalvingLeft}天</span>
                   </div>
                 )}
                 
@@ -141,6 +151,11 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                   <div>
                     <h3 className={`text-sm sm:text-lg font-bold ${isLightMode ? 'text-amber-900' : rarityStyle.text}`}>{treasure.name}</h3>
                     <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${isLightMode ? 'text-amber-700/70' : 'text-amber-200/60'} line-clamp-2`}>{treasure.description}</p>
+                    {taxEdictActive && (
+                      <p className={`mt-1 text-xs font-medium ${isLightMode ? 'text-emerald-800' : 'text-emerald-300/90'}`}>
+                        降税令生效中 · 剩余 {taxHalvingLeft} 个游戏日
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -158,7 +173,7 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                           vibrate(VIBRATION_PATTERNS.SUCCESS);
                           buyTreasure(treasure.id);
                       }}
-                      disabled={!canBuy}
+                      disabled={!canAfford || taxEdictActive}
                       className={`
                         flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto
                         ${canBuy 
@@ -168,7 +183,7 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                       `}
                     >
                       <Gem size={14} />
-                      {canBuy ? '购买收藏' : '囊中羞涩'}
+                      {taxEdictActive ? '降税令生效中' : canAfford ? '购买收藏' : '囊中羞涩'}
                     </button>
                 </div>
 

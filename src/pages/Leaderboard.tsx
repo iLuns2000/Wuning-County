@@ -153,10 +153,10 @@ export const Leaderboard: React.FC = () => {
   const unit = leaderboardType === 'money' ? '文' : '点';
 
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50">
+    <div className="p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 dark:from-slate-950 dark:to-slate-900">
       {/* 头部 */}
       <div className="mx-auto mb-4 max-w-md">
-        <Link to="/" className="inline-flex items-center text-indigo-700 hover:text-indigo-500">
+        <Link to="/" className="inline-flex items-center text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">
           <ArrowLeft className="mr-1 w-5 h-5" />
           返回首页
         </Link>
@@ -164,13 +164,13 @@ export const Leaderboard: React.FC = () => {
 
       <div className="mx-auto space-y-4 max-w-md">
         {/* 排行榜类型切换 */}
-        <div className="flex gap-2 p-2 bg-white rounded-lg shadow-md">
+        <div className="flex gap-2 p-2 bg-white rounded-lg shadow-md dark:bg-card">
           <button
             onClick={() => handleTypeChange('money')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               leaderboardType === 'money'
                 ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             <Trophy className="inline-block mr-1 w-4 h-4" />
@@ -181,7 +181,7 @@ export const Leaderboard: React.FC = () => {
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               leaderboardType === 'favorability'
                 ? 'bg-pink-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80'
             }`}
           >
             <Heart className="inline-block mr-1 w-4 h-4" />
@@ -191,32 +191,32 @@ export const Leaderboard: React.FC = () => {
 
         {/* 标题 */}
         <div className="py-4 text-center">
-          <h1 className="flex gap-2 justify-center items-center text-2xl font-bold text-indigo-900">
+          <h1 className="flex gap-2 justify-center items-center text-2xl font-bold text-indigo-900 dark:text-indigo-100">
             {leaderboardType === 'money' ? (
               <>
-                <Medal className="w-8 h-8 text-indigo-600" />
+                <Medal className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                 富豪榜
               </>
             ) : (
               <>
-                <Heart className="w-8 h-8 text-pink-600" />
+                <Heart className="w-8 h-8 text-pink-600 dark:text-pink-400" />
                 人气榜
               </>
             )}
           </h1>
-          <p className="mt-1 text-sm text-indigo-700">
+          <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300/90">
             {leaderboardType === 'money' ? '无宁县富甲天下排行' : '无宁县人脉通达排行'}
           </p>
         </div>
 
         {/* 上榜状态 */}
-        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
-          <div className={`px-4 py-3 border-b ${leaderboardType === 'money' ? 'bg-indigo-50' : 'bg-pink-50'}`}>
-            <h2 className={`flex gap-2 items-center font-bold ${leaderboardType === 'money' ? 'text-indigo-900' : 'text-pink-900'}`}>
+        <div className="overflow-hidden bg-white rounded-lg border shadow-lg border-indigo-100 dark:bg-card dark:border-border">
+          <div className={`px-4 py-3 border-b border-border/60 ${leaderboardType === 'money' ? 'bg-indigo-50 dark:bg-indigo-950/50' : 'bg-pink-50 dark:bg-pink-950/40'}`}>
+            <h2 className={`flex gap-2 items-center font-bold ${leaderboardType === 'money' ? 'text-indigo-900 dark:text-indigo-100' : 'text-pink-900 dark:text-pink-100'}`}>
               {leaderboardType === 'money' ? (
-                <Trophy className="w-4 h-4 text-indigo-600" />
+                <Trophy className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               ) : (
-                <Heart className="w-4 h-4 text-pink-600" />
+                <Heart className="w-4 h-4 text-pink-600 dark:text-pink-400" />
               )}
               我的榜帖
             </h2>
@@ -224,7 +224,7 @@ export const Leaderboard: React.FC = () => {
           <div className="p-4">
             {isOnLeaderboard ? (
               <div className="text-center">
-                <div className={`flex gap-2 justify-center items-center mb-3 ${leaderboardType === 'money' ? 'text-green-600' : 'text-pink-600'}`}>
+                <div className={`flex gap-2 justify-center items-center mb-3 ${leaderboardType === 'money' ? 'text-green-600 dark:text-green-400' : 'text-pink-600 dark:text-pink-400'}`}>
                   {leaderboardType === 'money' ? (
                     <Trophy className="w-6 h-6" />
                   ) : (
@@ -232,10 +232,10 @@ export const Leaderboard: React.FC = () => {
                   )}
                   <span className="font-bold">榜上有名</span>
                 </div>
-                <div className="mb-2 text-indigo-900">
-                  当前{valueLabel}: <span className="text-xl font-bold text-indigo-700">{currentDisplayValue}</span> {unit}
+                <div className="mb-2 text-indigo-900 dark:text-foreground">
+                  当前{valueLabel}: <span className="text-xl font-bold text-indigo-700 dark:text-indigo-300">{currentDisplayValue}</span> {unit}
                 </div>
-                <div className="mb-4 text-sm text-indigo-600">
+                <div className="mb-4 text-sm text-indigo-600 dark:text-indigo-400/90">
                   排名: 第 <span className="font-bold">{currentUserRank?.rank}</span> 名
                 </div>
                 <div className="flex gap-2 justify-center">
@@ -269,7 +269,7 @@ export const Leaderboard: React.FC = () => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       handleLeaveLeaderboard();
                     }}
-                    className="flex gap-1 items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200"
+                    className="flex gap-1 items-center px-4 py-2 text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80"
                   >
                     <UserMinus className="w-4 h-4" />
                     下榜
@@ -278,13 +278,13 @@ export const Leaderboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center">
-                <div className="mb-4 text-indigo-800">
+                <div className="mb-4 text-indigo-800 dark:text-indigo-200/90">
                   {leaderboardType === 'money' ? '登榜展示您的万贯家财' : '登榜展示您的人脉关系'}
                 </div>
-                <div className="mb-2 text-lg font-medium text-indigo-900">
+                <div className="mb-2 text-lg font-medium text-indigo-900 dark:text-foreground">
                   角色名: {playerName || `游客`}
                 </div>
-                <div className="mb-4 text-sm text-indigo-600">
+                <div className="mb-4 text-sm text-indigo-600 dark:text-indigo-400/90">
                   当前{valueLabel}: {currentValue.toLocaleString()} {unit}
                 </div>
                 <button
@@ -312,8 +312,8 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 排行榜列表 */}
-        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg">
-          <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600' : 'bg-pink-600'}`}>
+        <div className="overflow-hidden bg-white rounded-lg border shadow-lg border-indigo-100 dark:bg-card dark:border-border">
+          <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600 dark:bg-indigo-800' : 'bg-pink-600 dark:bg-pink-800'}`}>
             <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
               {leaderboardType === 'money' ? '富豪排行' : '人气排行'} (每页{PAGE_SIZE}人)
@@ -321,81 +321,81 @@ export const Leaderboard: React.FC = () => {
           </div>
           
           {loading ? (
-            <div className="p-8 text-center text-indigo-500">
+            <div className="p-8 text-center text-indigo-500 dark:text-indigo-400">
               <RefreshCw className="mx-auto mb-2 w-6 h-6 animate-spin" />
               官府正在整理榜文...
             </div>
           ) : (
             <>
-              <div className="divide-y divide-indigo-50">
+              <div className="divide-y divide-indigo-50 dark:divide-border">
                 {/* 固定第一名：县令（好感榜）/ 小四（财富榜） - 仅在第一页显示 */}
                 {currentPage === 1 && (
                   leaderboardType === 'money' ? (
-                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50">
-                      <div className="flex justify-center items-center w-8 h-8 font-bold text-yellow-900 bg-yellow-400 rounded-full">
+                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50 dark:from-amber-950/40 dark:to-yellow-950/25">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold rounded-full text-yellow-900 bg-yellow-400 dark:text-amber-100 dark:bg-amber-700">
                         1
                       </div>
                       <div className="flex-1 ml-3">
-                        <div className="font-medium text-indigo-900">
-                          小四<span className="ml-1 text-sm text-yellow-600">(无宁县首富)</span>
+                        <div className="font-medium text-indigo-900 dark:text-foreground">
+                          小四<span className="ml-1 text-sm text-yellow-600 dark:text-amber-400">(无宁县首富)</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-indigo-800">*************</div>
-                        <div className="text-xs text-indigo-500">文</div>
+                        <div className="font-bold text-indigo-800 dark:text-indigo-200">*************</div>
+                        <div className="text-xs text-indigo-500 dark:text-indigo-400">文</div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50">
-                      <div className="flex justify-center items-center w-8 h-8 font-bold text-pink-900 bg-pink-400 rounded-full">
+                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50 dark:from-pink-950/35 dark:to-rose-950/25">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold rounded-full text-pink-900 bg-pink-400 dark:text-pink-100 dark:bg-pink-700">
                         1
                       </div>
                       <div className="flex-1 ml-3">
-                        <div className="font-medium text-pink-900">
-                          县令<span className="ml-1 text-sm text-pink-600">(德高望重)</span>
+                        <div className="font-medium text-pink-900 dark:text-pink-100">
+                          县令<span className="ml-1 text-sm text-pink-600 dark:text-pink-300">(德高望重)</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-pink-800">*************</div>
-                        <div className="text-xs text-pink-500">好感度</div>
+                        <div className="font-bold text-pink-800 dark:text-pink-200">*************</div>
+                        <div className="text-xs text-pink-500 dark:text-pink-400">好感度</div>
                       </div>
                     </div>
                   )
                 )}
                 
                 {leaderboard.length === 0 ? (
-                  <div className="p-8 text-center text-indigo-500">
+                  <div className="p-8 text-center text-indigo-500 dark:text-indigo-400">
                     {leaderboardType === 'money' ? '暂无更多商贾' : '暂无更多人物'}
                   </div>
                 ) : (
                   leaderboard.map((entry) => (
                     <div
                       key={entry.user_id}
-                      className={`flex items-center px-4 py-3 hover:bg-indigo-50/50 transition-colors ${
-                        entry.user_id === deviceId ? 'bg-indigo-50' : ''
+                      className={`flex items-center px-4 py-3 transition-colors hover:bg-indigo-50/50 dark:hover:bg-accent/30 ${
+                        entry.user_id === deviceId ? 'bg-indigo-50 dark:bg-indigo-950/40' : ''
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                         entry.rank === 1 ? 'bg-gray-300 text-gray-700' :
+                         entry.rank === 1 ? 'bg-gray-300 text-gray-700 dark:bg-slate-600 dark:text-slate-100' :
                          entry.rank === 2 ? 'bg-amber-600 text-white' :
-                         'bg-indigo-100 text-indigo-700'
+                         'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
                        }`}>
                          {entry.rank + 1}
                        </div>
                       <div className="flex-1 ml-3">
-                        <div className="font-medium text-indigo-900">
+                        <div className="font-medium text-indigo-900 dark:text-foreground">
                           {entry.nickname || (leaderboardType === 'money' ? '匿名商贾' : '匿名人士')}
-                          {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500">(您)</span>}
+                          {entry.user_id === deviceId && <span className="ml-1 text-sm text-indigo-500 dark:text-indigo-400">(您)</span>}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-indigo-800">
+                        <div className="font-bold text-indigo-800 dark:text-indigo-200">
                           {leaderboardType === 'money' 
                             ? (entry as LeaderboardEntry).money?.toLocaleString()
                             : (entry as FavorabilityLeaderboardEntry).favorability?.toLocaleString()
                           }
                         </div>
-                        <div className="text-xs text-indigo-500">{leaderboardType === 'money' ? '文' : '好感度'}</div>
+                        <div className="text-xs text-indigo-500 dark:text-indigo-400">{leaderboardType === 'money' ? '文' : '好感度'}</div>
                       </div>
                     </div>
                   ))
@@ -403,22 +403,22 @@ export const Leaderboard: React.FC = () => {
               </div>
 
               {/* 翻页控件 */}
-              <div className="flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30">
+              <div className="flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30 dark:border-border dark:bg-muted/30">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-white rounded-md border border-indigo-200 disabled:opacity-50 disabled:bg-gray-50"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white rounded-md border text-indigo-700 border-indigo-200 disabled:opacity-50 disabled:bg-gray-50 dark:bg-card dark:text-indigo-200 dark:border-border dark:disabled:bg-muted/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   上页
                 </button>
-                <div className="text-sm font-medium text-indigo-900">
+                <div className="text-sm font-medium text-indigo-900 dark:text-foreground">
                   第 {currentPage} 页
                 </div>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={leaderboard.length < PAGE_SIZE}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-white rounded-md border border-indigo-200 disabled:opacity-50 disabled:bg-gray-50"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white rounded-md border text-indigo-700 border-indigo-200 disabled:opacity-50 disabled:bg-gray-50 dark:bg-card dark:text-indigo-200 dark:border-border dark:disabled:bg-muted/50"
                 >
                   下页
                   <ChevronRight className="w-4 h-4" />
@@ -429,7 +429,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 提示信息 */}
-        <div className="p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100">
+        <div className="p-4 text-sm text-center rounded-lg border text-indigo-500 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-300 dark:border-indigo-900/50">
           <p>
             📌 {leaderboardType === 'money' 
               ? '上榜后每日自动同步财富至官府榜文' 
