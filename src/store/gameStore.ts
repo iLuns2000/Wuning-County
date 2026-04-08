@@ -48,6 +48,7 @@ import {
 } from '@/services/clinicAnimalInteractionEngine';
 import { getDefaultClinicAnimalState } from '@/data/clinicAnimalRules';
 import { BirdFoodType } from '@/data/clinicAnimalRules';
+import { checkEventTriggerCondition } from '@/utils/eventConditions';
 
 // Weather System Helper
 const SEASON_LENGTH = 90;
@@ -3816,30 +3817,7 @@ export const useGameStore = create<GameStore>()(
       triggerEvent: () => {
         const state = get();
 
-        // 预计算当前季节索引 (缓存计算)
-        const seasonIndex = Math.floor(((state.day - 1) % 360) / 90);
-
-        const checkBasicCondition = (e: GameEvent) => {
-          const cond = e.triggerCondition;
-          if (!cond) return true;
-
-          if (cond.requiredRole && state.role !== cond.requiredRole) return false;
-          if (cond.minReputation && state.playerStats.reputation < cond.minReputation) return false;
-          if (cond.minMoney && state.playerStats.money < cond.minMoney) return false;
-          if (cond.minAbility && state.playerStats.ability < cond.minAbility) return false;
-          if (cond.minDay && state.day < cond.minDay) return false;
-          // 预过滤季节事件
-          if (cond.season && cond.season !== SEASONS[seasonIndex]) return false;
-          // 检查所需物品
-          if (cond.requiredItems) {
-            for (const [itemId, minCount] of Object.entries(cond.requiredItems)) {
-              if ((state.inventory[itemId] || 0) < minCount) return false;
-            }
-          }
-          if (cond.custom && !cond.custom(state)) return false;
-
-          return true;
-        };
+        const checkBasicCondition = (e: GameEvent) => checkEventTriggerCondition(e, state).passed;
 
         // 优化：先按概率分类，减少遍历次数
         const guaranteedEvents: GameEvent[] = [];
@@ -3896,11 +3874,18 @@ export const useGameStore = create<GameStore>()(
       },
 
       triggerSpecificEvent: (eventId: string) => {
+        const state = get();
         // Look in all event collections
         const event = [...npcEvents, ...randomEvents].find(e => e.id === eventId);
-        if (event) {
-          set({ currentEvent: event });
+        if (!event) return;
+
+        const check = checkEventTriggerCondition(event, state);
+        if (!check.passed) {
+          get().addLog(`【事件未解锁】${event.title}${check.reason ? `：${check.reason}` : ''}`);
+          return;
         }
+
+        set({ currentEvent: event });
       },
 
       dismissEvent: () => {

@@ -361,6 +361,16 @@ export const Game: React.FC = () => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
 
+    const minRelationReq = option.requirements?.minRelation;
+    if (minRelationReq) {
+      const currentRelation = (useGameStore.getState().npcRelations[minRelationReq.npcId] || 0);
+      if (currentRelation < minRelationReq.value) {
+        addLog(`好感度不足：需 ${minRelationReq.npcId} 好感 ≥ ${minRelationReq.value}（当前 ${currentRelation}）`);
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+    }
+
     // Check for insufficient resources (health/money)
     if (option.effect) {
         let healthCost = 0;
