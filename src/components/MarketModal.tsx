@@ -3,6 +3,7 @@ import { X, TrendingUp, TrendingDown, Coins, Store } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { goods } from '@/data/goods';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { HelpButton } from './ContextualHelpTip';
 
 interface MarketModalProps {
   onClose: () => void;
@@ -52,12 +53,15 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
                 <p className="text-xs text-muted-foreground">低买高卖，商贾之道</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-full transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex gap-1">
+            <HelpButton moduleId="market" />
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
         {/* Status Bar */}

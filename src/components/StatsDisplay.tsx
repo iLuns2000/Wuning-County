@@ -351,7 +351,8 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
           </div>
         )}
         
-        <button 
+        <button
+          data-guide-id="guide-office-btn"
           onClick={onOpenOffice}
           className="flex gap-2 justify-center items-center p-2 mt-3 w-full bg-gradient-to-r rounded-lg border transition-all from-indigo-500/10 to-purple-500/10 border-indigo-500/20 hover:border-indigo-500/40 hover:from-indigo-500/20 hover:to-purple-500/20 group"
         >

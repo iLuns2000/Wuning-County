@@ -37,6 +37,8 @@ import { ChoiceModal } from '@/components/ChoiceModal';
 import { useScreenOrientation } from '@/hooks/useScreenOrientation';
 import { getBackgroundImage, BACKGROUND_IMAGES } from '@/constants';
 import { useTheme } from '@/hooks/useTheme';
+import { OnboardingGuide } from '@/components/OnboardingGuide';
+import { GuidanceCard } from '@/components/GuidanceCard';
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
@@ -134,6 +136,10 @@ export const Game: React.FC = () => {
     dismissRaidAlert,
     showBackgroundImage,
     glassEffectEnabled,
+    startOnboarding,
+    onboardingCompleted,
+    onboardingDismissed,
+    onboardingStep,
   } = useGameStore();
 
   const currentTask = (currentTaskId && tasks) ? tasks.find(t => t.id === currentTaskId) : null;
@@ -233,6 +239,15 @@ export const Game: React.FC = () => {
   }, [role, navigate]);
 
   useEffect(() => {
+    if (role && !onboardingCompleted && !onboardingDismissed && onboardingStep === 0) {
+      const timer = setTimeout(() => {
+        startOnboarding();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [role, onboardingCompleted, onboardingDismissed, onboardingStep, startOnboarding]);
+
+  useEffect(() => {
     if (isNightWarning) {
        addLog('【天色渐晚】太阳即将落山，这一天快要结束了...');
        // Reset warning after a few seconds to avoid spamming (or just let it be handled by log deduplication if any)
@@ -259,15 +274,15 @@ export const Game: React.FC = () => {
     );
     
     return (
-      <div className="relative flex justify-center items-center p-6 min-h-screen overflow-hidden">
+      <div className="flex overflow-hidden relative justify-center items-center p-6 min-h-screen">
         {/* 背景图层 */}
         <div 
-          className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+          className="fixed top-0 left-0 w-full h-screen bg-center bg-no-repeat bg-cover"
           style={{ backgroundImage: `url(${gameOverBg})` }}
         />
         
         {/* 内容区域 */}
-        <div className="relative z-10 p-6 space-y-4 w-full max-w-xl text-center rounded-xl border bg-card/95 backdrop-blur-sm">
+        <div className="relative z-10 p-6 space-y-4 w-full max-w-xl text-center rounded-xl border backdrop-blur-sm bg-card/95">
           <h2 className="text-2xl font-bold text-rose-600">县城已毁于战火</h2>
           <p className="text-muted-foreground">山贼与战乱彻底摧毁了无宁县。你可以重新开局，尝试更稳健地维护治安与边防。</p>
           <div className="flex gap-3 justify-center">
@@ -681,14 +696,14 @@ export const Game: React.FC = () => {
   }, [raidAlert, logs]);
 
   return (
-    <div className="relative flex justify-center p-4 min-h-screen overflow-hidden">
+    <div className="flex overflow-hidden relative justify-center p-4 min-h-screen">
       {/* 动态背景图层 - 双层交叉淡入淡出 */}
       {showBackgroundImage && (
         <>
           {/* 当前背景层（底层） */}
           {currentBg && (
             <div 
-              className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+              className="fixed top-0 left-0 w-full h-screen bg-center bg-no-repeat bg-cover"
               style={{ 
                 backgroundImage: `url(${currentBg})`,
                 opacity: isTransitioning ? 0 : 1,
@@ -701,7 +716,7 @@ export const Game: React.FC = () => {
           {/* 新背景层（顶层） */}
           {nextBg && (
             <div 
-              className="fixed top-0 left-0 w-full h-screen bg-cover bg-center bg-no-repeat"
+              className="fixed top-0 left-0 w-full h-screen bg-center bg-no-repeat bg-cover"
               style={{ 
                 backgroundImage: `url(${nextBg})`,
                 opacity: isTransitioning ? 1 : 0,
@@ -714,7 +729,7 @@ export const Game: React.FC = () => {
       )}
       
       {/* 内容区域 */}
-      <div className="relative z-10 flex justify-center w-full min-h-screen">
+      <div className="flex relative z-10 justify-center w-full min-h-screen">
         <TimeManager 
           onNightWarning={() => setIsNightWarning(true)} 
           onNightChange={(night) => setIsNight(night)}
@@ -727,7 +742,7 @@ export const Game: React.FC = () => {
         >
         
         {/* Left Column: Stats - 毛玻璃效果 */}
-        <div className={`flex overflow-y-auto flex-col gap-6 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar rounded-xl p-2 ${getGlassClass()}`}>
+        <div className={`flex overflow-y-auto flex-col gap-6 p-2 mx-auto w-full max-w-md h-full rounded-xl md:max-w-none no-scrollbar ${getGlassClass()}`}>
           <header className="flex justify-between items-center py-2 shrink-0">
             <h1 className="text-xl font-bold">无宁县</h1>
             <div className="flex gap-2">
@@ -890,7 +905,7 @@ export const Game: React.FC = () => {
                   handleMerchantPatrol();
                 }}
                 disabled={!!currentEvent || playerStats.money < 80 || playerStats.health < 10}
-                className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-950/50 disabled:opacity-50"
+                className="flex gap-2 justify-center items-center p-4 bg-amber-50 rounded-lg transition-colors hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-950/50 disabled:opacity-50"
               >
                 <Shield size={20} />
                 <span>商会巡防 (-80钱 -10体力)</span>
@@ -905,7 +920,7 @@ export const Game: React.FC = () => {
                   handleEscortMerchant();
                 }}
                 disabled={!!currentEvent || playerStats.health < 20}
-                className="flex gap-2 justify-center items-center p-4 rounded-lg transition-colors bg-green-50 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-300 dark:hover:bg-green-950/50 disabled:opacity-50"
+                className="flex gap-2 justify-center items-center p-4 bg-green-50 rounded-lg transition-colors hover:bg-green-100 dark:bg-green-950/30 dark:text-green-300 dark:hover:bg-green-950/50 disabled:opacity-50"
               >
                 <Truck size={20} />
                 <span>护送商队 (-20体力)</span>
@@ -947,7 +962,8 @@ export const Game: React.FC = () => {
                 </div>
               )}
             </button>
-            <button 
+            <button
+              data-guide-id="guide-task-btn"
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 navigate('/tasks');
@@ -987,7 +1003,8 @@ export const Game: React.FC = () => {
               <span className="text-sm font-medium">公告栏</span>
             </button>
 
-            <button 
+            <button
+              data-guide-id="guide-market-btn"
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowMarket(true);
@@ -1140,7 +1157,8 @@ export const Game: React.FC = () => {
               <span className="text-sm font-medium">建筑阁</span>
             </button>
             
-            <button 
+            <button
+              data-guide-id="guide-explore-btn"
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
                 setShowExplore(true);
@@ -1328,6 +1346,26 @@ export const Game: React.FC = () => {
           onDismiss={dismissRaidAlert}
         />
       )}
+
+      <OnboardingGuide />
+
+      <GuidanceCard
+        onNavigate={(targetId) => {
+          const element = document.querySelector(`[data-guide-id="${targetId}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            (element as HTMLElement).click();
+          } else if (targetId === 'guide-task-btn') {
+            navigate('/tasks');
+          } else if (targetId === 'guide-market-btn') {
+            setShowMarket(true);
+          } else if (targetId === 'guide-explore-btn') {
+            setShowExplore(true);
+          } else if (targetId === 'guide-office-btn') {
+            setShowOffice(true);
+          }
+        }}
+      />
     </div>
   );
 };

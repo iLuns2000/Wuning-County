@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSlug from 'rehype-slug';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import manualContent from '../../GAME_MANUAL.md?raw';
 
 export const GameManual: React.FC = () => {
@@ -11,7 +13,7 @@ export const GameManual: React.FC = () => {
     <div className="flex flex-col items-center p-4 min-h-screen bg-background">
       <div className="w-full max-w-3xl">
         {/* Header */}
-        <header className="flex items-center gap-3 py-6 shrink-0">
+        <header className="flex gap-3 items-center py-6 shrink-0">
           <button
             onClick={() => navigate('/game')}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -37,7 +39,9 @@ export const GameManual: React.FC = () => {
           prose-code:bg-muted prose-code:px-1 prose-code:rounded prose-code:text-xs
           prose-hr:border-border
         ">
-          <ReactMarkdown>{manualContent}</ReactMarkdown>
+          <ReactMarkdown
+          rehypePlugins={[rehypeSlug, rehypeAutolinkHeadings]}
+        >{manualContent}</ReactMarkdown>
         </div>
       </div>
     </div>

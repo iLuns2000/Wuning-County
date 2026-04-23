@@ -298,6 +298,13 @@ export interface GameState {
     linkUrl?: string;
   } | null;
   dismissedActivities: Record<string, string>; // activityId -> contentHash
+
+  // 新手引导状态
+  onboardingVersion: number;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
+  onboardingDismissed: boolean;
+  hintState: Record<string, { seen: boolean; count: number }>;
 }
 
 export interface DisasterState {

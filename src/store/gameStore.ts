@@ -624,6 +624,13 @@ interface GameStore extends GameState {
   tickDebuffsPerDay: () => { logs: string[]; economyDelta: number; orderDelta: number; cultureDelta: number; livelihoodDelta: number; moneyDelta: number; reputationDelta: number; facilityIncomeMultiplier: number; cultureGainMultiplier: number };
   checkDebuffTriggers: () => void;
   tryClearDebuff: (id: string, methodId: string) => { success: boolean; message: string };
+
+  // 新手引导
+  startOnboarding: () => void;
+  nextOnboardingStep: () => void;
+  skipOnboarding: () => void;
+  completeOnboarding: () => void;
+  markHintShown: (hintId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -718,6 +725,13 @@ export const useGameStore = create<GameStore>()(
       // 活动弹窗初始状态
       activityPopup: null,
       dismissedActivities: {},
+
+      // 新手引导初始状态
+      onboardingVersion: 1,
+      onboardingCompleted: false,
+      onboardingStep: 0,
+      onboardingDismissed: false,
+      hintState: {},
 
       markInteraction: () => {
         const state = get();
@@ -1636,6 +1650,11 @@ export const useGameStore = create<GameStore>()(
           propertyTaxHalvingDaysLeft: undefined,
           countyDevelopment: { currentPath: 'none', lastSwitchedDay: 1 },
           externalThreat: { banditThreat: 15, defense: 40, warRisk: 5, lastRaidDay: 0 },
+          // 新手引导状态重置
+          onboardingCompleted: false,
+          onboardingStep: 0,
+          onboardingDismissed: false,
+          hintState: {},
         });
 
         if (firstTask) {
@@ -4879,6 +4898,39 @@ export const useGameStore = create<GameStore>()(
         return { success: true, message: `${config.name} 已解除！（${method.label}）` };
       },
 
+      startOnboarding: () => {
+        set({ onboardingStep: 1, onboardingDismissed: false });
+      },
+
+      nextOnboardingStep: () => {
+        const state = get();
+        const nextStep = state.onboardingStep + 1;
+        if (nextStep > 3) {
+          set({ onboardingCompleted: true, onboardingStep: 0 });
+        } else {
+          set({ onboardingStep: nextStep });
+        }
+      },
+
+      skipOnboarding: () => {
+        set({ onboardingDismissed: true, onboardingStep: 0 });
+      },
+
+      completeOnboarding: () => {
+        set({ onboardingCompleted: true, onboardingStep: 0 });
+      },
+
+      markHintShown: (hintId: string) => {
+        const state = get();
+        const current = state.hintState[hintId] || { seen: false, count: 0 };
+        set({
+          hintState: {
+            ...state.hintState,
+            [hintId]: { seen: true, count: current.count + 1 }
+          }
+        });
+      },
+
     }),
     {
       name: 'textgame-storage', // name of the item in the storage (must be unique)
@@ -4925,6 +4977,12 @@ export const useGameStore = create<GameStore>()(
           leekPlots: ensureLeekSkyscraperPlot(
             (persisted as Partial<GameState>).leekPlots ?? currentState.leekPlots
           ),
+          // 新手引导状态兼容旧存档
+          onboardingVersion: (persisted as Partial<GameState>).onboardingVersion ?? 1,
+          onboardingCompleted: (persisted as Partial<GameState>).onboardingCompleted ?? false,
+          onboardingStep: (persisted as Partial<GameState>).onboardingStep ?? 0,
+          onboardingDismissed: (persisted as Partial<GameState>).onboardingDismissed ?? false,
+          hintState: (persisted as Partial<GameState>).hintState ?? {},
         };
       },
       partialize: (state) => ({
@@ -4996,6 +5054,12 @@ export const useGameStore = create<GameStore>()(
         lastDebuffCheckDay: state.lastDebuffCheckDay,
         // 活动弹窗持久化
         dismissedActivities: state.dismissedActivities,
+        // 新手引导持久化
+        onboardingVersion: state.onboardingVersion,
+        onboardingCompleted: state.onboardingCompleted,
+        onboardingStep: state.onboardingStep,
+        onboardingDismissed: state.onboardingDismissed,
+        hintState: state.hintState,
       }), // Save everything except actions
     }
   )
