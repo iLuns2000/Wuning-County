@@ -262,52 +262,38 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
   }, [selectedCell, board]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <div
+      className="relative w-full max-w-lg mx-auto overflow-hidden flex flex-col rounded-lg
+                 bg-[#f5f0e6] dark:bg-[#1a1815]
+                 border border-[#d4c9b5] dark:border-[#3d3629]
+                 shadow-2xl"
+    >
+      <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />
 
-      <div
-        className="relative w-full max-w-lg overflow-hidden flex flex-col rounded-lg
-                   bg-[#f5f0e6] dark:bg-[#1a1815]
-                   border border-[#d4c9b5] dark:border-[#3d3629]
-                   shadow-2xl max-h-[95vh]"
-        onClick={e => e.stopPropagation()}
-        style={{ animation: 'modalIn 0.3s ease-out forwards' }}
-      >
-        <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />
-
-        <div className="px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
-                <svg className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="3" y1="9" x2="21" y2="9" />
-                  <line x1="3" y1="15" x2="21" y2="15" />
-                  <line x1="9" y1="3" x2="9" y2="21" />
-                  <line x1="15" y1="3" x2="15" y2="21" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0] font-display">数独游戏</h2>
-                <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">逻辑推理 · 益智填数</p>
-              </div>
+      <div className="px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
+              <svg className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+                <line x1="9" y1="3" x2="9" y2="21" />
+                <line x1="15" y1="3" x2="15" y2="21" />
+              </svg>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-[#6b5544] dark:text-[#a08060]">
-                {formatTime(timer)}
-              </span>
-              <button
-                onClick={() => {
-                  vibrate(VIBRATION_PATTERNS.LIGHT);
-                  onClose();
-                }}
-                className="p-2 rounded-lg hover:bg-[#8b7355]/10 transition-colors"
-              >
-                <X className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" />
-              </button>
+            <div>
+              <h2 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0] font-display">数独游戏</h2>
+              <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">逻辑推理 · 益智填数</p>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-sm text-[#6b5544] dark:text-[#a08060]">
+              {formatTime(timer)}
+            </span>
+          </div>
         </div>
+      </div>
 
         <div className="px-6 py-3 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629] flex gap-2 flex-wrap">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
@@ -473,7 +459,6 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               </div>
             </>
           )}
-        </div>
       </div>
     </div>
   );

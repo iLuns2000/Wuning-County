@@ -76,5 +76,15 @@ export const facilities: Facility[] = [
     resourceType: 'wood',
     resourceAmount: 2, // Base amount per level
     maxLevel: 10
+  },
+  {
+    id: 'sudoku',
+    name: '九宫馆',
+    description: '逻辑与智慧的博弈，填满九宫之格。',
+    cost: 1500,
+    dailyIncome: 50,
+    incomeDescription: '挑战金收益',
+    maxCount: 1,
+    type: 'normal'
   }
 ];

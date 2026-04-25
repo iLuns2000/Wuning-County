@@ -1,22 +1,20 @@
-﻿﻿﻿/**
+﻿﻿﻿﻿﻿﻿﻿/**
  * 古风游乐街弹窗 - 游乐街
  * 服装店 + 首饰店 + 梳妆台
  * 淡雅古风设计 - 米色纸张质感 + 墨色线条
  */
-import React, { useMemo, useState, lazy, Suspense } from 'react';
-import { X, ShoppingBag, Gem, Star, Coins, Grid3X3 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, ShoppingBag, Gem, Star, Coins } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items, barberExclusiveHairItemIds } from '@/data/items';
 import { AccessorySlot, ApparelSlot, Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
-const SudokuGame = lazy(() => import('./SudokuGame').then(m => ({ default: m.SudokuGame })));
-
 interface PlayStreetModalProps {
   onClose: () => void;
 }
 
-type TabKey = 'apparel' | 'accessory' | 'dressing' | 'sudoku';
+type TabKey = 'apparel' | 'accessory' | 'dressing';
 
 const apparelSlots: { id: ApparelSlot; label: string }[] = [
   { id: 'hair', label: '发型' },
@@ -94,13 +92,12 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
   const tabs = [
     { id: 'apparel' as const, label: '服装店', icon: ShoppingBag },
     { id: 'accessory' as const, label: '首饰店', icon: Gem },
-    { id: 'dressing' as const, label: '梳妆台', icon: Star },
-    { id: 'sudoku' as const, label: '数独', icon: Grid3X3 }
+    { id: 'dressing' as const, label: '梳妆台', icon: Star }
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 backdrop-blur-sm bg-black/50" />
       
       {/* 弹窗主体 - 淡雅米色纸张风格 */}
       <div 
@@ -120,8 +117,8 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
         
         {/* 标题栏 */}
         <div className="relative px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3 items-center">
               <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
                 <ShoppingBag className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" />
               </div>
@@ -144,7 +141,7 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
 
         {/* 金钱显示 */}
         <div className="px-6 py-3 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629]">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
              <div className="flex items-center gap-2 text-[#6b5544] dark:text-[#c4a86a] font-bold">
                 <Coins className="w-4 h-4" />
                 <span className="font-mono">{playerStats.money}</span>
@@ -431,25 +428,11 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
               </div>
             </div>
           )}
-
-          {/* 数独 */}
-          {tab === 'sudoku' && (
-            <Suspense
-              fallback={
-                <div className="flex flex-col items-center justify-center h-64 gap-4">
-                  <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
-                  <p className="text-[#8b7355] dark:text-[#a08060]">正在加载数独游戏...</p>
-                </div>
-              }
-            >
-              <SudokuGame onClose={onClose} />
-            </Suspense>
-          )}
         </div>
 
         {/* 底部装饰 */}
         <div className="px-6 py-2 bg-[#ebe5d8] dark:bg-[#221e16] border-t border-[#d4c9b5] dark:border-[#3d3629]">
-          <div className="flex justify-center gap-1">
+          <div className="flex gap-1 justify-center">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8b7355]/40" />
             <span className="w-1.5 h-1.5 rounded-full bg-[#8b7355]/30" />
           </div>

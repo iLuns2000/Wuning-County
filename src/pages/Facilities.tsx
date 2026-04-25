@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Dices, Target, Sparkles, ScrollText, FlaskConical, Gamepad2 } from 'lucide-react';
 import { LogPanel } from '@/components/LogPanel';
 import { AlchemyGame } from '@/components/AlchemyGame';
+import { SudokuGame } from '@/components/SudokuGame';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 // 设施卡片通用样式
@@ -432,11 +433,46 @@ const ArcheryGallery: React.FC = () => {
   );
 };
 
+// 九宫馆 (数独) 组件
+const SudokuFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
+  const vibrate = useGameVibrate();
+
+  return (
+    <FacilityCard
+      icon={<Gamepad2 size={20} className="text-white" />}
+      title="九宫馆"
+      description="逻辑与智慧的博弈。在九宫格中填入数字，使每行、每列及每个九宫格内数字不重复。"
+      color="purple"
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>逻辑推理，锻炼脑力</span>
+          <span className="text-purple-400">数独 玩法</span>
+        </div>
+        
+        <button
+          onClick={() => {
+            vibrate(VIBRATION_PATTERNS.LIGHT);
+            onEnter();
+          }}
+          className="flex gap-2 justify-center items-center py-3 w-full font-bold text-white 
+                   bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg 
+                   transition-all hover:shadow-lg hover:shadow-purple-500/20 hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <Gamepad2 size={18} />
+          进入挑战
+        </button>
+      </div>
+    </FacilityCard>
+  );
+};
+
 // 主组件
 export const Facilities: React.FC = () => {
   const { logs } = useGameStore();
   const navigate = useNavigate();
   const [showAlchemy, setShowAlchemy] = useState(false);
+  const [showSudoku, setShowSudoku] = useState(false);
 
   if (showAlchemy) {
     return (
@@ -450,6 +486,23 @@ export const Facilities: React.FC = () => {
             返回游乐坊
           </button>
           <AlchemyGame onClose={() => setShowAlchemy(false)} />
+        </div>
+      </div>
+    );
+  }
+
+  if (showSudoku) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="p-4 mx-auto max-w-4xl">
+          <button
+            onClick={() => setShowSudoku(false)}
+            className="flex gap-2 items-center mb-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft size={20} />
+            返回游乐坊
+          </button>
+          <SudokuGame onClose={() => setShowSudoku(false)} />
         </div>
       </div>
     );
@@ -480,6 +533,7 @@ export const Facilities: React.FC = () => {
           {/* 设施列表 */}
           <div className="space-y-4">
             <AlchemyFacility onEnter={() => setShowAlchemy(true)} />
+            <SudokuFacility onEnter={() => setShowSudoku(true)} />
             <FortuneTeller />
             <GamblingHouse />
             <ArcheryGallery />
