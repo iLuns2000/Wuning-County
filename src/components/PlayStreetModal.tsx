@@ -1,20 +1,22 @@
-/**
+﻿﻿﻿/**
  * 古风游乐街弹窗 - 游乐街
  * 服装店 + 首饰店 + 梳妆台
  * 淡雅古风设计 - 米色纸张质感 + 墨色线条
  */
-import React, { useMemo, useState } from 'react';
-import { X, ShoppingBag, Gem, Star, Coins } from 'lucide-react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
+import { X, ShoppingBag, Gem, Star, Coins, Grid3X3 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { items, barberExclusiveHairItemIds } from '@/data/items';
 import { AccessorySlot, ApparelSlot, Item } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
+const SudokuGame = lazy(() => import('./SudokuGame').then(m => ({ default: m.SudokuGame })));
+
 interface PlayStreetModalProps {
   onClose: () => void;
 }
 
-type TabKey = 'apparel' | 'accessory' | 'dressing';
+type TabKey = 'apparel' | 'accessory' | 'dressing' | 'sudoku';
 
 const apparelSlots: { id: ApparelSlot; label: string }[] = [
   { id: 'hair', label: '发型' },
@@ -92,7 +94,8 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
   const tabs = [
     { id: 'apparel' as const, label: '服装店', icon: ShoppingBag },
     { id: 'accessory' as const, label: '首饰店', icon: Gem },
-    { id: 'dressing' as const, label: '梳妆台', icon: Star }
+    { id: 'dressing' as const, label: '梳妆台', icon: Star },
+    { id: 'sudoku' as const, label: '数独', icon: Grid3X3 }
   ];
 
   return (
@@ -427,6 +430,20 @@ export const PlayStreetModal: React.FC<PlayStreetModalProps> = ({ onClose }) => 
                 </div>
               </div>
             </div>
+          )}
+
+          {/* 数独 */}
+          {tab === 'sudoku' && (
+            <Suspense
+              fallback={
+                <div className="flex flex-col items-center justify-center h-64 gap-4">
+                  <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
+                  <p className="text-[#8b7355] dark:text-[#a08060]">正在加载数独游戏...</p>
+                </div>
+              }
+            >
+              <SudokuGame onClose={onClose} />
+            </Suspense>
           )}
         </div>
 

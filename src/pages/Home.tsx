@@ -108,7 +108,34 @@ export const Home: React.FC = () => {
           选择你的身份，开启县城生活
         </p>
       
-      {/* 角色卡片网格 */}
+      {/* 数据存储提示 */}
+        <div 
+          className="mb-8 p-4 max-w-2xl rounded-xl border border-amber-500/30 bg-black/40 backdrop-blur-md text-amber-200/90 text-sm leading-relaxed"
+          style={{
+            animation: 'titleFadeIn 1s ease-out 0.4s forwards',
+            opacity: 0
+          }}
+        >
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <p>
+                本游戏除排行榜数据外其他数据全部存于您的浏览器缓存，如果是用微信直接打开建议切换到其他浏览器打开，且不要长期清理缓存。
+              </p>
+              <p className="text-xs text-amber-200/70">
+                如果有长期清理缓存习惯可以下载 APK（目前仅限安卓），只要不清理应用缓存即可。
+                <br />
+                下载地址：<a href="https://pan.quark.cn/s/bb182ad58c74" target="_blank" rel="noopener noreferrer" className="text-amber-400 underline hover:text-amber-300">https://pan.quark.cn/s/bb182ad58c74</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 角色卡片网格 */}
       <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-3">
         {roles.map((roleItem, index) => (
           <button

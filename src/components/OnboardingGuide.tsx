@@ -54,6 +54,17 @@ export const OnboardingGuide: React.FC = () => {
         </div>
 
         <div className="px-6 py-3 border-t bg-muted/30">
+          <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] leading-normal text-amber-700 dark:text-amber-400">
+            <p className="font-bold mb-1 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> 重要提示：数据存储
+            </p>
+            <p>
+              本游戏除排行榜数据外其他数据全部存于您的浏览器缓存，如果是用微信直接打开建议切换到其他浏览器打开，且不要长期清理缓存。
+              <br />
+              如果有长期清理缓存习惯可以下载 APK（目前仅限安卓），只要不清理应用缓存即可。下载地址：<a href="https://pan.quark.cn/s/bb182ad58c74" target="_blank" rel="noopener noreferrer" className="underline font-bold">https://pan.quark.cn/s/bb182ad58c74</a>
+            </p>
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex gap-1.5">
               {steps.map((_, idx) => (
