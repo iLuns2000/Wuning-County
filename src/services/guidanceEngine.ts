@@ -227,7 +227,7 @@ export const generateGuidance = (state: GameState): Guidance | null => {
     return {
       id: 'default',
       title: '自由探索',
-      reason: '您目前状态良好，可以自由探索武宁镇的各种玩法。',
+      reason: '您目前状态良好，可以自由探索无宁县的各种玩法。',
       cta: '查看任务',
       action: () => {},
       priority: 10,

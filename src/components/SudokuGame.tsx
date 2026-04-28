@@ -8,10 +8,11 @@ interface SudokuGameProps {
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
-const DIFFICULTY_HOLES: Record<Difficulty, number> = {
-  easy: 35,
-  medium: 45,
-  hard: 55
+const DIFFICULTY_GIVENS: Record<Difficulty, number> = {
+  // 给定数字数量（剩余空格数 = 81 - 给定数）
+  easy: 36,    // 简单：45个空格
+  medium: 30,  // 中等：51个空格
+  hard: 25     // 困难：56个空格
 };
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -66,6 +67,57 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return arr;
 };
 
+// 检查是否违反数独规则（用于实时验证玩家输入）
+const violatesRules = (board: Board, row: number, col: number, num: number): boolean => {
+  for (let i = 0; i < 9; i++) {
+    if (i !== col && board[row][i].value === num) return true;
+    if (i !== row && board[i][col].value === num) return true;
+  }
+  const boxRow = Math.floor(row / 3) * 3;
+  const boxCol = Math.floor(col / 3) * 3;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      const r = boxRow + i, c = boxCol + j;
+      if (!(r === row && c === col) && board[r][c].value === num) return true;
+    }
+  }
+  return false;
+};
+
+// 检查数独是否有唯一解（用于生成有效题目）
+const hasUniqueSolution = (board: number[][]): boolean => {
+  const copy = board.map(row => [...row]);
+  let solutions = 0;
+
+  const solve = (b: number[][]): boolean => {
+    if (solutions > 1) return false; // 超过一个解，提前终止
+
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (b[row][col] === 0) {
+          for (let num = 1; num <= 9; num++) {
+            if (isValidPlacement(b, row, col, num)) {
+              b[row][col] = num;
+              if (solve(b)) {
+                b[row][col] = 0;
+                if (solutions > 1) return false;
+              } else {
+                b[row][col] = 0;
+              }
+            }
+          }
+          return false;
+        }
+      }
+    }
+    solutions++;
+    return true;
+  };
+
+  solve(copy);
+  return solutions === 1;
+};
+
 const generateSudoku = (difficulty: Difficulty): { puzzle: Board; solution: number[][] } => {
   const solution: number[][] = Array(9).fill(null).map(() => Array(9).fill(0));
 
@@ -90,18 +142,41 @@ const generateSudoku = (difficulty: Difficulty): { puzzle: Board; solution: numb
 
   fillBoard(solution);
 
+  // 先将完整解复制到puzzle
   const puzzle: Board = createEmptyBoard();
-  const holes = DIFFICULTY_HOLES[difficulty];
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      puzzle[r][c].value = solution[r][c];
+      puzzle[r][c].isGiven = true;
+    }
+  }
+
+  // 挖洞生成题目，确保唯一解
+  const givens = DIFFICULTY_GIVENS[difficulty];
   const positions = shuffleArray(
     Array.from({ length: 81 }, (_, i) => ({ row: Math.floor(i / 9), col: i % 9 }))
   );
 
-  let holeCount = 0;
+  let removedCount = 0;
+  const targetRemoved = 81 - givens;
+
   for (const pos of positions) {
-    if (holeCount >= holes) break;
-    puzzle[pos.row][pos.col].value = solution[pos.row][pos.col];
-    puzzle[pos.row][pos.col].isGiven = true;
-    holeCount++;
+    if (removedCount >= targetRemoved) break;
+
+    const backup = puzzle[pos.row][pos.col].value;
+    puzzle[pos.row][pos.col].value = 0;
+    puzzle[pos.row][pos.col].isGiven = false;
+
+    // 创建纯数字数组用于验证唯一解
+    const testBoard = puzzle.map(row => row.map(cell => cell.value));
+
+    if (hasUniqueSolution(testBoard)) {
+      removedCount++;
+    } else {
+      // 恢复，因为会导致多解
+      puzzle[pos.row][pos.col].value = backup;
+      puzzle[pos.row][pos.col].isGiven = true;
+    }
   }
 
   return { puzzle, solution };
@@ -114,7 +189,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
   const [solution, setSolution] = useState<number[][]>([]);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(true); // 初始为true，等待生成
   const [showNotes, setShowNotes] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -135,6 +210,11 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
       setIsTimerRunning(true);
     }, 50);
   }, []);
+
+  // 组件挂载时自动开始一局游戏
+  useEffect(() => {
+    startNewGame('easy');
+  }, [startNewGame]);
 
   useEffect(() => {
     if (isTimerRunning && timer < 3600) {
@@ -185,7 +265,12 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
     } else {
       cell.value = num;
       cell.notes = [];
-      cell.isError = num !== solution[selectedCell.row][selectedCell.col];
+      // 检查是否违反数独规则（实时反馈）
+      const ruleViolation = violatesRules(board, selectedCell.row, selectedCell.col, num);
+      // 检查是否与答案不符
+      const wrongAnswer = num !== solution[selectedCell.row][selectedCell.col];
+      // 只有在违反规则或与答案不符时才标记错误
+      cell.isError = ruleViolation || wrongAnswer;
 
       if (checkCompletion(newBoard)) {
         setIsComplete(true);
@@ -213,6 +298,64 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
   const handleErase = () => {
     handleClear();
   };
+
+  // 键盘输入支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果正在生成或已完成，不处理
+      if (isGenerating || isComplete) return;
+
+      // 数字键 1-9 输入数字
+      if (e.key >= '1' && e.key <= '9') {
+        const num = parseInt(e.key, 10);
+        handleNumberInput(num);
+        return;
+      }
+
+      // 删除/退格键清除
+      if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+        handleClear();
+        return;
+      }
+
+      // 方向键移动选中格子
+      if (selectedCell) {
+        let newRow = selectedCell.row;
+        let newCol = selectedCell.col;
+
+        switch (e.key) {
+          case 'ArrowUp':
+            newRow = Math.max(0, selectedCell.row - 1);
+            e.preventDefault();
+            break;
+          case 'ArrowDown':
+            newRow = Math.min(8, selectedCell.row + 1);
+            e.preventDefault();
+            break;
+          case 'ArrowLeft':
+            newCol = Math.max(0, selectedCell.col - 1);
+            e.preventDefault();
+            break;
+          case 'ArrowRight':
+            newCol = Math.min(8, selectedCell.col + 1);
+            e.preventDefault();
+            break;
+        }
+
+        if (newRow !== selectedCell.row || newCol !== selectedCell.col) {
+          setSelectedCell({ row: newRow, col: newCol });
+        }
+      }
+
+      // N 键切换笔记模式
+      if (e.key === 'n' || e.key === 'N') {
+        setShowNotes(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isGenerating, isComplete, selectedCell, handleNumberInput, handleClear]);
 
   const getHighlightedCells = useMemo(() => {
     if (!selectedCell) return new Set<string>();
@@ -306,8 +449,8 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               className={`
                 px-3 py-1.5 rounded text-sm font-medium transition-all
                 ${difficulty === diff
-                  ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6]'
-                  : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
+                  ? 'bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6]'
+                  : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
                 }
               `}
             >
@@ -320,7 +463,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               vibrate(VIBRATION_PATTERNS.LIGHT);
               startNewGame(difficulty);
             }}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
+            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629] flex items-center gap-1 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             重开
@@ -330,12 +473,12 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
         <div className="flex-1 overflow-y-auto p-4 bg-[#faf7f0] dark:bg-[#1a1815]">
           {isGenerating ? (
             <div className="flex items-center justify-center h-64">
-              <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
+              <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355] dark:border-[#a08060]" />
             </div>
           ) : isComplete ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <div className="p-4 rounded-full bg-green-100">
-                <Check className="w-12 h-12 text-green-600" />
+              <div className="p-4 rounded-full bg-green-100 dark:bg-green-900/30">
+                <Check className="w-12 h-12 text-green-600 dark:text-green-400" />
               </div>
               <div className="text-center">
                 <h3 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0]">恭喜完成！</h3>
@@ -348,7 +491,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   vibrate(VIBRATION_PATTERNS.LIGHT);
                   startNewGame(difficulty);
                 }}
-                className="px-6 py-2 rounded-lg bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6] font-medium hover:bg-[#3d3228]"
+                className="px-6 py-2 rounded-lg bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6] font-medium hover:bg-[#5a4838] dark:hover:bg-[#4a3a28] transition-colors"
               >
                 再来一局
               </button>
@@ -357,7 +500,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
             <>
               <div className="flex justify-center mb-3">
                 <div
-                  className="grid grid-cols-9 gap-0.5 p-2 rounded-lg bg-[#d4c9b5] dark:bg-[#3d3629]"
+                  className="grid grid-cols-9 gap-0.5 p-2 rounded-lg bg-[#c9b896] dark:bg-[#3d3629]"
                   style={{
                     boxShadow: 'inset 0 0 0 2px #8b7355'
                   }}
@@ -381,21 +524,21 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                             transition-all duration-100
                             ${borderRight} ${borderBottom}
                             ${cell.isGiven
-                              ? 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#4a3f32] dark:text-[#e8e0d0] cursor-default'
-                              : 'bg-white dark:bg-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] cursor-pointer hover:bg-[#f0ebe0]'
+                              ? 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#4a3f32] dark:text-[#e8e0d0] font-bold cursor-default'
+                              : 'bg-white dark:bg-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] cursor-pointer hover:bg-[#f5f0e6] dark:hover:bg-[#2a2318]'
                             }
                             ${isSelected
-                              ? 'bg-[#8b7355]/30 ring-2 ring-[#8b7355]'
+                              ? 'bg-[#8b7355]/30 dark:bg-[#8b7355]/40 ring-2 ring-[#8b7355]'
                               : isHighlighted
-                                ? 'bg-[#8b7355]/10'
+                                ? 'bg-[#d4c9b5]/40 dark:bg-[#8b7355]/15'
                                 : ''
                             }
                             ${cell.isError
-                              ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
+                              ? 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
                               : ''
                             }
-                            ${isSameNumber
-                              ? 'bg-[#8b7355]/20'
+                            ${isSameNumber && !isSelected
+                              ? 'bg-[#c9b896]/50 dark:bg-[#8b7355]/25'
                               : ''
                             }
                           `}
@@ -428,10 +571,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                     setShowNotes(!showNotes);
                   }}
                   className={`
-                    px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1
+                    px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 transition-colors
                     ${showNotes
-                      ? 'bg-[#8b7355] text-white'
-                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060]'
+                      ? 'bg-[#8b7355] text-white dark:text-[#f5f0e6]'
+                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
                     }
                   `}
                 >
@@ -445,14 +588,14 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   <button
                     key={num}
                     onClick={() => handleNumberInput(num)}
-                    className="w-10 h-10 rounded-lg bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6] font-bold text-lg hover:bg-[#3d3228] transition-colors"
+                    className="w-10 h-10 rounded-lg bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6] font-bold text-lg hover:bg-[#5a4838] dark:hover:bg-[#4a3a28] transition-colors"
                   >
                     {num}
                   </button>
                 ))}
                 <button
                   onClick={handleErase}
-                  className="w-10 h-10 rounded-lg bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] font-bold text-lg hover:bg-[#d4c9b5] transition-colors flex items-center justify-center"
+                  className="w-10 h-10 rounded-lg bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] font-bold text-lg hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629] transition-colors flex items-center justify-center"
                 >
                   <X className="w-5 h-5" />
                 </button>

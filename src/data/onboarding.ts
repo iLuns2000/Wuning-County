@@ -13,7 +13,7 @@ export interface OnboardingConfig {
 export const onboardingConfig: OnboardingConfig = {
   merchant: [
     {
-      title: '欢迎来到武宁镇',
+      title: '欢迎来到无宁县',
       content: '作为商人，您的目标是精打细算积累财富。通过低买高卖赚取利润，扩建商队，做大生意。',
     },
     {
@@ -29,8 +29,8 @@ export const onboardingConfig: OnboardingConfig = {
   ],
   magistrate: [
     {
-      title: '欢迎来到武宁镇',
-      content: '作为县令，您的目标是造福百姓、整顿吏治。勤政爱民，让武宁县繁荣昌盛。',
+      title: '欢迎来到无宁县',
+      content: '作为县令，您的目标是造福百姓、整顿吏治。勤政爱民，让无宁县繁荣昌盛。',
     },
     {
       title: '处理公务',
@@ -45,7 +45,7 @@ export const onboardingConfig: OnboardingConfig = {
   ],
   hero: [
     {
-      title: '欢迎来到武宁镇',
+      title: '欢迎来到无宁县',
       content: '作为侠客，您的目标是快意恩仇、行侠仗义。修炼武艺，结交豪杰，成就一番事业。',
     },
     {
