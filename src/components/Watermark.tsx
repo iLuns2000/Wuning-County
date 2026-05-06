@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGameStore } from '@/store/gameStore';
 
 export const Watermark: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role } = useGameStore();
   const [clickCount, setClickCount] = useState(0);
+
+  // 只在首页显示
+  const isHomePage = location.pathname === '/' || location.pathname === '/index.html';
 
   const handleDevClick = () => {
     if (!role) return; // Only active when role is selected
@@ -18,6 +22,9 @@ export const Watermark: React.FC = () => {
       setClickCount(0);
     }
   };
+
+  // 非首页不显示
+  if (!isHomePage) return null;
 
   return (
     <div className="fixed bottom-2 right-4 z-50 text-right pointer-events-none select-none md:bottom-4 md:right-6">
