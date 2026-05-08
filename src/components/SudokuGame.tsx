@@ -492,8 +492,8 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
       <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />
 
       <div className="px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-3 items-center">
             <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
               <svg className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -508,7 +508,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">逻辑推理 · 益智填数</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex gap-3 items-center">
             <span className="font-mono text-sm text-[#6b5544] dark:text-[#a08060]">
               {formatTime(timer)}
             </span>
@@ -549,7 +549,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
           <button
             onClick={() => {
               vibrate(VIBRATION_PATTERNS.LIGHT);
-              setShowLeaderboard(true);
+              startNewGame(difficulty);
             }}
             className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
           >
@@ -560,12 +560,12 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
 
         <div className="flex-1 overflow-y-auto p-4 bg-[#faf7f0] dark:bg-[#1a1815]">
           {isGenerating ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex justify-center items-center h-64">
               <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355] dark:border-[#a08060]" />
             </div>
           ) : isComplete ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <div className="p-4 rounded-full bg-green-100 dark:bg-green-900/30">
+            <div className="flex flex-col gap-4 justify-center items-center h-64">
+              <div className="p-4 bg-green-100 rounded-full dark:bg-green-900/30">
                 <Check className="w-12 h-12 text-green-600 dark:text-green-400" />
               </div>
               <div className="text-center">
@@ -574,7 +574,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   用时 {formatTime(timer)}
                 </p>
                 {bestTimes[difficulty] && timer < bestTimes[difficulty] && (
-                  <p className="text-green-500 text-sm mt-1">🎉 打破个人最佳纪录！</p>
+                  <p className="mt-1 text-sm text-green-500">🎉 打破个人最佳纪录！</p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -614,9 +614,9 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
             <>
               <div className="flex justify-center mb-3">
                 <div
-                  className="grid grid-cols-9 gap-0.5 p-2 rounded-lg bg-[#c9b896] dark:bg-[#3d3629]"
+                  className="grid grid-cols-9 p-0.5 rounded-lg bg-[#8b7355] dark:bg-[#3d3629] overflow-hidden"
                   style={{
-                    boxShadow: 'inset 0 0 0 2px #8b7355'
+                    boxShadow: '0 0 0 1px #8b7355'
                   }}
                 >
                   {board.map((row, rowIndex) =>
@@ -625,8 +625,9 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                       const isHighlighted = getHighlightedCells.has(`${rowIndex},${colIndex}`);
                       const isSameNumber = sameNumbersCount > 1 && board[rowIndex][colIndex].value === board[selectedCell?.row ?? 0][selectedCell?.col ?? 0].value && board[selectedCell?.row ?? 0][selectedCell?.col ?? 0].value !== 0;
 
-                      const borderRight = (colIndex + 1) % 3 === 0 && colIndex !== 8 ? 'border-r-2 border-[#8b7355]' : '';
-                      const borderBottom = (rowIndex + 1) % 3 === 0 && rowIndex !== 8 ? 'border-b-2 border-[#8b7355]' : '';
+                      // 3x3 区域分割线
+                      const isRightEdge = (colIndex + 1) % 3 === 0 && colIndex !== 8;
+                      const isBottomEdge = (rowIndex + 1) % 3 === 0 && rowIndex !== 8;
 
                       return (
                         <button
@@ -634,17 +635,19 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                           onClick={() => handleCellClick(rowIndex, colIndex)}
                           disabled={cell.isGiven}
                           className={`
-                            w-9 h-9 flex items-center justify-center text-sm font-medium rounded
+                            w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-sm sm:text-base font-medium
                             transition-all duration-100
-                            ${borderRight} ${borderBottom}
+                            border-b border-r border-[#d4c9b5]/60 dark:border-[#3d3629]/30
+                            ${isRightEdge ? 'mr-[2px]' : ''}
+                            ${isBottomEdge ? 'mb-[2px]' : ''}
                             ${cell.isGiven
-                              ? 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#4a3f32] dark:text-[#e8e0d0] font-bold cursor-default'
-                              : 'bg-white dark:bg-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] cursor-pointer hover:bg-[#f5f0e6] dark:hover:bg-[#2a2318]'
+                              ? 'bg-[#fcfaf7] dark:bg-[#2a2318] text-[#4a3f32] dark:text-[#e8e0d0] font-bold cursor-default'
+                              : 'bg-white dark:bg-[#242018] text-[#8b7355] dark:text-[#a08060] cursor-pointer hover:bg-[#f5f0e6] dark:hover:bg-[#2a2318]'
                             }
                             ${isSelected
-                              ? 'bg-[#8b7355]/30 dark:bg-[#8b7355]/40 ring-2 ring-[#8b7355]'
+                              ? 'bg-[#8b7355]/30 dark:bg-[#8b7355]/40 ring-2 ring-inset ring-[#8b7355] !border-transparent z-10'
                               : isHighlighted
-                                ? 'bg-[#d4c9b5]/40 dark:bg-[#8b7355]/15'
+                                ? 'bg-[#d4c9b5]/30 dark:bg-[#8b7355]/15'
                                 : ''
                             }
                             ${cell.isError
@@ -652,19 +655,21 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                               : ''
                             }
                             ${isSameNumber && !isSelected
-                              ? 'bg-[#c9b896]/50 dark:bg-[#8b7355]/25'
+                              ? 'bg-[#c9b896]/40 dark:bg-[#8b7355]/20'
                               : ''
                             }
                           `}
                         >
                           {cell.value !== 0 ? (
-                            cell.value
+                            <span className={cell.isGiven ? 'text-[#4a3f32] dark:text-[#e8e0d0]' : 'text-[#8b7355] dark:text-[#a08060]'}>
+                              {cell.value}
+                            </span>
                           ) : cell.notes.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-0.5 text-[8px] leading-none">
+                            <div className="grid grid-cols-3 gap-0.5 text-[8px] sm:text-[10px] leading-none">
                               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                                 <span
                                   key={n}
-                                  className={cell.notes.includes(n) ? 'text-[#8b7355]' : 'text-transparent'}
+                                  className={cell.notes.includes(n) ? 'text-[#8b7355] dark:text-[#a08060]' : 'text-transparent'}
                                 >
                                   {n}
                                 </span>
@@ -720,10 +725,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
 
       {/* 排行榜弹窗 */}
       {showLeaderboard && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="flex absolute inset-0 z-50 justify-center items-center backdrop-blur-sm bg-black/50">
           <div className="w-[90%] max-w-md max-h-[80%] overflow-hidden flex flex-col rounded-lg bg-[#f5f0e6] dark:bg-[#1a1815] border border-[#d4c9b5] dark:border-[#3d3629] shadow-2xl">
             <div className="px-4 py-3 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629] flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2 items-center">
                 <Trophy className="w-5 h-5 text-[#8b7355]" />
                 <h3 className="text-lg font-bold text-[#4a3f32] dark:text-[#e8e0d0]">数独排行榜</h3>
               </div>
@@ -758,9 +763,9 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
             </div>
             
             {/* 排行榜列表 */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="overflow-y-auto flex-1 p-4">
               {leaderboardLoading ? (
-                <div className="flex items-center justify-center h-32">
+                <div className="flex justify-center items-center h-32">
                   <div className="w-8 h-8 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
                 </div>
               ) : leaderboard.length === 0 ? (
