@@ -1339,8 +1339,8 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        // construction_order 是一个特殊的珍宝，可以重复购买
-        if (invHas(state.inventory, treasureId) && treasureId !== 'construction_order') {
+        // construction_order 和 rare_stone 是特殊的珍宝，可以重复购买
+        if (invHas(state.inventory, treasureId) && treasureId !== 'construction_order' && treasureId !== 'rare_stone') {
           get().addLog('你已经拥有此珍宝了。');
           return;
         }

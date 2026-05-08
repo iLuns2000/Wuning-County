@@ -9,7 +9,7 @@
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
 import React, { useState, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Watermark } from '@/components/Watermark';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -47,6 +47,27 @@ const PageLoader = () => (
     <div className="w-12 h-12 rounded-full border-t-2 border-b-2 animate-spin border-primary"></div>
   </div>
 );
+
+// 备案号组件 - 只在首页显示
+const IcpBadge: React.FC = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/' || location.pathname === '/index.html';
+  
+  if (!isHomePage) return null;
+  
+  return (
+    <div className="fixed bottom-2 left-0 w-full text-center text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
+      <a
+        href="https://beian.miit.gov.cn/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="transition-colors pointer-events-auto hover:text-muted-foreground/80"
+      >
+        苏ICP备2026005123号
+      </a>
+    </div>
+  );
+};
 
 /* 古风字体类名工具 */
 export const cn = (...classes: (string | undefined | null | false)[]) => {
@@ -252,16 +273,8 @@ function App() {
           onDismiss={(id, hash) => dismissActivityPopup(id, hash)}
         />
       )}
-      <div className="fixed bottom-2 left-0 w-full text-center text-[10px] md:text-xs text-muted-foreground/40 pointer-events-none select-none">
-        <a
-          href="https://beian.miit.gov.cn/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="transition-colors pointer-events-auto hover:text-muted-foreground/80"
-        >
-          苏ICP备2026005123号
-        </a>
-      </div>
+      {/* 备案号 - 只在首页显示 */}
+      <IcpBadge />
     </Router>
     </>
   );

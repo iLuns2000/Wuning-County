@@ -291,3 +291,73 @@ export async function getActiveAnnouncements(): Promise<AnnouncementResponse> {
     data: res.data || [],
   };
 }
+
+// ========== 数独排行榜 API ==========
+
+export interface SudokuLeaderboardEntry {
+  rank: number;
+  user_id: string;
+  nickname: string | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  time_seconds: number;
+  created_at: string;
+}
+
+export interface SudokuLeaderboardResponse {
+  success: boolean;
+  difficulty: string;
+  total: number;
+  leaderboard: SudokuLeaderboardEntry[];
+  error?: string;
+}
+
+export interface SudokuSubmitResponse {
+  success: boolean;
+  message?: string;
+  is_new_record?: boolean;
+  time_seconds?: number;
+  best_time?: number;
+  error?: string;
+}
+
+// 获取数独排行榜
+export async function getSudokuLeaderboard(
+  difficulty: 'easy' | 'medium' | 'hard',
+  limit: number = 10,
+  offset: number = 0
+): Promise<SudokuLeaderboardResponse> {
+  return request(`/sudoku/leaderboard?difficulty=${difficulty}&limit=${limit}&offset=${offset}`, {
+    method: 'GET',
+  });
+}
+
+// 提交数独成绩
+export async function submitSudokuScore(
+  userId: string,
+  nickname: string | undefined,
+  difficulty: 'easy' | 'medium' | 'hard',
+  timeSeconds: number
+): Promise<SudokuSubmitResponse> {
+  return request('/sudoku/submit', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      nickname,
+      difficulty,
+      time_seconds: timeSeconds,
+    }),
+  });
+}
+
+// 获取用户数独最佳成绩
+export async function getSudokuBestScores(
+  userId: string,
+  difficulty?: 'easy' | 'medium' | 'hard'
+): Promise<{ success: boolean; records: Array<{ difficulty: string; time_seconds: number; created_at: string }>; error?: string }> {
+  const url = difficulty 
+    ? `/sudoku/best?user_id=${userId}&difficulty=${difficulty}`
+    : `/sudoku/best?user_id=${userId}`;
+  return request(url, {
+    method: 'GET',
+  });
+}

@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { X, RotateCcw, Check, Lightbulb } from 'lucide-react';
+import { X, RotateCcw, Check, Lightbulb, Trophy, Medal } from 'lucide-react';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import { getSudokuLeaderboard, submitSudokuScore, getDeviceId, getSudokuBestScores, type SudokuLeaderboardEntry } from '@/utils/cloudApi';
+import { useGameStore } from '@/store/gameStore';
 
 interface SudokuGameProps {
   onClose: () => void;
@@ -193,6 +195,16 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  
+  // 排行榜相关状态
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<SudokuLeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [bestTimes, setBestTimes] = useState<Record<string, number>>({});
+  
+  const playerName = useGameStore((state) => state.playerProfile)?.name || '';
+  const deviceId = getDeviceId();
 
   const startNewGame = useCallback((diff: Difficulty) => {
     setIsGenerating(true);
@@ -224,6 +236,72 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
       return () => clearInterval(interval);
     }
   }, [isTimerRunning, timer]);
+
+  // 加载排行榜
+  const loadLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    try {
+      const result = await getSudokuLeaderboard(difficulty, 10, 0);
+      if (result.success) {
+        setLeaderboard(result.leaderboard);
+      }
+    } catch (e) {
+      console.error('加载排行榜失败:', e);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, [difficulty]);
+
+  // 加载用户最佳成绩
+  const loadBestTimes = useCallback(async () => {
+    try {
+      const result = await getSudokuBestScores(deviceId);
+      if (result.success && result.records) {
+        const times: Record<string, number> = {};
+        result.records.forEach(r => {
+          times[r.difficulty] = r.time_seconds;
+        });
+        setBestTimes(times);
+      }
+    } catch (e) {
+      console.error('加载最佳成绩失败:', e);
+    }
+  }, [deviceId]);
+
+  // 提交成绩
+  const submitScore = useCallback(async () => {
+    if (!isComplete) return;
+    setSubmitting(true);
+    try {
+      const result = await submitSudokuScore(deviceId, playerName || undefined, difficulty, timer);
+      if (result.success) {
+        if (result.is_new_record) {
+          alert(`🎉 新纪录！\n用时: ${formatTime(timer)}`);
+        } else {
+          alert(`成绩已提交！\n当前用时: ${formatTime(timer)}\n最佳成绩: ${formatTime(result.best_time || timer)}`);
+        }
+        loadLeaderboard();
+        loadBestTimes();
+      }
+    } catch (e) {
+      console.error('提交成绩失败:', e);
+      alert('提交失败，请稍后重试');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [isComplete, deviceId, playerName, difficulty, timer, loadLeaderboard, loadBestTimes]);
+
+  // 切换排行榜显示
+  useEffect(() => {
+    if (showLeaderboard) {
+      loadLeaderboard();
+    }
+  }, [showLeaderboard, loadLeaderboard]);
+
+  // 初始加载最佳成绩
+  useEffect(() => {
+    loadBestTimes();
+  }, [loadBestTimes]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -461,9 +539,19 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
           <button
             onClick={() => {
               vibrate(VIBRATION_PATTERNS.LIGHT);
-              startNewGame(difficulty);
+              setShowLeaderboard(true);
             }}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629] flex items-center gap-1 transition-colors"
+            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
+          >
+            <Trophy className="w-4 h-4" />
+            排行
+          </button>
+          <button
+            onClick={() => {
+              vibrate(VIBRATION_PATTERNS.LIGHT);
+              setShowLeaderboard(true);
+            }}
+            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
           >
             <RotateCcw className="w-4 h-4" />
             重开
@@ -485,16 +573,42 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                 <p className="text-[#8b7355] dark:text-[#a08060] mt-1">
                   用时 {formatTime(timer)}
                 </p>
+                {bestTimes[difficulty] && timer < bestTimes[difficulty] && (
+                  <p className="text-green-500 text-sm mt-1">🎉 打破个人最佳纪录！</p>
+                )}
               </div>
-              <button
-                onClick={() => {
-                  vibrate(VIBRATION_PATTERNS.LIGHT);
-                  startNewGame(difficulty);
-                }}
-                className="px-6 py-2 rounded-lg bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6] font-medium hover:bg-[#5a4838] dark:hover:bg-[#4a3a28] transition-colors"
-              >
-                再来一局
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    vibrate(VIBRATION_PATTERNS.LIGHT);
+                    submitScore();
+                  }}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-lg bg-[#8b7355] text-[#f5f0e6] font-medium hover:bg-[#7a6345] flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Trophy className="w-4 h-4" />
+                  {submitting ? '提交中...' : '提交成绩'}
+                </button>
+                <button
+                  onClick={() => {
+                    vibrate(VIBRATION_PATTERNS.LIGHT);
+                    setShowLeaderboard(true);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6] font-medium hover:bg-[#3d3228] flex items-center gap-1"
+                >
+                  <Medal className="w-4 h-4" />
+                  查看排行
+                </button>
+                <button
+                  onClick={() => {
+                    vibrate(VIBRATION_PATTERNS.LIGHT);
+                    startNewGame(difficulty);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] font-medium hover:bg-[#d4c9b5]"
+                >
+                  再来一局
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -603,6 +717,103 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
             </>
           )}
       </div>
+
+      {/* 排行榜弹窗 */}
+      {showLeaderboard && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-[90%] max-w-md max-h-[80%] overflow-hidden flex flex-col rounded-lg bg-[#f5f0e6] dark:bg-[#1a1815] border border-[#d4c9b5] dark:border-[#3d3629] shadow-2xl">
+            <div className="px-4 py-3 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-[#8b7355]" />
+                <h3 className="text-lg font-bold text-[#4a3f32] dark:text-[#e8e0d0]">数独排行榜</h3>
+              </div>
+              <button
+                onClick={() => setShowLeaderboard(false)}
+                className="p-1 rounded hover:bg-[#d4c9b5]/50"
+              >
+                <X className="w-5 h-5 text-[#6b5544]" />
+              </button>
+            </div>
+            
+            {/* 难度切换 */}
+            <div className="px-4 py-2 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629] flex gap-2">
+              {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
+                <button
+                  key={diff}
+                  onClick={() => {
+                    vibrate(VIBRATION_PATTERNS.LIGHT);
+                    setDifficulty(diff);
+                  }}
+                  className={`
+                    px-3 py-1 rounded text-sm font-medium transition-all
+                    ${difficulty === diff
+                      ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6]'
+                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
+                    }
+                  `}
+                >
+                  {DIFFICULTY_LABELS[diff]}
+                </button>
+              ))}
+            </div>
+            
+            {/* 排行榜列表 */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {leaderboardLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-8 h-8 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center text-[#8b7355] py-8">
+                  暂无记录，快来挑战吧！
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leaderboard.map((entry, index) => (
+                    <div
+                      key={entry.user_id}
+                      className={`
+                        flex items-center gap-3 p-2 rounded-lg
+                        ${entry.user_id === deviceId
+                          ? 'bg-[#8b7355]/20 border border-[#8b7355]/40'
+                          : 'bg-[#e8e0d8] dark:bg-[#2a2318]'
+                        }
+                      `}
+                    >
+                      <div className={`
+                        w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                        ${index === 0 ? 'bg-yellow-500 text-white' : index === 1 ? 'bg-gray-400 text-white' : index === 2 ? 'bg-amber-600 text-white' : 'bg-[#d4c9b5] text-[#6b5544]'}
+                      `}>
+                        {entry.rank}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-[#4a3f32] dark:text-[#e8e0d0]">
+                          {entry.nickname || `玩家${entry.user_id.slice(-4)}`}
+                        </div>
+                        <div className="text-xs text-[#8b7355]/70">
+                          {formatTime(entry.time_seconds)}
+                        </div>
+                      </div>
+                      {entry.user_id === deviceId && (
+                        <span className="text-xs text-[#8b7355] bg-[#8b7355]/20 px-2 py-0.5 rounded">我</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* 我的最隹成绩 */}
+            {bestTimes[difficulty] && (
+              <div className="px-4 py-3 bg-[#ebe5d8] dark:bg-[#2a2318] border-t border-[#d4c9b5] dark:border-[#3d3629]">
+                <div className="text-sm text-[#6b5544] dark:text-[#a08060]">
+                  我的最佳成绩: <span className="font-bold text-[#4a3f32] dark:text-[#e8e0d0]">{formatTime(bestTimes[difficulty])}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
