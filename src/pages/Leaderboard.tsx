@@ -13,6 +13,8 @@ export const Leaderboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [hasUserJoined, setHasUserJoined] = useState(false);
   const [leaderboardType, setLeaderboardType] = useState<LeaderboardType>('money');
   
@@ -33,20 +35,23 @@ export const Leaderboard: React.FC = () => {
   // 加载排行榜
   const loadLeaderboard = async (type: LeaderboardType, page: number = 1) => {
     setLoading(true);
-    const offset = (page - 1) * PAGE_SIZE;
     try {
       let result;
       if (type === 'money') {
-        result = await getLeaderboard(PAGE_SIZE, offset);
+        result = await getLeaderboard(page, PAGE_SIZE);
         if (result.success) {
           setLeaderboard(result.leaderboard);
+          setTotalPages(result.totalPages || 1);
+          setTotal(result.total || 0);
           const isOnBoard = result.leaderboard.some((e: LeaderboardEntry) => e.user_id === deviceId);
           setHasUserJoined(isOnBoard);
         }
       } else {
-        result = await getFavorabilityLeaderboard(PAGE_SIZE, offset);
+        result = await getFavorabilityLeaderboard(page, PAGE_SIZE);
         if (result.success) {
           setLeaderboard(result.leaderboard);
+          setTotalPages(result.totalPages || 1);
+          setTotal(result.total || 0);
           const isOnBoard = result.leaderboard.some((e: FavorabilityLeaderboardEntry) => e.user_id === deviceId);
           setHasUserJoined(isOnBoard);
         }
@@ -85,7 +90,7 @@ export const Leaderboard: React.FC = () => {
     try {
       await registerUser(deviceId, displayName);
       setUserNickname(displayName);
-      await setMoney(deviceId, money);
+      await setMoney(deviceId, money, displayName);
       
       alert(`恭喜上榜成功！\n当前财富: ${money.toLocaleString()} 文\n每天会自动同步一次财富到排行榜。`);
       setHasUserJoined(true);
@@ -106,7 +111,7 @@ export const Leaderboard: React.FC = () => {
     try {
       await registerUser(deviceId, displayName);
       setUserNickname(displayName);
-      await setFavorability(deviceId, countyMagistrateFavorability);
+      await setFavorability(deviceId, countyMagistrateFavorability, displayName);
       
       alert(`恭喜上榜成功！\n当前楼县令好感度: ${countyMagistrateFavorability}\n每天会自动同步一次好感度到排行榜。`);
       setHasUserJoined(true);
@@ -210,7 +215,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 上榜状态 */}
-        <div className="overflow-hidden bg-white rounded-lg border shadow-lg border-indigo-100 dark:bg-card dark:border-border">
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
           <div className={`px-4 py-3 border-b border-border/60 ${leaderboardType === 'money' ? 'bg-indigo-50 dark:bg-indigo-950/50' : 'bg-pink-50 dark:bg-pink-950/40'}`}>
             <h2 className={`flex gap-2 items-center font-bold ${leaderboardType === 'money' ? 'text-indigo-900 dark:text-indigo-100' : 'text-pink-900 dark:text-pink-100'}`}>
               {leaderboardType === 'money' ? (
@@ -243,11 +248,12 @@ export const Leaderboard: React.FC = () => {
                     onClick={async () => {
                       vibrate(VIBRATION_PATTERNS.LIGHT);
                       try {
+                        const displayName = playerName || `玩家${deviceId.slice(-4)}`;
                         if (leaderboardType === 'money') {
-                          await setMoney(deviceId, money);
+                          await setMoney(deviceId, money, displayName);
                           alert(`财富已同步！\n当前财富: ${money.toLocaleString()} 文`);
                         } else {
-                          await setFavorability(deviceId, countyMagistrateFavorability);
+                          await setFavorability(deviceId, countyMagistrateFavorability, displayName);
                           alert(`楼县令好感度已同步！\n当前好感度: ${countyMagistrateFavorability}`);
                         }
                         loadLeaderboard(leaderboardType);
@@ -312,11 +318,11 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 排行榜列表 */}
-        <div className="overflow-hidden bg-white rounded-lg border shadow-lg border-indigo-100 dark:bg-card dark:border-border">
+        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
           <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600 dark:bg-indigo-800' : 'bg-pink-600 dark:bg-pink-800'}`}>
             <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
-              {leaderboardType === 'money' ? '富豪排行' : '人气排行'} (每页{PAGE_SIZE}人)
+              {leaderboardType === 'money' ? '富豪排行' : '人气排行'} (共{total}人)
             </h2>
           </div>
           
@@ -332,7 +338,7 @@ export const Leaderboard: React.FC = () => {
                 {currentPage === 1 && (
                   leaderboardType === 'money' ? (
                     <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50 dark:from-amber-950/40 dark:to-yellow-950/25">
-                      <div className="flex justify-center items-center w-8 h-8 font-bold rounded-full text-yellow-900 bg-yellow-400 dark:text-amber-100 dark:bg-amber-700">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold text-yellow-900 bg-yellow-400 rounded-full dark:text-amber-100 dark:bg-amber-700">
                         1
                       </div>
                       <div className="flex-1 ml-3">
@@ -347,7 +353,7 @@ export const Leaderboard: React.FC = () => {
                     </div>
                   ) : (
                     <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50 dark:from-pink-950/35 dark:to-rose-950/25">
-                      <div className="flex justify-center items-center w-8 h-8 font-bold rounded-full text-pink-900 bg-pink-400 dark:text-pink-100 dark:bg-pink-700">
+                      <div className="flex justify-center items-center w-8 h-8 font-bold text-pink-900 bg-pink-400 rounded-full dark:text-pink-100 dark:bg-pink-700">
                         1
                       </div>
                       <div className="flex-1 ml-3">
@@ -406,18 +412,18 @@ export const Leaderboard: React.FC = () => {
               <div className="flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30 dark:border-border dark:bg-muted/30">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
+                  disabled={currentPage <= 1}
                   className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white rounded-md border text-indigo-700 border-indigo-200 disabled:opacity-50 disabled:bg-gray-50 dark:bg-card dark:text-indigo-200 dark:border-border dark:disabled:bg-muted/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   上页
                 </button>
                 <div className="text-sm font-medium text-indigo-900 dark:text-foreground">
-                  第 {currentPage} 页
+                  {currentPage}/{totalPages} 页 · 共 {total} 人
                 </div>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={leaderboard.length < PAGE_SIZE}
+                  disabled={currentPage >= totalPages}
                   className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white rounded-md border text-indigo-700 border-indigo-200 disabled:opacity-50 disabled:bg-gray-50 dark:bg-card dark:text-indigo-200 dark:border-border dark:disabled:bg-muted/50"
                 >
                   下页
@@ -429,7 +435,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 提示信息 */}
-        <div className="p-4 text-sm text-center rounded-lg border text-indigo-500 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-300 dark:border-indigo-900/50">
+        <div className="p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-300 dark:border-indigo-900/50">
           <p>
             📌 {leaderboardType === 'money' 
               ? '上榜后每日自动同步财富至官府榜文' 

@@ -1657,6 +1657,11 @@ export const useGameStore = create<GameStore>()(
           hintState: {},
         });
 
+        const prevWarDestroyed = localStorage.getItem('wuning_war_destroyed');
+        if (prevWarDestroyed === 'true') {
+          set({ flags: { previous_game_war_destroyed: true } });
+        }
+
         if (firstTask) {
           setTimeout(() => get().addLog(`【主线任务】${firstTask.title}: ${firstTask.description}`), 0);
         }
@@ -2288,6 +2293,8 @@ export const useGameStore = create<GameStore>()(
               } else if (ach.id === 'one_thousand_and_one_nights') {
                 bonusItems.push('story_collection');
                 get().addLog(`【获得物品】故事集：一本厚厚的故事集，记录了你讲过的一百零一个故事。`);
+              } else if (ach.id === 'rebuild_wuning') {
+                localStorage.removeItem('wuning_war_destroyed');
               }
 
               get().addLog(`【成就达成】${ach.name}：获得 ${ach.rewardExp} 阅历！`);
@@ -2747,6 +2754,7 @@ export const useGameStore = create<GameStore>()(
           if (nextExternalThreat.warRisk >= 95 && newCountyStats.order <= 10 && newCountyStats.economy <= 10) {
             isGameOver = true;
             warMessage = '【战火覆城】县城长期失修、民心离散，最终毁于战火。';
+            localStorage.setItem('wuning_war_destroyed', 'true');
           }
 
           // ── 自动巡逻每日效果 ────────────────────────────────────────

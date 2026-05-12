@@ -132,12 +132,16 @@ export interface LeaderboardEntry {
 export interface LeaderboardResponse {
   success: boolean;
   leaderboard: LeaderboardEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
   error?: string;
 }
 
 // 获取排行榜
-export async function getLeaderboard(limit: number = 10, offset: number = 0): Promise<LeaderboardResponse> {
-  return request(`/money/leaderboard?limit=${limit}&offset=${offset}`, {
+export async function getLeaderboard(page: number = 1, pageSize: number = 10): Promise<LeaderboardResponse> {
+  return request(`/money/leaderboard?page=${page}&pageSize=${pageSize}`, {
     method: 'GET',
   });
 }
@@ -151,10 +155,10 @@ export async function addMoney(userId: string, amount: number): Promise<{ succes
 }
 
 // 设置金钱 (替换而非累加)
-export async function setMoney(userId: string, money: number): Promise<{ success: boolean; money?: number; error?: string }> {
+export async function setMoney(userId: string, money: number, nickname?: string): Promise<{ success: boolean; money?: number; error?: string }> {
   return request('/money/set', {
     method: 'POST',
-    body: JSON.stringify({ user_id: userId, money }),
+    body: JSON.stringify({ user_id: userId, money, nickname }),
   });
 }
 
@@ -186,21 +190,25 @@ export interface FavorabilityLeaderboardEntry {
 export interface FavorabilityLeaderboardResponse {
   success: boolean;
   leaderboard: FavorabilityLeaderboardEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
   error?: string;
 }
 
 // 获取好感度排行榜
-export async function getFavorabilityLeaderboard(limit: number = 10, offset: number = 0): Promise<FavorabilityLeaderboardResponse> {
-  return request(`/user/favorability/leaderboard?limit=${limit}&offset=${offset}`, {
+export async function getFavorabilityLeaderboard(page: number = 1, pageSize: number = 10): Promise<FavorabilityLeaderboardResponse> {
+  return request(`/user/favorability/leaderboard?page=${page}&pageSize=${pageSize}`, {
     method: 'GET',
   });
 }
 
 // 设置好感度
-export async function setFavorability(userId: string, favorability: number): Promise<{ success: boolean; favorability?: number; error?: string }> {
+export async function setFavorability(userId: string, favorability: number, nickname?: string): Promise<{ success: boolean; favorability?: number; error?: string }> {
   return request('/user/favorability/set', {
     method: 'POST',
-    body: JSON.stringify({ user_id: userId, favorability }),
+    body: JSON.stringify({ user_id: userId, favorability, nickname }),
   });
 }
 

@@ -770,4 +770,17 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
     rewardExp: 80,
     condition: (state) => (state.flags['tuyumen_xiada_gossip_caught'] || 0) >= 10,
   },
+  {
+    id: 'rebuild_wuning',
+    name: '重建无宁',
+    description: '城毁于战火后重启新局，励精图治，终使县城重现繁荣。',
+    rewardExp: 500,
+    rarity: 'legend',
+    condition: (state) =>
+      !!state.flags['previous_game_war_destroyed'] &&
+      state.countyStats.economy >= 80 &&
+      state.countyStats.order >= 80 &&
+      state.countyStats.culture >= 80 &&
+      state.countyStats.livelihood >= 80,
+  },
 ];
