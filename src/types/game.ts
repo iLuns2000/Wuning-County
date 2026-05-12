@@ -179,6 +179,8 @@ export interface Scroll {
   description: string;
   npcId?: string; // If specific to an NPC
   obtainedAt: number; // Day obtained
+  opened?: boolean;
+  openedContent?: string; // Content revealed when opened
 }
 
 export interface Policy {

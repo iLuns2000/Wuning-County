@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const data=require\\('./1836589294.json'\\); console.log\\('Total weibos:', data.weibos.length\\); console.log\\('Keys:', Object.keys\\(data\\)\\); console.log\\('Sample content:', data.weibos[0].content.substring\\(0,100\\)\\); console.log\\('Fields per weibo:', Object.keys\\(data.weibos[0]\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(npx tsc *)",
+      "Bash(node *)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "cloudbase"
+  ]
+}

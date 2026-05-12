@@ -31,6 +31,7 @@ import { getJiYiOuGiftCategory, getJiYiOuGiftReward, rollJiYiOuLoreDrop } from '
 import { buildGiftOutcome } from '@/services/npcGiftInteractionEngine';
 import { hasNPCGiftRule } from '@/data/npcGiftInteractionRules';
 import { debuffConfigs, getDebuffConfig } from '@/data/debuffs';
+import { scrollContents } from '@/data/scrollContents';
 import {
   feedBird,
   teaseBird,
@@ -461,6 +462,7 @@ interface GameStore extends GameState {
   triggerSpecificEvent: (eventId: string) => void;
   dismissEvent: () => void;
   resetGame: () => void;
+  openScroll: (scrollId: string) => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
   incrementGiftFailure: (npcId: string) => void;
@@ -3843,6 +3845,19 @@ export const useGameStore = create<GameStore>()(
       },
 
       addLog: (message) => set(state => ({ logs: [message, ...state.logs].slice(0, 500) })),
+
+      openScroll: (scrollId) => {
+        set(prev => {
+          const scroll = prev.collectedScrolls.find(s => s.id === scrollId);
+          if (!scroll || scroll.opened) return prev;
+          const randomContent = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+          return {
+            collectedScrolls: prev.collectedScrolls.map(s =>
+              s.id === scrollId ? { ...s, opened: true, openedContent: randomContent } : s
+            )
+          };
+        });
+      },
 
       triggerEvent: () => {
         const state = get();
