@@ -1657,9 +1657,13 @@ export const useGameStore = create<GameStore>()(
           hintState: {},
         });
 
-        const prevWarDestroyed = localStorage.getItem('wuning_war_destroyed');
-        if (prevWarDestroyed === 'true') {
-          set({ flags: { previous_game_war_destroyed: true } });
+        try {
+          const prevWarDestroyed = localStorage.getItem('wuning_war_destroyed');
+          if (prevWarDestroyed === 'true') {
+            set({ flags: { previous_game_war_destroyed: true } });
+          }
+        } catch (e) {
+          console.warn('读取战争状态失败', e);
         }
 
         if (firstTask) {
