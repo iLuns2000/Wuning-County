@@ -464,6 +464,7 @@ interface GameStore extends GameState {
   resetGame: () => void;
   openScroll: (scrollId: string) => void;
   buyScroll: () => void;
+  grantFreeScrollsIfNeeded: () => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
   incrementGiftFailure: (npcId: string) => void;
@@ -728,6 +729,8 @@ export const useGameStore = create<GameStore>()(
       // 活动弹窗初始状态
       activityPopup: null,
       dismissedActivities: {},
+
+      hasReceivedFreeScrolls: false,
 
       // 新手引导初始状态
       onboardingVersion: 1,
@@ -3883,6 +3886,28 @@ export const useGameStore = create<GameStore>()(
         get().addLog(`【藏珍匣】花费 ${SCROLL_PRICE} 文购得一卷「神秘卷轴」。`);
       },
 
+      grantFreeScrollsIfNeeded: () => {
+        const state = get();
+        if (state.hasReceivedFreeScrolls) return;
+        const current = state.collectedScrolls.length;
+        const needed = Math.max(0, 10 - current);
+        if (needed === 0) {
+          set({ hasReceivedFreeScrolls: true });
+          return;
+        }
+        const newScrolls: import('@/types/game').Scroll[] = Array.from({ length: needed }, (_, i) => ({
+          id: `scroll_free_${Date.now()}_${i}`,
+          name: '神秘卷轴',
+          description: '记载着一些不为人知的秘密。',
+          obtainedAt: state.day,
+        }));
+        set(prev => ({
+          collectedScrolls: [...prev.collectedScrolls, ...newScrolls],
+          hasReceivedFreeScrolls: true,
+        }));
+        get().addLog(`【藏珍匣】获得 ${needed} 卷神秘卷轴。`);
+      },
+
       triggerEvent: () => {
         const state = get();
 
@@ -4118,6 +4143,7 @@ export const useGameStore = create<GameStore>()(
           npcInteractionStates: state.npcInteractionStates,
           isVoiceLost: state.isVoiceLost,
           collectedScrolls: state.collectedScrolls,
+          hasReceivedFreeScrolls: state.hasReceivedFreeScrolls,
           activePolicyId: state.activePolicyId,
           talents: state.talents,
           achievements: state.achievements,
@@ -4188,6 +4214,7 @@ export const useGameStore = create<GameStore>()(
             'npcInteractionStates',
             'isVoiceLost',
             'collectedScrolls',
+            'hasReceivedFreeScrolls',
             'activePolicyId',
             'talents',
             'achievements',
@@ -5034,6 +5061,7 @@ export const useGameStore = create<GameStore>()(
           onboardingStep: (persisted as Partial<GameState>).onboardingStep ?? 0,
           onboardingDismissed: (persisted as Partial<GameState>).onboardingDismissed ?? false,
           hintState: (persisted as Partial<GameState>).hintState ?? {},
+          hasReceivedFreeScrolls: (persisted as Partial<GameState>).hasReceivedFreeScrolls ?? false,
         };
       },
       partialize: (state) => ({
@@ -5060,6 +5088,7 @@ export const useGameStore = create<GameStore>()(
         npcInteractionStates: state.npcInteractionStates,
         isVoiceLost: state.isVoiceLost,
         collectedScrolls: state.collectedScrolls,
+        hasReceivedFreeScrolls: state.hasReceivedFreeScrolls,
         activePolicyId: state.activePolicyId,
         talents: state.talents,
         achievements: state.achievements,

@@ -220,6 +220,7 @@ export interface GameState {
   isVoiceLost: boolean; // Cannot chat if true
   isMoGuRenaming: boolean; // Whether the user is currently renaming at Mo Gu
   collectedScrolls: Scroll[];
+  hasReceivedFreeScrolls?: boolean; // 是否已赠送过初始卷轴
   activePolicyId?: string; // Currently active policy
   inventory: Record<string, number>; // itemId -> count, 优化存储
   equippedApparel: Partial<Record<ApparelSlot, string>>;

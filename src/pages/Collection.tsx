@@ -21,10 +21,15 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export const Collection: React.FC = () => {
   const navigate = useNavigate();
-  const { collectedScrolls, openScroll, inventory, playerStats, buyScroll } = useGameStore();
+  const { collectedScrolls, openScroll, inventory, playerStats, buyScroll, grantFreeScrollsIfNeeded } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
   const [showContent, setShowContent] = useState(false);
+
+  // 进入藏珍匣时检查并赠送初始卷轴
+  useEffect(() => {
+    grantFreeScrollsIfNeeded();
+  }, [grantFreeScrollsIfNeeded]);
 
   // --- 随机回顾状态 ---
   const [reviewMode, setReviewMode] = useState(false);
