@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter } from 'lucide-react';
 import { Swiper, SwiperSlide, SwiperClass } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -9,6 +9,23 @@ import { useGameStore } from '@/store/gameStore';
 import { npcs } from '@/data/npcs';
 import { Scroll as ScrollType } from '@/types/game';
 import { CHRONICLE_BOOK_ID, SCROLL_PRICE } from '@/data/treasures';
+
+// --- 卷轴本地元数据（阅读次数、收藏）存储在 localStorage ---
+const SCROLL_META_KEY = 'wuning_scroll_meta';
+interface ScrollMeta { viewCount: number; favorite: boolean }
+type ScrollMetaMap = Record<string, ScrollMeta>;
+
+function loadScrollMeta(): ScrollMetaMap {
+  try {
+    return JSON.parse(localStorage.getItem(SCROLL_META_KEY) || '{}');
+  } catch { return {}; }
+}
+function saveScrollMeta(map: ScrollMetaMap) {
+  localStorage.setItem(SCROLL_META_KEY, JSON.stringify(map));
+}
+function getMeta(map: ScrollMetaMap, id: string): ScrollMeta {
+  return map[id] || { viewCount: 0, favorite: false };
+}
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -25,6 +42,21 @@ export const Collection: React.FC = () => {
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
   const [showContent, setShowContent] = useState(false);
+
+  // --- 本地卷轴元数据 ---
+  const [scrollMeta, setScrollMeta] = useState<ScrollMetaMap>(() => loadScrollMeta());
+  const updateMeta = (id: string, patch: Partial<ScrollMeta>) => {
+    setScrollMeta(prev => {
+      const cur = getMeta(prev, id);
+      const next = { ...prev, [id]: { ...cur, ...patch } };
+      saveScrollMeta(next);
+      return next;
+    });
+  };
+
+  // --- 筛选状态 ---
+  type FilterType = 'all' | 'unread' | 'read' | 'favorite';
+  const [filter, setFilter] = useState<FilterType>('all');
 
   // 进入藏珍匣时检查并赠送初始卷轴
   useEffect(() => {
@@ -100,9 +132,18 @@ export const Collection: React.FC = () => {
   const openedScrolls = collectedScrolls.filter(s => s.opened);
   const unopenedScrolls = collectedScrolls.filter(s => !s.opened);
 
+  // 筛选后的列表
+  const filteredScrolls = collectedScrolls.filter(s => {
+    if (filter === 'unread') return !s.opened;
+    if (filter === 'read') return s.opened;
+    if (filter === 'favorite') return getMeta(scrollMeta, s.id).favorite;
+    return true;
+  });
+
+  const reviewSource = filteredScrolls.filter(s => s.opened);
   const startReview = () => {
-    if (openedScrolls.length === 0) return;
-    setReviewList(shuffleArray(openedScrolls));
+    if (reviewSource.length === 0) return;
+    setReviewList(shuffleArray(reviewSource));
     setReviewIndex(0);
     setReviewMode(true);
   };
@@ -126,16 +167,15 @@ export const Collection: React.FC = () => {
 
   const handleOpen = (scroll: ScrollType) => {
     if (scroll.opened) {
-      // Already opened, just show content
       setRevealingScroll(scroll);
       setShowContent(true);
+      updateMeta(scroll.id, { viewCount: getMeta(scrollMeta, scroll.id).viewCount + 1 });
       return;
     }
-    // Open the scroll first
     openScroll(scroll.id);
     setRevealingScroll(scroll);
     setShowContent(false);
-    // Trigger reveal animation
+    updateMeta(scroll.id, { viewCount: 1 });
     setTimeout(() => setShowContent(true), 300);
   };
 
@@ -198,7 +238,7 @@ export const Collection: React.FC = () => {
                 查重
               </button>
             )}
-            {openedScrolls.length > 0 && (
+            {reviewSource.length > 0 && (
               <button
                 onClick={startReview}
                 className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -209,6 +249,27 @@ export const Collection: React.FC = () => {
             )}
           </div>
         </header>
+
+        {/* 筛选栏 */}
+        <div className="flex gap-1 items-center">
+          <Filter size={14} className="mr-1 text-muted-foreground" />
+          {([['all', '全部'], ['unread', '未读'], ['read', '已读'], ['favorite', '收藏']] as [FilterType, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                filter === key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {filteredScrolls.length} / {collectedScrolls.length}
+          </span>
+        </div>
 
         {hasChronicleBook && (
           <div className="p-4 bg-gradient-to-r rounded-lg border from-amber-500/10 to-yellow-500/10 border-amber-500/30">
@@ -257,23 +318,41 @@ export const Collection: React.FC = () => {
                   : '与 NPC 建立深厚羁绊或许能获得意外之喜...'}
               </p>
             </div>
+          ) : filteredScrolls.length === 0 ? (
+            <div className="col-span-full py-12 text-center rounded-lg border-2 border-dashed text-muted-foreground">
+              <p>当前筛选无结果</p>
+            </div>
           ) : (
-            collectedScrolls.map((scroll) => {
+            filteredScrolls.map((scroll) => {
               const npcName = scroll.npcId ? npcs.find(n => n.id === scroll.npcId)?.name : '未知';
+              const meta = getMeta(scrollMeta, scroll.id);
 
               return (
-                <div key={scroll.id} className="p-4 rounded-lg border shadow-sm transition-shadow bg-card hover:shadow-md">
+                <div key={scroll.id} className={`p-4 rounded-lg border shadow-sm transition-shadow bg-card hover:shadow-md ${meta.favorite ? 'border-rose-400/50' : ''}`}>
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-bold text-primary">{scroll.name}</h3>
+                    <div className="flex gap-1.5 items-center">
+                      <button
+                        onClick={() => updateMeta(scroll.id, { favorite: !meta.favorite })}
+                        className="p-0.5 transition-colors"
+                      >
+                        <Heart size={16} className={meta.favorite ? 'fill-rose-500 text-rose-500' : 'text-muted-foreground/40'} />
+                      </button>
+                      <h3 className="text-lg font-bold text-primary">{scroll.name}</h3>
+                    </div>
                     <span className="px-2 py-1 text-xs rounded bg-secondary text-muted-foreground">
                       第 {scroll.obtainedAt} 天获得
                     </span>
                   </div>
                   <p className="mb-3 text-sm text-muted-foreground">{scroll.description}</p>
                   <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-xs text-muted-foreground">
-                      赠予者: {npcName}
-                    </span>
+                    <div className="flex gap-3 items-center text-xs text-muted-foreground">
+                      <span>赠予者: {npcName}</span>
+                      {scroll.opened && meta.viewCount > 0 && (
+                        <span className="flex gap-0.5 items-center opacity-60">
+                          <Eye size={11} /> {meta.viewCount}
+                        </span>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleOpen(scroll)}
                       className="flex gap-1 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
@@ -308,10 +387,16 @@ export const Collection: React.FC = () => {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="flex gap-2 items-center text-lg font-bold text-primary">
-                  <Scroll size={20} />
-                  卷轴内容
-                </h2>
+                <div className="flex gap-2 items-center">
+                  <Scroll size={20} className="text-primary" />
+                  <h2 className="text-lg font-bold text-primary">卷轴内容</h2>
+                  <button
+                    onClick={() => updateMeta(latest.id, { favorite: !getMeta(scrollMeta, latest.id).favorite })}
+                    className="p-0.5 transition-colors"
+                  >
+                    <Heart size={18} className={getMeta(scrollMeta, latest.id).favorite ? 'fill-rose-500 text-rose-500' : 'text-muted-foreground/40'} />
+                  </button>
+                </div>
                 <span className="px-2 py-1 text-xs rounded bg-secondary text-muted-foreground">
                   第 {latest.obtainedAt} 天获得
                 </span>
@@ -403,6 +488,12 @@ export const Collection: React.FC = () => {
                           <div className="flex gap-2 items-center">
                             <Shuffle size={18} className="text-primary" />
                             <h2 className="text-lg font-bold text-primary">随机回顾</h2>
+                            <button
+                              onClick={() => updateMeta(scroll.id, { favorite: !getMeta(scrollMeta, scroll.id).favorite })}
+                              className="p-0.5 transition-colors"
+                            >
+                              <Heart size={18} className={getMeta(scrollMeta, scroll.id).favorite ? 'fill-rose-500 text-rose-500' : 'text-muted-foreground/40'} />
+                            </button>
                             <span className="ml-auto px-2 py-0.5 text-xs rounded bg-secondary text-muted-foreground">
                               第 {scroll.obtainedAt} 天获得
                             </span>
