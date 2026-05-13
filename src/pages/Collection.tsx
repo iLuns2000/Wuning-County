@@ -50,7 +50,7 @@ export const Collection: React.FC = () => {
   const analyzeDuplicates = () => {
     const contentMap = new Map<string, ScrollType[]>();
     for (const scroll of openedScrolls) {
-      const key = scroll.openedContent || '';
+      const key = `${scroll.openedContent || ''}|${scroll.phoneModel || ''}|${scroll.publishDate || ''}`;
       if (!key) continue;
       const arr = contentMap.get(key) || [];
       arr.push(scroll);
@@ -84,7 +84,9 @@ export const Collection: React.FC = () => {
       .filter(g => g.checked)
       .flatMap(g => g.toRemove.map(s => s.id));
     if (idsToRemove.length > 0) {
-      removeScrollsByIds(idsToRemove);
+      if (window.confirm(`确定要删除 ${idsToRemove.length} 个重复卷轴吗？此操作不可撤销。`)) {
+        removeScrollsByIds(idsToRemove);
+      }
     }
     setShowDedupModal(false);
     setDedupGroups([]);
@@ -209,7 +211,7 @@ export const Collection: React.FC = () => {
         </header>
 
         {hasChronicleBook && (
-          <div className="p-4 rounded-lg border bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30">
+          <div className="p-4 bg-gradient-to-r rounded-lg border from-amber-500/10 to-yellow-500/10 border-amber-500/30">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-3 items-center">
                 <div className="p-2 rounded-lg bg-amber-500/20">
@@ -316,7 +318,7 @@ export const Collection: React.FC = () => {
               </div>
 
               <div className="p-4 mb-4 rounded-lg border-2 border-dashed bg-secondary/50 border-primary/30">
-                <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                   {latest.openedContent || '卷轴上的文字模糊不清，无法辨认...'}
                 </p>
               </div>
@@ -353,21 +355,21 @@ export const Collection: React.FC = () => {
       {/* 随机回顾模式 */}
       {reviewMode && reviewList.length > 0 && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm select-none"
+          className="fixed inset-0 z-50 backdrop-blur-sm select-none bg-black/80"
           onClick={exitReview}
         >
           {/* 关闭 */}
           <button
             onClick={e => { e.stopPropagation(); exitReview(); }}
-            className="absolute top-4 right-4 z-30 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+            className="absolute top-4 right-4 z-30 p-2 text-white rounded-full bg-white/10 hover:bg-white/20"
           >
             ✕
           </button>
 
           {/* Swiper 轮播 */}
-          <div className="relative flex items-center justify-center w-full h-full px-12 sm:px-16" onClick={e => e.stopPropagation()}>
+          <div className="flex relative justify-center items-center px-12 w-full h-full sm:px-16" onClick={e => e.stopPropagation()}>
             {/* 上一张按钮 */}
-            <button className="swiper-prev absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+            <button className="absolute left-2 top-1/2 z-30 p-2 text-white rounded-full transition-colors -translate-y-1/2 swiper-prev sm:left-4 sm:p-3 bg-white/10 hover:bg-white/20">
               <ChevronLeft size={24} />
             </button>
 
@@ -389,10 +391,10 @@ export const Collection: React.FC = () => {
                 const npcName = scroll.npcId ? npcs.find(n => n.id === scroll.npcId)?.name : '未知';
                 return (
                   <SwiperSlide key={scroll.id + '-' + idx}>
-                    <div className="flex items-center justify-center w-full h-full px-4 py-14 overflow-hidden">
+                    <div className="flex overflow-hidden justify-center items-center px-4 py-14 w-full h-full">
                       <div className="w-full max-w-md max-h-[calc(100vh-7rem)] flex flex-col rounded-xl border-2 shadow-2xl bg-card border-primary/30">
                         {/* 固定头部 */}
-                        <div className="shrink-0 px-6 pt-5 pb-3">
+                        <div className="px-6 pt-5 pb-3 shrink-0">
                           <div className="flex justify-center mb-3">
                             <span className="px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-mono">
                               {idx + 1} / {reviewList.length}
@@ -409,19 +411,19 @@ export const Collection: React.FC = () => {
 
                         {/* 可滚动内容区 */}
                         <div
-                          className="flex-1 overflow-y-auto px-6 py-2 min-h-0"
+                          className="overflow-y-auto flex-1 px-6 py-2 min-h-0"
                           style={{ touchAction: 'pan-y' }}
                         >
                           <div className="p-4 rounded-lg border-2 border-dashed bg-secondary/50 border-primary/30">
-                            <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                               {scroll.openedContent || '卷轴上的文字模糊不清，无法辨认...'}
                             </p>
                           </div>
                         </div>
 
                         {/* 固定底部 */}
-                        <div className="shrink-0 px-6 pb-5 pt-3">
-                          <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-muted-foreground">
+                        <div className="px-6 pt-3 pb-5 shrink-0">
+                          <div className="flex flex-wrap gap-2 justify-between items-center text-xs text-muted-foreground">
                             <div className="flex gap-3">
                               {scroll.phoneModel && (
                                 <span><span className="opacity-60">设备:</span> {scroll.phoneModel}</span>
@@ -441,7 +443,7 @@ export const Collection: React.FC = () => {
             </Swiper>
 
             {/* 下一张按钮 */}
-            <button className="swiper-next absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+            <button className="absolute right-2 top-1/2 z-30 p-2 text-white rounded-full transition-colors -translate-y-1/2 swiper-next sm:right-4 sm:p-3 bg-white/10 hover:bg-white/20">
               <ChevronRight size={24} />
             </button>
           </div>
@@ -464,7 +466,7 @@ export const Collection: React.FC = () => {
             onClick={e => e.stopPropagation()}
           >
             {/* 头部 */}
-            <div className="shrink-0 px-6 pt-5 pb-3 border-b">
+            <div className="px-6 pt-5 pb-3 border-b shrink-0">
               <div className="flex gap-2 items-center">
                 <CopyCheck size={18} className="text-primary" />
                 <h2 className="text-lg font-bold text-primary">查重结果</h2>
@@ -475,7 +477,7 @@ export const Collection: React.FC = () => {
             </div>
 
             {/* 重复列表 */}
-            <div className="flex-1 overflow-y-auto px-6 py-3 space-y-3 min-h-0">
+            <div className="overflow-y-auto flex-1 px-6 py-3 space-y-3 min-h-0">
               {dedupGroups.map((group, idx) => (
                 <div key={idx} className="p-3 rounded-lg border bg-secondary/30">
                   <div className="flex justify-between items-center mb-2">
@@ -494,7 +496,7 @@ export const Collection: React.FC = () => {
                       {group.checked ? '去重' : '保留全部'}
                     </button>
                   </div>
-                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap line-clamp-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground line-clamp-3">
                     {group.content}
                   </p>
                   {group.checked && (
@@ -507,7 +509,7 @@ export const Collection: React.FC = () => {
             </div>
 
             {/* 底部按钮 */}
-            <div className="shrink-0 flex gap-3 px-6 py-4 border-t">
+            <div className="flex gap-3 px-6 py-4 border-t shrink-0">
               <button
                 onClick={cancelDedup}
                 className="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
