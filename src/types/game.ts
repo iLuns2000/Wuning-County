@@ -181,6 +181,8 @@ export interface Scroll {
   obtainedAt: number; // Day obtained
   opened?: boolean;
   openedContent?: string; // Content revealed when opened
+  phoneModel?: string; // 发布设备
+  publishDate?: string; // 发布日期
 }
 
 export interface Policy {

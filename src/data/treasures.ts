@@ -12,6 +12,10 @@ import { Item } from '@/types/game';
 
 /** 珍宝阁「降税令」id，与 gameStore 购买/税收逻辑共用 */
 export const TAX_RELIEF_EDICT_ID = 'tax_relief_edict';
+/** 珍宝阁「岁月书」id，拥有后可在藏珍匣购买卷轴 */
+export const CHRONICLE_BOOK_ID = 'chronicle_book';
+/** 卷轴单价 */
+export const SCROLL_PRICE = 5000;
 /** 购买后生效的游戏日数 */
 export const PROPERTY_TAX_HALVING_GAME_DAYS = 15;
 
@@ -78,6 +82,14 @@ export const treasures: Item[] = [
     type: 'treasure',
     rarity: 'epic',
   },
+  {
+    id: CHRONICLE_BOOK_ID,
+    name: '岁月书',
+    description:
+      '一册记载着流年碎影的古卷，翻开便能窥见往昔风云。持有此书者，可在藏珍匣中购得神秘卷轴。',
+    type: 'treasure',
+    rarity: 'rare',
+  },
 ];
 
 export const treasurePrices: Record<string, number> = {
@@ -91,4 +103,5 @@ export const treasurePrices: Record<string, number> = {
   'rare_stone': 1800000,
   'xiao_he_tie': 520,
   [TAX_RELIEF_EDICT_ID]: 999900,
+  [CHRONICLE_BOOK_ID]: 100000,
 };

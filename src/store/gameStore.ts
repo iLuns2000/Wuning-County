@@ -23,7 +23,7 @@ import {
 } from '@/data/leekGardenConstants';
 import { items, hairstyleItemIds, barberExclusiveHairItemIds } from '@/data/items';
 import { snacks } from '@/data/snacks';
-import { treasurePrices, TAX_RELIEF_EDICT_ID, PROPERTY_TAX_HALVING_GAME_DAYS } from '@/data/treasures';
+import { treasurePrices, TAX_RELIEF_EDICT_ID, PROPERTY_TAX_HALVING_GAME_DAYS, CHRONICLE_BOOK_ID, SCROLL_PRICE } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
@@ -463,6 +463,7 @@ interface GameStore extends GameState {
   dismissEvent: () => void;
   resetGame: () => void;
   openScroll: (scrollId: string) => void;
+  buyScroll: () => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
   incrementGiftFailure: (npcId: string) => void;
@@ -3850,13 +3851,36 @@ export const useGameStore = create<GameStore>()(
         set(prev => {
           const scroll = prev.collectedScrolls.find(s => s.id === scrollId);
           if (!scroll || scroll.opened) return prev;
-          const randomContent = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+          const randomItem = scrollContents[Math.floor(Math.random() * scrollContents.length)];
           return {
             collectedScrolls: prev.collectedScrolls.map(s =>
-              s.id === scrollId ? { ...s, opened: true, openedContent: randomContent } : s
+              s.id === scrollId ? { ...s, opened: true, openedContent: randomItem.text, phoneModel: randomItem.phoneModel, publishDate: randomItem.publishDate } : s
             )
           };
         });
+      },
+
+      buyScroll: () => {
+        const state = get();
+        if (!invHas(state.inventory, CHRONICLE_BOOK_ID)) {
+          get().addLog('你需要先拥有「岁月书」才能购买卷轴。');
+          return;
+        }
+        if (state.playerStats.money < SCROLL_PRICE) {
+          get().addLog('资金不足，无法购买卷轴。');
+          return;
+        }
+        const newScroll: import('@/types/game').Scroll = {
+          id: `scroll_${Date.now()}`,
+          name: '神秘卷轴',
+          description: '记载着一些不为人知的秘密。',
+          obtainedAt: state.day,
+        };
+        set(prev => ({
+          playerStats: { ...prev.playerStats, money: prev.playerStats.money - SCROLL_PRICE },
+          collectedScrolls: [...prev.collectedScrolls, newScroll],
+        }));
+        get().addLog(`【藏珍匣】花费 ${SCROLL_PRICE} 文购得一卷「神秘卷轴」。`);
       },
 
       triggerEvent: () => {
