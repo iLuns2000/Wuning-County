@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2 } from 'lucide-react';
 import { Swiper, SwiperSlide, SwiperClass } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -21,7 +21,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export const Collection: React.FC = () => {
   const navigate = useNavigate();
-  const { collectedScrolls, openScroll, inventory, playerStats, buyScroll, grantFreeScrollsIfNeeded } = useGameStore();
+  const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, inventory, playerStats, buyScroll, grantFreeScrollsIfNeeded } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
   const [showContent, setShowContent] = useState(false);
@@ -37,7 +37,66 @@ export const Collection: React.FC = () => {
   const [reviewIndex, setReviewIndex] = useState(0);
   const swiperRef = useRef<SwiperClass | null>(null);
 
+  // --- 查重状态 ---
+  interface DedupGroup {
+    content: string;
+    keep: ScrollType; // 保留的那条
+    toRemove: ScrollType[]; // 待去重的
+    checked: boolean; // true = 确认销毁
+  }
+  const [dedupGroups, setDedupGroups] = useState<DedupGroup[]>([]);
+  const [showDedupModal, setShowDedupModal] = useState(false);
+
+  const analyzeDuplicates = () => {
+    const contentMap = new Map<string, ScrollType[]>();
+    for (const scroll of openedScrolls) {
+      const key = scroll.openedContent || '';
+      if (!key) continue;
+      const arr = contentMap.get(key) || [];
+      arr.push(scroll);
+      contentMap.set(key, arr);
+    }
+    const groups: DedupGroup[] = [];
+    contentMap.forEach(scrolls => {
+      if (scrolls.length > 1) {
+        groups.push({
+          content: scrolls[0].openedContent || '',
+          keep: scrolls[0],
+          toRemove: scrolls.slice(1),
+          checked: true,
+        });
+      }
+    });
+    if (groups.length === 0) {
+      alert('没有发现重复的卷轴内容');
+      return;
+    }
+    setDedupGroups(groups);
+    setShowDedupModal(true);
+  };
+
+  const toggleDedupGroup = (index: number) => {
+    setDedupGroups(prev => prev.map((g, i) => i === index ? { ...g, checked: !g.checked } : g));
+  };
+
+  const confirmDedup = () => {
+    const idsToRemove = dedupGroups
+      .filter(g => g.checked)
+      .flatMap(g => g.toRemove.map(s => s.id));
+    if (idsToRemove.length > 0) {
+      removeScrollsByIds(idsToRemove);
+    }
+    setShowDedupModal(false);
+    setDedupGroups([]);
+  };
+
+  const cancelDedup = () => {
+    setShowDedupModal(false);
+    setDedupGroups([]);
+  };
+
   const openedScrolls = collectedScrolls.filter(s => s.opened);
+  const unopenedScrolls = collectedScrolls.filter(s => !s.opened);
 
   const startReview = () => {
     if (openedScrolls.length === 0) return;
@@ -52,13 +111,16 @@ export const Collection: React.FC = () => {
 
   // 键盘 Esc 退出
   useEffect(() => {
-    if (!reviewMode) return;
+    if (!reviewMode && !showDedupModal) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') exitReview();
+      if (e.key === 'Escape') {
+        if (reviewMode) exitReview();
+        if (showDedupModal) cancelDedup();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [reviewMode]);
+  }, [reviewMode, showDedupModal]);
 
   const handleOpen = (scroll: ScrollType) => {
     if (scroll.opened) {
@@ -97,41 +159,88 @@ export const Collection: React.FC = () => {
             <Scroll className="text-primary" />
             藏珍匣
           </h1>
-          {openedScrolls.length > 0 && (
-            <button
-              onClick={startReview}
-              className="flex gap-1.5 items-center ml-auto px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            >
-              <Shuffle size={14} />
-              随机回顾
-            </button>
-          )}
+          <div className="flex gap-2 ml-auto">
+            {unopenedScrolls.length >= 10 && (
+              <button
+                onClick={() => openScrollsBatch(10)}
+                className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Sparkles size={14} />
+                十连展
+              </button>
+            )}
+            {unopenedScrolls.length > 1 && unopenedScrolls.length < 10 && (
+              <button
+                onClick={openAllScrolls}
+                className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Sparkles size={14} />
+                全部展开
+              </button>
+            )}
+            {unopenedScrolls.length >= 10 && (
+              <button
+                onClick={openAllScrolls}
+                className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                <Sparkles size={14} />
+                全部
+              </button>
+            )}
+            {openedScrolls.length > 1 && (
+              <button
+                onClick={analyzeDuplicates}
+                className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                <CopyCheck size={14} />
+                查重
+              </button>
+            )}
+            {openedScrolls.length > 0 && (
+              <button
+                onClick={startReview}
+                className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                <Shuffle size={14} />
+                随机回顾
+              </button>
+            )}
+          </div>
         </header>
 
         {hasChronicleBook && (
           <div className="p-4 rounded-lg border bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-3 items-center">
                 <div className="p-2 rounded-lg bg-amber-500/20">
                   <BookOpen size={20} className="text-amber-500" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">岁月书已就绪</p>
-                  <p className="text-xs text-muted-foreground">可花费 {SCROLL_PRICE.toLocaleString()} 文购得一卷神秘卷轴</p>
+                  <p className="text-xs text-muted-foreground">卷轴单价 {SCROLL_PRICE.toLocaleString()} 文</p>
                 </div>
               </div>
-              <button
-                onClick={buyScroll}
-                disabled={playerStats.money < SCROLL_PRICE}
-                className={`flex gap-1.5 items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  playerStats.money >= SCROLL_PRICE
-                    ? 'bg-amber-600 text-white hover:bg-amber-700'
-                    : 'bg-muted text-muted-foreground cursor-not-allowed'
-                }`}
-              >
-                <ShoppingCart size={14} />
-                购买卷轴
-              </button>
+              <div className="flex gap-2">
+                {[1, 10, 50].map(n => {
+                  const total = SCROLL_PRICE * n;
+                  const canAfford = playerStats.money >= total;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => buyScroll(n)}
+                      disabled={!canAfford}
+                      className={`flex gap-1 items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                        canAfford
+                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed'
+                      }`}
+                    >
+                      <ShoppingCart size={12} />
+                      ×{n}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -280,42 +389,49 @@ export const Collection: React.FC = () => {
                 const npcName = scroll.npcId ? npcs.find(n => n.id === scroll.npcId)?.name : '未知';
                 return (
                   <SwiperSlide key={scroll.id + '-' + idx}>
-                    <div className="flex items-center justify-center w-full h-full px-4 py-16">
-                      <div className="w-full max-w-md p-6 rounded-xl border-2 shadow-2xl bg-card border-primary/30">
-                        {/* 计数器 */}
-                        <div className="flex justify-center mb-3">
-                          <span className="px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-mono">
-                            {idx + 1} / {reviewList.length}
-                          </span>
-                        </div>
-
-                        {/* 标题 */}
-                        <div className="flex gap-2 items-center mb-4">
-                          <Shuffle size={18} className="text-primary" />
-                          <h2 className="text-lg font-bold text-primary">随机回顾</h2>
-                          <span className="ml-auto px-2 py-0.5 text-xs rounded bg-secondary text-muted-foreground">
-                            第 {scroll.obtainedAt} 天获得
-                          </span>
-                        </div>
-
-                        {/* 内容 */}
-                        <div className="p-4 mb-4 rounded-lg border-2 border-dashed bg-secondary/50 border-primary/30">
-                          <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-                            {scroll.openedContent || '卷轴上的文字模糊不清，无法辨认...'}
-                          </p>
-                        </div>
-
-                        {/* 元信息 */}
-                        <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-muted-foreground">
-                          <div className="flex gap-3">
-                            {scroll.phoneModel && (
-                              <span><span className="opacity-60">设备:</span> {scroll.phoneModel}</span>
-                            )}
-                            {scroll.publishDate && (
-                              <span><span className="opacity-60">发布:</span> {scroll.publishDate}</span>
-                            )}
+                    <div className="flex items-center justify-center w-full h-full px-4 py-14 overflow-hidden">
+                      <div className="w-full max-w-md max-h-[calc(100vh-7rem)] flex flex-col rounded-xl border-2 shadow-2xl bg-card border-primary/30">
+                        {/* 固定头部 */}
+                        <div className="shrink-0 px-6 pt-5 pb-3">
+                          <div className="flex justify-center mb-3">
+                            <span className="px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-mono">
+                              {idx + 1} / {reviewList.length}
+                            </span>
                           </div>
-                          <span>赠予者: {npcName}</span>
+                          <div className="flex gap-2 items-center">
+                            <Shuffle size={18} className="text-primary" />
+                            <h2 className="text-lg font-bold text-primary">随机回顾</h2>
+                            <span className="ml-auto px-2 py-0.5 text-xs rounded bg-secondary text-muted-foreground">
+                              第 {scroll.obtainedAt} 天获得
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 可滚动内容区 */}
+                        <div
+                          className="flex-1 overflow-y-auto px-6 py-2 min-h-0"
+                          style={{ touchAction: 'pan-y' }}
+                        >
+                          <div className="p-4 rounded-lg border-2 border-dashed bg-secondary/50 border-primary/30">
+                            <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                              {scroll.openedContent || '卷轴上的文字模糊不清，无法辨认...'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 固定底部 */}
+                        <div className="shrink-0 px-6 pb-5 pt-3">
+                          <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex gap-3">
+                              {scroll.phoneModel && (
+                                <span><span className="opacity-60">设备:</span> {scroll.phoneModel}</span>
+                              )}
+                              {scroll.publishDate && (
+                                <span><span className="opacity-60">发布:</span> {scroll.publishDate}</span>
+                              )}
+                            </div>
+                            <span>赠予者: {npcName}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -334,6 +450,84 @@ export const Collection: React.FC = () => {
           <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-white/30 z-30">
             滑动 / 滚轮 / 方向键切换 · Esc 退出
           </p>
+        </div>
+      )}
+
+      {/* 查重结果弹窗 */}
+      {showDedupModal && dedupGroups.length > 0 && (
+        <div
+          className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/60"
+          onClick={cancelDedup}
+        >
+          <div
+            className="relative w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border-2 shadow-2xl bg-card"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 头部 */}
+            <div className="shrink-0 px-6 pt-5 pb-3 border-b">
+              <div className="flex gap-2 items-center">
+                <CopyCheck size={18} className="text-primary" />
+                <h2 className="text-lg font-bold text-primary">查重结果</h2>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                发现 {dedupGroups.length} 组重复内容，共 {dedupGroups.reduce((s, g) => s + g.toRemove.length, 0)} 条待去重
+              </p>
+            </div>
+
+            {/* 重复列表 */}
+            <div className="flex-1 overflow-y-auto px-6 py-3 space-y-3 min-h-0">
+              {dedupGroups.map((group, idx) => (
+                <div key={idx} className="p-3 rounded-lg border bg-secondary/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      第 {group.keep.obtainedAt} 天 ×{group.toRemove.length + 1}
+                    </span>
+                    <button
+                      onClick={() => toggleDedupGroup(idx)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                        group.checked
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                          : 'bg-secondary text-muted-foreground border border-transparent'
+                      }`}
+                    >
+                      {group.checked ? <Check size={12} /> : <Trash2 size={12} />}
+                      {group.checked ? '去重' : '保留全部'}
+                    </button>
+                  </div>
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap line-clamp-3">
+                    {group.content}
+                  </p>
+                  {group.checked && (
+                    <p className="mt-1.5 text-xs text-red-400/80">
+                      将销毁 {group.toRemove.length} 条重复卷轴，保留 1 条
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 底部按钮 */}
+            <div className="shrink-0 flex gap-3 px-6 py-4 border-t">
+              <button
+                onClick={cancelDedup}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDedup}
+                disabled={!dedupGroups.some(g => g.checked)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  dedupGroups.some(g => g.checked)
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
+              >
+                <Trash2 size={14} />
+                确认去重 ({dedupGroups.filter(g => g.checked).reduce((s, g) => s + g.toRemove.length, 0)})
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

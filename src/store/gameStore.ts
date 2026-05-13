@@ -463,7 +463,10 @@ interface GameStore extends GameState {
   dismissEvent: () => void;
   resetGame: () => void;
   openScroll: (scrollId: string) => void;
-  buyScroll: () => void;
+  openAllScrolls: () => void;
+  openScrollsBatch: (count: number) => void;
+  removeScrollsByIds: (ids: string[]) => void;
+  buyScroll: (count?: number) => void;
   grantFreeScrollsIfNeeded: () => void;
   checkTaskCompletion: () => void;
   handleTaskAction: () => void;
@@ -3863,27 +3866,65 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      buyScroll: () => {
+      openAllScrolls: () => {
+        set(prev => {
+          const hasUnopened = prev.collectedScrolls.some(s => !s.opened);
+          if (!hasUnopened) return prev;
+          return {
+            collectedScrolls: prev.collectedScrolls.map(s => {
+              if (s.opened) return s;
+              const item = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+              return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
+            })
+          };
+        });
+        get().addLog('【藏珍匣】所有卷轴已展开。');
+      },
+
+      openScrollsBatch: (count) => {
+        let opened = 0;
+        set(prev => {
+          const result = prev.collectedScrolls.map(s => {
+            if (s.opened || opened >= count) return s;
+            opened++;
+            const item = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+            return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
+          });
+          return { collectedScrolls: result };
+        });
+        if (opened > 0) get().addLog(`【藏珍匣】展开 ${opened} 份卷轴。`);
+      },
+
+      removeScrollsByIds: (ids) => {
+        if (ids.length === 0) return;
+        set(prev => ({
+          collectedScrolls: prev.collectedScrolls.filter(s => !ids.includes(s.id)),
+        }));
+        get().addLog(`【藏珍匣】已销毁 ${ids.length} 卷卷轴。`);
+      },
+
+      buyScroll: (count = 1) => {
         const state = get();
         if (!invHas(state.inventory, CHRONICLE_BOOK_ID)) {
           get().addLog('你需要先拥有「岁月书」才能购买卷轴。');
           return;
         }
-        if (state.playerStats.money < SCROLL_PRICE) {
-          get().addLog('资金不足，无法购买卷轴。');
+        const total = SCROLL_PRICE * count;
+        if (state.playerStats.money < total) {
+          get().addLog(`资金不足，购买 ${count} 卷需要 ${total.toLocaleString()} 文。`);
           return;
         }
-        const newScroll: import('@/types/game').Scroll = {
-          id: `scroll_${Date.now()}`,
+        const newScrolls: import('@/types/game').Scroll[] = Array.from({ length: count }, (_, i) => ({
+          id: `scroll_${Date.now()}_${i}`,
           name: '神秘卷轴',
           description: '记载着一些不为人知的秘密。',
           obtainedAt: state.day,
-        };
-        set(prev => ({
-          playerStats: { ...prev.playerStats, money: prev.playerStats.money - SCROLL_PRICE },
-          collectedScrolls: [...prev.collectedScrolls, newScroll],
         }));
-        get().addLog(`【藏珍匣】花费 ${SCROLL_PRICE} 文购得一卷「神秘卷轴」。`);
+        set(prev => ({
+          playerStats: { ...prev.playerStats, money: prev.playerStats.money - total },
+          collectedScrolls: [...prev.collectedScrolls, ...newScrolls],
+        }));
+        get().addLog(`【藏珍匣】花费 ${total.toLocaleString()} 文购得 ${count} 卷「神秘卷轴」。`);
       },
 
       grantFreeScrollsIfNeeded: () => {
