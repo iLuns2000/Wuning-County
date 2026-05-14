@@ -511,6 +511,7 @@ interface GameStore extends GameState {
   openAllScrolls: () => void;
   openScrollsBatch: (count: number) => void;
   removeScrollsByIds: (ids: string[]) => void;
+  combineScrollFragments: () => void;
   buyScroll: (count?: number) => void;
   grantFreeScrollsIfNeeded: () => void;
   checkTaskCompletion: () => void;
@@ -4002,8 +4003,32 @@ export const useGameStore = create<GameStore>()(
         if (ids.length === 0) return;
         set(prev => ({
           collectedScrolls: prev.collectedScrolls.filter(s => !ids.includes(s.id)),
+          flags: { ...prev.flags, scroll_fragments: (prev.flags['scroll_fragments'] || 0) + ids.length },
         }));
-        get().addLog(`【藏珍匣】已销毁 ${ids.length} 卷卷轴。`);
+        get().addLog(`【藏珍匣】已销毁 ${ids.length} 卷卷轴，获得 ${ids.length} 个卷轴碎片。`);
+      },
+
+      combineScrollFragments: () => {
+        const state = get();
+        const fragments = state.flags['scroll_fragments'] || 0;
+        const COMBINE_COST = 5;
+        if (fragments < COMBINE_COST) {
+          get().addLog(`卷轴碎片不足，合成需要 ${COMBINE_COST} 个碎片，当前仅有 ${fragments} 个。`);
+          return;
+        }
+        const scrollsToCreate = Math.floor(fragments / COMBINE_COST);
+        const remaining = fragments % COMBINE_COST;
+        const newScrolls: import('@/types/game').Scroll[] = Array.from({ length: scrollsToCreate }, (_, i) => ({
+          id: `scroll_fragment_${Date.now()}_${i}`,
+          name: '碎片卷轴',
+          description: '由卷轴碎片拼合而成，记载着一些不为人知的秘密。',
+          obtainedAt: state.day,
+        }));
+        set(prev => ({
+          collectedScrolls: [...prev.collectedScrolls, ...newScrolls],
+          flags: { ...prev.flags, scroll_fragments: remaining },
+        }));
+        get().addLog(`【藏珍匣】消耗 ${scrollsToCreate * COMBINE_COST} 个卷轴碎片，合成了 ${scrollsToCreate} 卷卷轴。`);
       },
 
       buyScroll: (count = 1) => {
@@ -4158,6 +4183,7 @@ export const useGameStore = create<GameStore>()(
           isVoiceLost: false,
           isMoGuRenaming: false,
           collectedScrolls: [],
+          hasReceivedFreeScrolls: false,
           inventory: {},
           equippedApparel: {},
           equippedAccessories: [],

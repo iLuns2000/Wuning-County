@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck, ArrowUpDown, Puzzle } from 'lucide-react';
 import { Swiper, SwiperSlide, SwiperClass } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -38,7 +38,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export const Collection: React.FC = () => {
   const navigate = useNavigate();
-  const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, inventory, playerStats, buyScroll, buyTreasure, grantFreeScrollsIfNeeded, flags, updateStats, checkAchievements } = useGameStore();
+  const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, combineScrollFragments, inventory, playerStats, buyScroll, buyTreasure, grantFreeScrollsIfNeeded, flags, updateStats, checkAchievements } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
   const [showContent, setShowContent] = useState(false);
@@ -128,7 +128,7 @@ export const Collection: React.FC = () => {
       .filter(g => g.checked)
       .flatMap(g => g.toRemove.map(s => s.id));
     if (idsToRemove.length > 0) {
-      if (window.confirm(`确定要删除 ${idsToRemove.length} 个重复卷轴吗？此操作不可撤销。`)) {
+      if (window.confirm(`确定销毁 ${idsToRemove.length} 个重复卷轴吗？销毁后将获得 ${idsToRemove.length} 个卷轴碎片。`)) {
         removeScrollsByIds(idsToRemove);
         const prev = flags['scroll_dedup_count'] || 0;
         updateStats({ flags: { ...flags, scroll_dedup_count: prev + idsToRemove.length } });
@@ -415,6 +415,37 @@ export const Collection: React.FC = () => {
               >
                 <ShoppingCart size={12} />
                 购买
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 卷轴碎片 */}
+        {(flags['scroll_fragments'] || 0) > 0 && (
+          <div className="p-4 bg-gradient-to-r rounded-lg border from-violet-500/10 to-fuchsia-500/10 border-violet-500/30">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3 items-center">
+                <div className="p-2 rounded-lg bg-violet-500/20">
+                  <Puzzle size={20} className="text-violet-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">
+                    卷轴碎片 × {flags['scroll_fragments'] || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">每 5 个碎片可合成 1 卷卷轴</p>
+                </div>
+              </div>
+              <button
+                onClick={combineScrollFragments}
+                disabled={(flags['scroll_fragments'] || 0) < 5}
+                className={`flex gap-1 items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  (flags['scroll_fragments'] || 0) >= 5
+                    ? 'bg-violet-600 text-white hover:bg-violet-700'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
+              >
+                <Puzzle size={12} />
+                合成卷轴
               </button>
             </div>
           </div>
