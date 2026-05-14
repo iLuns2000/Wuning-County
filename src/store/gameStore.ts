@@ -110,6 +110,24 @@ function pickDedupContentIndex(): number | null {
   if (available.length === 0) return null; // 所有内容都已出现过
   return available[Math.floor(Math.random() * available.length)];
 }
+/** 将已开卷轴的内容反向匹配到 scrollContents 索引，注册到已用集合中 */
+function syncOpenedScrollIndices(collectedScrolls: import('@/types/game').Scroll[]) {
+  const indices = loadOpenedContentIndices();
+  // 建立 text -> index 的映射
+  const textToIndex = new Map<string, number>();
+  scrollContents.forEach((item, i) => { textToIndex.set(item.text, i); });
+  let added = 0;
+  for (const scroll of collectedScrolls) {
+    if (!scroll.opened || !scroll.openedContent) continue;
+    const idx = textToIndex.get(scroll.openedContent);
+    if (idx !== undefined && !indices.has(idx)) {
+      indices.add(idx);
+      added++;
+    }
+  }
+  if (added > 0) saveOpenedContentIndices(indices);
+  return added;
+}
 
 const defaultLeekGardenStats = (): LeekGardenStats => ({
   totalHarvestedLeek: 0,
@@ -1379,6 +1397,13 @@ export const useGameStore = create<GameStore>()(
         if (treasureId === DEDUP_TALISMAN_ID) {
           const treasure = items.find(i => i.id === treasureId);
           if (!treasure) return;
+          // 首次购买时把已有卷轴的内容索引同步到已用集合
+          const DEDUP_SYNC_KEY = 'wuning_dedup_synced';
+          if (!localStorage.getItem(DEDUP_SYNC_KEY)) {
+            const synced = syncOpenedScrollIndices(state.collectedScrolls);
+            localStorage.setItem(DEDUP_SYNC_KEY, '1');
+            if (synced > 0) get().addLog(`【避重符】已同步 ${synced} 条历史卷轴内容。`);
+          }
           const current = state.flags['scroll_no_duplicate_count'] || 0;
           set(s => ({
             playerStats: { ...s.playerStats, money: s.playerStats.money - cost },
