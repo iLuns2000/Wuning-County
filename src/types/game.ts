@@ -180,6 +180,7 @@ export interface Scroll {
   npcId?: string; // If specific to an NPC
   obtainedAt: number; // Day obtained
   opened?: boolean;
+  openedAt?: number; // Day when opened
   openedContent?: string; // Content revealed when opened
   phoneModel?: string; // 发布设备
   publishDate?: string; // 发布日期

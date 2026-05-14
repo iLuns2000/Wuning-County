@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck, ArrowUpDown } from 'lucide-react';
 import { Swiper, SwiperSlide, SwiperClass } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -55,8 +55,20 @@ export const Collection: React.FC = () => {
   };
 
   // --- 筛选状态 ---
-  type FilterType = 'all' | 'unread' | 'read' | 'favorite';
+  type FilterType = 'all' | 'unopened' | 'read' | 'favorite';
   const [filter, setFilter] = useState<FilterType>('all');
+
+  // --- 排序状态 ---
+  type SortKey = 'obtainedAt' | 'viewCount' | 'openTimeDesc' | 'openTimeAsc';
+  const [sortKey, setSortKey] = useState<SortKey>('obtainedAt');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  // --- 分页状态 ---
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  // 切换筛选/排序时重置到第一页
+  const setFilterAndReset = (f: FilterType) => { setFilter(f); setPage(1); };
+  const setSortAndReset = (k: SortKey) => { setSortKey(k); setPage(1); };
 
   // 进入藏珍匣时检查并赠送初始卷轴
   useEffect(() => {
@@ -137,16 +149,38 @@ export const Collection: React.FC = () => {
 
   // 筛选后的列表
   const filteredScrolls = collectedScrolls.filter(s => {
-    if (filter === 'unread') return !s.opened;
+    if (filter === 'unopened') return !s.opened;
     if (filter === 'read') return s.opened;
     if (filter === 'favorite') return getMeta(scrollMeta, s.id).favorite;
     return true;
+  }).sort((a, b) => {
+    switch (sortKey) {
+      case 'obtainedAt':
+        return b.obtainedAt - a.obtainedAt; // 最新获得的排前面
+      case 'viewCount':
+        return getMeta(scrollMeta, b.id).viewCount - getMeta(scrollMeta, a.id).viewCount;
+      case 'openTimeDesc':
+        return (b.openedAt || b.obtainedAt) - (a.openedAt || a.obtainedAt);
+      case 'openTimeAsc':
+        return (a.openedAt || a.obtainedAt) - (b.openedAt || b.obtainedAt);
+      default:
+        return 0;
+    }
   });
 
-  const reviewSource = filteredScrolls.filter(s => s.opened);
+  // 分页后的列表
+  const totalPages = Math.max(1, Math.ceil(filteredScrolls.length / PAGE_SIZE));
+  const paginatedScrolls = filteredScrolls.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // 随机回顾来源：不受分页影响，仅限已读，最多50条；未打开筛选时不可回顾
+  const reviewSource = filter === 'unopened' ? [] : filteredScrolls.filter(s => s.opened);
+  const REVIEW_MAX = 50;
   const startReview = () => {
     if (reviewSource.length === 0) return;
-    setReviewList(shuffleArray(reviewSource));
+    const source = reviewSource.length > REVIEW_MAX
+      ? shuffleArray(reviewSource).slice(0, REVIEW_MAX)
+      : reviewSource;
+    setReviewList(shuffleArray(source));
     setReviewIndex(0);
     setReviewMode(true);
   };
@@ -167,6 +201,14 @@ export const Collection: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [reviewMode, showDedupModal]);
+
+  // 点击外部关闭排序菜单
+  useEffect(() => {
+    if (!showSortMenu) return;
+    const handler = () => setShowSortMenu(false);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, [showSortMenu]);
 
   const handleOpen = (scroll: ScrollType) => {
     if (scroll.opened) {
@@ -241,7 +283,7 @@ export const Collection: React.FC = () => {
                 查重
               </button>
             )}
-            {reviewSource.length > 0 && (
+            {filter !== 'unopened' && reviewSource.length > 0 && (
               <button
                 onClick={startReview}
                 className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -253,13 +295,13 @@ export const Collection: React.FC = () => {
           </div>
         </header>
 
-        {/* 筛选栏 */}
-        <div className="flex gap-1 items-center">
+        {/* 筛选栏 + 排序 */}
+        <div className="flex flex-wrap gap-1 items-center">
           <Filter size={14} className="mr-1 text-muted-foreground" />
-          {([['all', '全部'], ['unread', '未读'], ['read', '已读'], ['favorite', '收藏']] as [FilterType, string][]).map(([key, label]) => (
+          {([['all', '全部'], ['unopened', '未打开'], ['read', '已读'], ['favorite', '收藏']] as [FilterType, string][]).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setFilter(key)}
+              onClick={() => setFilterAndReset(key)}
               className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
                 filter === key
                   ? 'bg-primary text-primary-foreground'
@@ -269,7 +311,41 @@ export const Collection: React.FC = () => {
               {label}
             </button>
           ))}
-          <span className="ml-auto text-xs text-muted-foreground">
+          {unopenedScrolls.length > 0 && (
+            <span className="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              {unopenedScrolls.length} 未打开
+            </span>
+          )}
+          <div className="relative ml-auto">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu); }}
+              className="flex gap-1 items-center px-2 py-1 text-xs rounded-full transition-colors bg-secondary text-muted-foreground hover:bg-secondary/80"
+            >
+              <ArrowUpDown size={12} />
+              {sortKey === 'obtainedAt' ? '获得时间' : sortKey === 'viewCount' ? '查看次数' : sortKey === 'openTimeDesc' ? '打开时间↓' : '打开时间↑'}
+            </button>
+            {showSortMenu && (
+              <div onClick={e => e.stopPropagation()} className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border shadow-lg bg-card">
+                {([
+                  ['obtainedAt', '获得时间'],
+                  ['viewCount', '查看次数'],
+                  ['openTimeDesc', '打开时间 ↓'],
+                  ['openTimeAsc', '打开时间 ↑'],
+                ] as [SortKey, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => { setSortAndReset(key); setShowSortMenu(false); }}
+                    className={`w-full px-3 py-1.5 text-xs text-left transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                      sortKey === key ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary text-foreground'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground">
             {filteredScrolls.length} / {collectedScrolls.length}
           </span>
         </div>
@@ -359,7 +435,7 @@ export const Collection: React.FC = () => {
               <p>当前筛选无结果</p>
             </div>
           ) : (
-            filteredScrolls.map((scroll) => {
+            paginatedScrolls.map((scroll) => {
               const npcName = scroll.npcId ? npcs.find(n => n.id === scroll.npcId)?.name : '未知';
               const meta = getMeta(scrollMeta, scroll.id);
 
@@ -408,6 +484,59 @@ export const Collection: React.FC = () => {
             })
           )}
         </div>
+
+        {/* 分页控件 */}
+        {totalPages > 1 && (() => {
+          // 生成页码列表：始终显示首尾页，当前页附近±2，其余用省略号
+          const pages: (number | '...')[] = [];
+          const range = 2;
+          for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= page - range && i <= page + range)) {
+              pages.push(i);
+            } else if (pages[pages.length - 1] !== '...') {
+              pages.push('...');
+            }
+          }
+          return (
+            <div className="flex flex-wrap justify-center items-center gap-1 py-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  page === 1 ? 'text-muted-foreground/40 cursor-not-allowed' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                ‹
+              </button>
+              {pages.map((p, i) =>
+                p === '...' ? (
+                  <span key={`e${i}`} className="px-1 text-xs text-muted-foreground/40">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`min-w-[28px] px-1.5 py-1 text-xs rounded transition-colors ${
+                      page === p
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  page === totalPages ? 'text-muted-foreground/40 cursor-not-allowed' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                ›
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Scroll Content Modal */}

@@ -3939,7 +3939,7 @@ export const useGameStore = create<GameStore>()(
           const item = scrollContents[chosenIdx];
           return {
             collectedScrolls: prev.collectedScrolls.map(s =>
-              s.id === scrollId ? { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate } : s
+              s.id === scrollId ? { ...s, opened: true, openedAt: prev.day, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate } : s
             ),
             flags: newFlags,
           };
@@ -3965,7 +3965,7 @@ export const useGameStore = create<GameStore>()(
             }
             addOpenedContentIndex(chosenIdx);
             const item = scrollContents[chosenIdx];
-            return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
+            return { ...s, opened: true, openedAt: prev.day, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
           });
           return { collectedScrolls: newScrolls, flags: newFlags };
         });
@@ -3991,7 +3991,7 @@ export const useGameStore = create<GameStore>()(
             }
             addOpenedContentIndex(chosenIdx);
             const item = scrollContents[chosenIdx];
-            return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
+            return { ...s, opened: true, openedAt: prev.day, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
           });
           return { collectedScrolls: result, flags: newFlags };
         });
