@@ -783,4 +783,12 @@ export const achievements: (Achievement & { condition: (state: GameState) => boo
       state.countyStats.culture >= 80 &&
       state.countyStats.livelihood >= 80,
   },
+  {
+    id: 'scroll_dedup_20',
+    name: '卷轴非酋',
+    description: '通过查重销毁的卷轴累计超过 20 个',
+    rewardExp: 80,
+    rarity: 'rare',
+    condition: (state) => (state.flags['scroll_dedup_count'] || 0) >= 20,
+  },
 ];

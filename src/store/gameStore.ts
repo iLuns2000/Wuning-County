@@ -23,7 +23,7 @@ import {
 } from '@/data/leekGardenConstants';
 import { items, hairstyleItemIds, barberExclusiveHairItemIds } from '@/data/items';
 import { snacks } from '@/data/snacks';
-import { treasurePrices, TAX_RELIEF_EDICT_ID, PROPERTY_TAX_HALVING_GAME_DAYS, CHRONICLE_BOOK_ID, SCROLL_PRICE } from '@/data/treasures';
+import { treasurePrices, TAX_RELIEF_EDICT_ID, PROPERTY_TAX_HALVING_GAME_DAYS, CHRONICLE_BOOK_ID, SCROLL_PRICE, DEDUP_TALISMAN_ID, DEDUP_TALISMAN_USES } from '@/data/treasures';
 import { charities } from '@/data/charities';
 import { officeUpgrades } from '@/data/officeUpgrades';
 import { countyDevelopmentPaths, getCountyDevelopmentPath } from '@/data/countyDevelopmentPaths';
@@ -83,6 +83,33 @@ const invRemoveN = (inv: Record<string, number>, itemId: string, count: number):
 
 // 辅助函数：检查 inventory 中是否有某物品
 const invHas = (inv: Record<string, number>, itemId: string): boolean => (inv[itemId] || 0) > 0;
+
+// --- 避重符：已开卷轴内容索引存储 ---
+const OPENED_CONTENT_INDICES_KEY = 'wuning_opened_content_indices';
+function loadOpenedContentIndices(): Set<number> {
+  try {
+    const arr = JSON.parse(localStorage.getItem(OPENED_CONTENT_INDICES_KEY) || '[]');
+    return new Set(arr);
+  } catch { return new Set(); }
+}
+function saveOpenedContentIndices(indices: Set<number>) {
+  localStorage.setItem(OPENED_CONTENT_INDICES_KEY, JSON.stringify([...indices]));
+}
+function addOpenedContentIndex(index: number) {
+  const indices = loadOpenedContentIndices();
+  indices.add(index);
+  saveOpenedContentIndices(indices);
+}
+/** 当避重符生效时，从尚未使用过的内容索引中随机选取一个 */
+function pickDedupContentIndex(): number | null {
+  const opened = loadOpenedContentIndices();
+  const available: number[] = [];
+  for (let i = 0; i < scrollContents.length; i++) {
+    if (!opened.has(i)) available.push(i);
+  }
+  if (available.length === 0) return null; // 所有内容都已出现过
+  return available[Math.floor(Math.random() * available.length)];
+}
 
 const defaultLeekGardenStats = (): LeekGardenStats => ({
   totalHarvestedLeek: 0,
@@ -1345,6 +1372,22 @@ export const useGameStore = create<GameStore>()(
             `【珍宝阁】花费 ${cost} 文购得【${treasure.name}】，文书已呈官府备案，即日起连续 ${PROPERTY_TAX_HALVING_GAME_DAYS} 个游戏日内财产税减半。`
           );
           get().handleEventOption({ reputation: 5, culture: 2 }, '');
+          return;
+        }
+
+        // 避重符：可重复购买，叠加生效次数，不入背包
+        if (treasureId === DEDUP_TALISMAN_ID) {
+          const treasure = items.find(i => i.id === treasureId);
+          if (!treasure) return;
+          const current = state.flags['scroll_no_duplicate_count'] || 0;
+          set(s => ({
+            playerStats: { ...s.playerStats, money: s.playerStats.money - cost },
+            flags: { ...s.flags, scroll_no_duplicate_count: current + DEDUP_TALISMAN_USES },
+          }));
+          get().addLog(
+            `【珍宝阁】花费 ${cost} 文购得【${treasure.name}】，接下来 ${current + DEDUP_TALISMAN_USES} 次开卷将不会出现重复内容。`
+          );
+          get().handleEventOption({ reputation: 2, culture: 1 }, '');
           return;
         }
 
@@ -3857,11 +3900,23 @@ export const useGameStore = create<GameStore>()(
         set(prev => {
           const scroll = prev.collectedScrolls.find(s => s.id === scrollId);
           if (!scroll || scroll.opened) return prev;
-          const randomItem = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+          const buffLeft = prev.flags['scroll_no_duplicate_count'] || 0;
+          let chosenIdx: number;
+          let newFlags = prev.flags;
+          if (buffLeft > 0) {
+            const dedupIdx = pickDedupContentIndex();
+            chosenIdx = dedupIdx !== null ? dedupIdx : Math.floor(Math.random() * scrollContents.length);
+            newFlags = { ...prev.flags, scroll_no_duplicate_count: buffLeft - 1 };
+          } else {
+            chosenIdx = Math.floor(Math.random() * scrollContents.length);
+          }
+          addOpenedContentIndex(chosenIdx);
+          const item = scrollContents[chosenIdx];
           return {
             collectedScrolls: prev.collectedScrolls.map(s =>
-              s.id === scrollId ? { ...s, opened: true, openedContent: randomItem.text, phoneModel: randomItem.phoneModel, publishDate: randomItem.publishDate } : s
-            )
+              s.id === scrollId ? { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate } : s
+            ),
+            flags: newFlags,
           };
         });
       },
@@ -3870,13 +3925,24 @@ export const useGameStore = create<GameStore>()(
         set(prev => {
           const hasUnopened = prev.collectedScrolls.some(s => !s.opened);
           if (!hasUnopened) return prev;
-          return {
-            collectedScrolls: prev.collectedScrolls.map(s => {
-              if (s.opened) return s;
-              const item = scrollContents[Math.floor(Math.random() * scrollContents.length)];
-              return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
-            })
-          };
+          let buffLeft = prev.flags['scroll_no_duplicate_count'] || 0;
+          let newFlags = prev.flags;
+          const newScrolls = prev.collectedScrolls.map(s => {
+            if (s.opened) return s;
+            let chosenIdx: number;
+            if (buffLeft > 0) {
+              const dedupIdx = pickDedupContentIndex();
+              chosenIdx = dedupIdx !== null ? dedupIdx : Math.floor(Math.random() * scrollContents.length);
+              buffLeft--;
+              newFlags = { ...newFlags, scroll_no_duplicate_count: buffLeft };
+            } else {
+              chosenIdx = Math.floor(Math.random() * scrollContents.length);
+            }
+            addOpenedContentIndex(chosenIdx);
+            const item = scrollContents[chosenIdx];
+            return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
+          });
+          return { collectedScrolls: newScrolls, flags: newFlags };
         });
         get().addLog('【藏珍匣】所有卷轴已展开。');
       },
@@ -3884,13 +3950,25 @@ export const useGameStore = create<GameStore>()(
       openScrollsBatch: (count) => {
         let opened = 0;
         set(prev => {
+          let buffLeft = prev.flags['scroll_no_duplicate_count'] || 0;
+          let newFlags = prev.flags;
           const result = prev.collectedScrolls.map(s => {
             if (s.opened || opened >= count) return s;
             opened++;
-            const item = scrollContents[Math.floor(Math.random() * scrollContents.length)];
+            let chosenIdx: number;
+            if (buffLeft > 0) {
+              const dedupIdx = pickDedupContentIndex();
+              chosenIdx = dedupIdx !== null ? dedupIdx : Math.floor(Math.random() * scrollContents.length);
+              buffLeft--;
+              newFlags = { ...newFlags, scroll_no_duplicate_count: buffLeft };
+            } else {
+              chosenIdx = Math.floor(Math.random() * scrollContents.length);
+            }
+            addOpenedContentIndex(chosenIdx);
+            const item = scrollContents[chosenIdx];
             return { ...s, opened: true, openedContent: item.text, phoneModel: item.phoneModel, publishDate: item.publishDate };
           });
-          return { collectedScrolls: result };
+          return { collectedScrolls: result, flags: newFlags };
         });
         if (opened > 0) get().addLog(`【藏珍匣】展开 ${opened} 份卷轴。`);
       },
@@ -4115,6 +4193,8 @@ export const useGameStore = create<GameStore>()(
           onboardingDismissed: false,
           hintState: {},
         });
+        // 清除避重符的已开内容索引
+        localStorage.removeItem(OPENED_CONTENT_INDICES_KEY);
       },
 
       updateStats: (updates) => {

@@ -5,7 +5,7 @@
 import React from 'react';
 import { X, Gem, Coins, Sparkles, Crown } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { treasures, treasurePrices, TAX_RELIEF_EDICT_ID } from '@/data/treasures';
+import { treasures, treasurePrices, TAX_RELIEF_EDICT_ID, DEDUP_TALISMAN_ID, DEDUP_TALISMAN_USES } from '@/data/treasures';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -22,7 +22,7 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
 };
 
 export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
-  const { inventory, playerStats, buyTreasure, propertyTaxHalvingDaysLeft } = useGameStore();
+  const { inventory, playerStats, buyTreasure, propertyTaxHalvingDaysLeft, flags } = useGameStore();
   const vibrate = useGameVibrate();
   const { theme } = useTheme();
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -101,8 +101,10 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
             const price = treasurePrices[treasure.id];
             const owned = getOwnedCount(treasure.id);
             const isTaxEdict = treasure.id === TAX_RELIEF_EDICT_ID;
+            const isDedupTalisman = treasure.id === DEDUP_TALISMAN_ID;
             const taxHalvingLeft = propertyTaxHalvingDaysLeft ?? 0;
             const taxEdictActive = isTaxEdict && taxHalvingLeft > 0;
+            const dedupBuffLeft = isDedupTalisman ? (flags['scroll_no_duplicate_count'] || 0) : 0;
             const canAfford = playerStats.money >= price;
             const canBuy = canAfford && !taxEdictActive;
             const rarity = treasure.rarity || 'common';
@@ -133,17 +135,23 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                   </span>
                 </div>
 
-                {/* 已有数量（降税令不入背包，改显示生效天数） */}
-                {!isTaxEdict && owned > 0 && (
-                  <div className="absolute -top-1 -left-1 w-8 h-8 flex items-center justify-center 
+                {/* 已有数量（降税令、避重符不入背包） */}
+                {!isTaxEdict && !isDedupTalisman && owned > 0 && (
+                  <div className="absolute -top-1 -left-1 w-8 h-8 flex items-center justify-center
                                 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-full shadow-lg">
                     <span className="text-sm font-bold text-white">×{owned}</span>
                   </div>
                 )}
                 {taxEdictActive && (
-                  <div className="absolute -top-1 -left-1 px-2 py-0.5 flex items-center justify-center 
+                  <div className="absolute -top-1 -left-1 px-2 py-0.5 flex items-center justify-center
                                 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg shadow-lg border border-emerald-400/40">
                     <span className="text-[10px] sm:text-xs font-bold text-white whitespace-nowrap">剩余{taxHalvingLeft}天</span>
+                  </div>
+                )}
+                {isDedupTalisman && dedupBuffLeft > 0 && (
+                  <div className="absolute -top-1 -left-1 px-2 py-0.5 flex items-center justify-center
+                                bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg shadow-lg border border-blue-400/40">
+                    <span className="text-[10px] sm:text-xs font-bold text-white whitespace-nowrap">剩{dedupBuffLeft}次</span>
                   </div>
                 )}
                 
@@ -154,6 +162,11 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                     {taxEdictActive && (
                       <p className={`mt-1 text-xs font-medium ${isLightMode ? 'text-emerald-800' : 'text-emerald-300/90'}`}>
                         降税令生效中 · 剩余 {taxHalvingLeft} 个游戏日
+                      </p>
+                    )}
+                    {isDedupTalisman && dedupBuffLeft > 0 && (
+                      <p className={`mt-1 text-xs font-medium ${isLightMode ? 'text-blue-800' : 'text-blue-300/90'}`}>
+                        避重符生效中 · 剩余 {dedupBuffLeft} 次不重复开卷
                       </p>
                     )}
                   </div>
@@ -183,7 +196,7 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
                       `}
                     >
                       <Gem size={14} />
-                      {taxEdictActive ? '降税令生效中' : canAfford ? '购买收藏' : '囊中羞涩'}
+                      {taxEdictActive ? '降税令生效中' : isDedupTalisman ? (canAfford ? (dedupBuffLeft > 0 ? '叠加购买' : '购买') : '囊中羞涩') : canAfford ? '购买收藏' : '囊中羞涩'}
                     </button>
                 </div>
 

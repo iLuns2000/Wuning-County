@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter } from 'lucide-react';
+import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck } from 'lucide-react';
 import { Swiper, SwiperSlide, SwiperClass } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -8,7 +8,7 @@ import 'swiper/css/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { npcs } from '@/data/npcs';
 import { Scroll as ScrollType } from '@/types/game';
-import { CHRONICLE_BOOK_ID, SCROLL_PRICE } from '@/data/treasures';
+import { CHRONICLE_BOOK_ID, SCROLL_PRICE, DEDUP_TALISMAN_ID, DEDUP_TALISMAN_USES, DEDUP_TALISMAN_PRICE } from '@/data/treasures';
 
 // --- 卷轴本地元数据（阅读次数、收藏）存储在 localStorage ---
 const SCROLL_META_KEY = 'wuning_scroll_meta';
@@ -38,7 +38,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 export const Collection: React.FC = () => {
   const navigate = useNavigate();
-  const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, inventory, playerStats, buyScroll, grantFreeScrollsIfNeeded } = useGameStore();
+  const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, inventory, playerStats, buyScroll, buyTreasure, grantFreeScrollsIfNeeded, flags, updateStats, checkAchievements } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
   const [showContent, setShowContent] = useState(false);
@@ -118,6 +118,9 @@ export const Collection: React.FC = () => {
     if (idsToRemove.length > 0) {
       if (window.confirm(`确定要删除 ${idsToRemove.length} 个重复卷轴吗？此操作不可撤销。`)) {
         removeScrollsByIds(idsToRemove);
+        const prev = flags['scroll_dedup_count'] || 0;
+        updateStats({ flags: { ...flags, scroll_dedup_count: prev + idsToRemove.length } });
+        checkAchievements();
       }
     }
     setShowDedupModal(false);
@@ -304,6 +307,39 @@ export const Collection: React.FC = () => {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 避重符状态与购买 */}
+        {(hasChronicleBook || (flags['scroll_no_duplicate_count'] || 0) > 0) && (
+          <div className="p-4 bg-gradient-to-r rounded-lg border from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3 items-center">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <ShieldCheck size={20} className="text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">
+                    避重符{(flags['scroll_no_duplicate_count'] || 0) > 0 ? ` · 剩余 ${flags['scroll_no_duplicate_count']} 次` : ''}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {DEDUP_TALISMAN_PRICE.toLocaleString()} 文 / 每张保 {DEDUP_TALISMAN_USES} 次不重复
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => buyTreasure(DEDUP_TALISMAN_ID)}
+                disabled={playerStats.money < DEDUP_TALISMAN_PRICE}
+                className={`flex gap-1 items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  playerStats.money >= DEDUP_TALISMAN_PRICE
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
+              >
+                <ShoppingCart size={12} />
+                购买
+              </button>
             </div>
           </div>
         )}

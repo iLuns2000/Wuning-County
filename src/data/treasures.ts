@@ -18,6 +18,10 @@ export const CHRONICLE_BOOK_ID = 'chronicle_book';
 export const SCROLL_PRICE = 5000;
 /** 购买后生效的游戏日数 */
 export const PROPERTY_TAX_HALVING_GAME_DAYS = 15;
+/** 避重符：保证接下来 N 次开卷轴不重复 */
+export const DEDUP_TALISMAN_ID = 'dedup_talisman';
+export const DEDUP_TALISMAN_USES = 5;
+export const DEDUP_TALISMAN_PRICE = 30000;
 
 export const treasures: Item[] = [
   {
@@ -90,6 +94,14 @@ export const treasures: Item[] = [
     type: 'treasure',
     rarity: 'rare',
   },
+  {
+    id: DEDUP_TALISMAN_ID,
+    name: '避重符',
+    description:
+      '一道古老的符箓，贴在卷轴上可保接下来五次开卷不重复。叠使用时次数累加。',
+    type: 'treasure',
+    rarity: 'rare',
+  },
 ];
 
 export const treasurePrices: Record<string, number> = {
@@ -104,4 +116,5 @@ export const treasurePrices: Record<string, number> = {
   'xiao_he_tie': 520,
   [TAX_RELIEF_EDICT_ID]: 999900,
   [CHRONICLE_BOOK_ID]: 100000,
+  [DEDUP_TALISMAN_ID]: DEDUP_TALISMAN_PRICE,
 };
