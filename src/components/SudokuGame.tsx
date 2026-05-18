@@ -198,6 +198,9 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
   const [inputMode, setInputMode] = useState<'builtin' | 'system'>(() => {
     return (localStorage.getItem('sudoku-input-mode') as 'builtin' | 'system') || 'builtin';
   });
+  const [minimalMode, setMinimalMode] = useState(() => {
+    return localStorage.getItem('sudoku-minimal-mode') === 'true';
+  });
   const systemInputRef = useRef<HTMLInputElement>(null);
   
   // 排行榜相关状态
@@ -406,6 +409,13 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
     }
   };
 
+  const toggleMinimalMode = () => {
+    const newMode = !minimalMode;
+    setMinimalMode(newMode);
+    localStorage.setItem('sudoku-minimal-mode', String(newMode));
+    vibrate(VIBRATION_PATTERNS.LIGHT);
+  };
+
   const handleNumberInput = (num: number) => {
     if (!selectedCell || isComplete) return;
     vibrate(VIBRATION_PATTERNS.LIGHT);
@@ -585,18 +595,24 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
 
   return (
     <div
-      className="relative w-full max-w-lg mx-auto overflow-hidden flex flex-col rounded-lg
-                 bg-[#f5f0e6] dark:bg-[#1a1815]
-                 border border-[#d4c9b5] dark:border-[#3d3629]
-                 shadow-2xl"
+      className={`relative w-full max-w-lg mx-auto overflow-hidden flex flex-col ${minimalMode
+        ? 'bg-white border-2 border-black'
+        : 'rounded-lg bg-[#f5f0e6] dark:bg-[#1a1815] border border-[#d4c9b5] dark:border-[#3d3629] shadow-2xl'
+      }`}
     >
-      <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />
+      {!minimalMode && <div className="h-1 bg-gradient-to-r from-[#8b7355] via-[#a08060] to-[#8b7355]" />}
 
-      <div className="px-6 py-4 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]">
+      <div className={`px-6 py-4 ${minimalMode
+        ? 'bg-white border-b-2 border-black'
+        : 'bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]'
+      }`}>
         <div className="flex justify-between items-center">
           <div className="flex gap-3 items-center">
-            <div className="p-2 rounded-lg bg-[#8b7355]/10 border border-[#8b7355]/20">
-              <svg className="w-5 h-5 text-[#6b5544] dark:text-[#a08060]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className={`p-2 rounded-lg ${minimalMode
+              ? 'bg-white border-2 border-black'
+              : 'bg-[#8b7355]/10 border border-[#8b7355]/20'
+            }`}>
+              <svg className={`w-5 h-5 ${minimalMode ? 'text-black' : 'text-[#6b5544] dark:text-[#a08060]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <line x1="3" y1="9" x2="21" y2="9" />
                 <line x1="3" y1="15" x2="21" y2="15" />
@@ -605,19 +621,22 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#4a3f32] dark:text-[#e8e0d0] font-display">数独游戏</h2>
-              <p className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">逻辑推理 · 益智填数</p>
+              <h2 className={`text-xl font-bold ${minimalMode ? 'text-black' : 'text-[#4a3f32] dark:text-[#e8e0d0]'} font-display`}>数独游戏</h2>
+              <p className={`text-xs ${minimalMode ? 'text-gray-600' : 'text-[#8b7355]/70 dark:text-[#a08060]/70'}`}>逻辑推理 · 益智填数</p>
             </div>
           </div>
           <div className="flex gap-3 items-center">
-            <span className="font-mono text-sm text-[#6b5544] dark:text-[#a08060]">
+            <span className={`font-mono text-sm ${minimalMode ? 'text-black' : 'text-[#6b5544] dark:text-[#a08060]'}`}>
               {formatTime(timer)}
             </span>
           </div>
         </div>
       </div>
 
-        <div className="px-6 py-3 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629] flex gap-2 flex-wrap">
+        <div className={`px-6 py-3 ${minimalMode
+          ? 'bg-white border-b-2 border-black'
+          : 'bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629]'
+        } flex gap-2 flex-wrap`}>
           {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
             <button
               key={diff}
@@ -627,9 +646,13 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               }}
               className={`
                 px-3 py-1.5 rounded text-sm font-medium transition-all
-                ${difficulty === diff
-                  ? 'bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6]'
-                  : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
+                ${minimalMode
+                  ? difficulty === diff
+                    ? 'bg-black text-white'
+                    : 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                  : difficulty === diff
+                    ? 'bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6]'
+                    : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
                 }
               `}
             >
@@ -642,7 +665,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               vibrate(VIBRATION_PATTERNS.LIGHT);
               setShowLeaderboard(true);
             }}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
+            className={`px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 ${minimalMode
+              ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+              : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
+            }`}
           >
             <Trophy className="w-4 h-4" />
             排行
@@ -652,23 +678,26 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               vibrate(VIBRATION_PATTERNS.LIGHT);
               startNewGame(difficulty);
             }}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] flex items-center gap-1"
+            className={`px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 ${minimalMode
+              ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+              : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
+            }`}
           >
             <RotateCcw className="w-4 h-4" />
             重开
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-[#faf7f0] dark:bg-[#1a1815]">
+        <div className={`flex-1 overflow-y-auto p-4 ${minimalMode ? 'bg-white' : 'bg-[#faf7f0] dark:bg-[#1a1815]'}`}>
           {isGenerating ? (
             <div className="flex justify-center items-center h-64">
               <div className="w-10 h-10 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355] dark:border-[#a08060]" />
             </div>
           ) : isComplete ? (
-            <div className="flex flex-col gap-5 justify-center items-center h-auto py-8">
+            <div className="flex flex-col gap-5 justify-center items-center py-8 h-auto">
               <div className="relative">
-                <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-                <div className="relative p-5 bg-gradient-to-br from-green-100 to-green-200 rounded-full dark:bg-gradient-to-br dark:from-green-900/50 dark:to-green-800/40 shadow-lg">
+                <div className="absolute inset-0 rounded-full animate-ping bg-green-500/20" />
+                <div className="relative p-5 bg-gradient-to-br from-green-100 to-green-200 rounded-full shadow-lg dark:bg-gradient-to-br dark:from-green-900/50 dark:to-green-800/40">
                   <Check className="w-14 h-14 text-green-600 dark:text-green-400" />
                 </div>
               </div>
@@ -678,7 +707,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   {DIFFICULTY_LABELS[difficulty]} · 用时 {formatTime(timer)}
                 </p>
                 {bestTimes[difficulty] && timer < bestTimes[difficulty] && (
-                  <p className="mt-2 text-sm text-green-600 dark:text-green-400 font-medium">🎉 打破个人最佳纪录！</p>
+                  <p className="mt-2 text-sm font-medium text-green-600 dark:text-green-400">🎉 打破个人最佳纪录！</p>
                 )}
               </div>
 
@@ -686,33 +715,33 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                 <div className="w-full max-w-sm p-4 rounded-xl bg-gradient-to-br from-[#f0ebe0] to-[#faf7f0] dark:from-[#2a2318] dark:to-[#221e16] border border-[#d4c9b5] dark:border-[#3d3629] shadow-lg">
                   <div className="text-sm font-bold text-[#6b5544] dark:text-[#a08060] mb-3 text-center">—— 奖励结算 ——</div>
                   <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="flex flex-col items-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30">
-                      <Coins className="w-6 h-6 text-yellow-600 dark:text-yellow-500 mb-1" />
+                    <div className="flex flex-col items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800/30">
+                      <Coins className="mb-1 w-6 h-6 text-yellow-600 dark:text-yellow-500" />
                       <span className="text-sm font-bold text-[#4a3f32] dark:text-[#e8e0d0]">{rewardInfo.money}</span>
                       <span className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">文</span>
                     </div>
-                    <div className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30">
-                      <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-1" />
+                    <div className="flex flex-col items-center p-3 bg-blue-50 rounded-lg border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/30">
+                      <TrendingUp className="mb-1 w-6 h-6 text-blue-600 dark:text-blue-400" />
                       <span className="text-sm font-bold text-[#4a3f32] dark:text-[#e8e0d0]">+{rewardInfo.ability}</span>
                       <span className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">能力</span>
                     </div>
                     {rewardInfo.reputation > 0 && (
-                      <div className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/30">
-                        <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400 mb-1" />
+                      <div className="flex flex-col items-center p-3 bg-purple-50 rounded-lg border border-purple-200 dark:bg-purple-900/20 dark:border-purple-800/30">
+                        <Zap className="mb-1 w-6 h-6 text-purple-600 dark:text-purple-400" />
                         <span className="text-sm font-bold text-[#4a3f32] dark:text-[#e8e0d0]">+{rewardInfo.reputation}</span>
                         <span className="text-xs text-[#8b7355]/70 dark:text-[#a08060]/70">声望</span>
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 justify-center flex-wrap">
+                  <div className="flex flex-wrap gap-2 justify-center">
                     {rewardInfo.isPerfect && (
-                      <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/50 dark:to-green-800/40 text-green-700 dark:text-green-400 font-medium border border-green-300 dark:border-green-700/30">✨ 无错通关</span>
+                      <span className="px-3 py-1 text-xs font-medium text-green-700 bg-gradient-to-r from-green-200 to-green-300 rounded-full border border-green-300 dark:from-green-900/50 dark:to-green-800/40 dark:text-green-400 dark:border-green-700/30">✨ 无错通关</span>
                     )}
                     {rewardInfo.isFirstComplete && (
-                      <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-yellow-200 to-yellow-300 dark:from-yellow-900/50 dark:to-yellow-800/40 text-yellow-700 dark:text-yellow-400 font-medium border border-yellow-300 dark:border-yellow-700/30">🌟 首次完成</span>
+                      <span className="px-3 py-1 text-xs font-medium text-yellow-700 bg-gradient-to-r from-yellow-200 to-yellow-300 rounded-full border border-yellow-300 dark:from-yellow-900/50 dark:to-yellow-800/40 dark:text-yellow-400 dark:border-yellow-700/30">🌟 首次完成</span>
                     )}
                     {timer < 300 && (
-                      <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-red-200 to-red-300 dark:from-red-900/50 dark:to-red-800/40 text-red-700 dark:text-red-400 font-medium border border-red-300 dark:border-red-700/30">⚡ 神速通关</span>
+                      <span className="px-3 py-1 text-xs font-medium text-red-700 bg-gradient-to-r from-red-200 to-red-300 rounded-full border border-red-300 dark:from-red-900/50 dark:to-red-800/40 dark:text-red-400 dark:border-red-700/30">⚡ 神速通关</span>
                     )}
                   </div>
                 </div>
@@ -804,9 +833,9 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
               />
               <div className="flex justify-center mb-4">
                 <div
-                  className="grid grid-cols-9 p-1 rounded-xl bg-[#8b7355] dark:bg-[#3d3629] overflow-hidden shadow-inner"
-                  style={{
-                    boxShadow: 'inset 0 0 0 3px #8b7355, 0 8px 24px rgba(0,0,0,0.15)'
+                  className={`grid grid-cols-9 p-2 overflow-hidden ${minimalMode ? 'border-2 border-black bg-white' : 'rounded-xl bg-[#8b7355] dark:bg-[#3d3629]'}`}
+                  style={minimalMode ? {} : {
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
                   }}
                 >
                   {board.map((row, rowIndex) =>
@@ -815,9 +844,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                       const isHighlighted = getHighlightedCells.has(`${rowIndex},${colIndex}`);
                       const isSameNumber = sameNumbersCount > 1 && board[rowIndex][colIndex].value === board[selectedCell?.row ?? 0][selectedCell?.col ?? 0].value && board[selectedCell?.row ?? 0][selectedCell?.col ?? 0].value !== 0;
 
-                      // 3x3 区域分割线
                       const isRightEdge = (colIndex + 1) % 3 === 0 && colIndex !== 8;
                       const isBottomEdge = (rowIndex + 1) % 3 === 0 && rowIndex !== 8;
+                      const isLastCol = colIndex === 8;
+                      const isLastRow = rowIndex === 8;
 
                       return (
                         <button
@@ -827,31 +857,50 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                           className={`
                             w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-sm sm:text-lg font-semibold
                             transition-all duration-150 ease-out
-                            border-b border-r border-[#d4c9b5]/40 dark:border-[#3d3629]/20
-                            ${isRightEdge ? 'mr-[3px]' : ''}
-                            ${isBottomEdge ? 'mb-[3px]' : ''}
-                            ${cell.isGiven
-                              ? 'bg-gradient-to-br from-[#fcfaf7] to-[#f5f0e6] dark:from-[#2a2318] dark:to-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] font-bold cursor-default shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]'
-                              : 'bg-gradient-to-br from-white to-[#faf7f0] dark:from-[#242018] dark:to-[#1e1a14] text-[#8b7355] dark:text-[#a08060] cursor-pointer hover:bg-[#f5f0e6] dark:hover:bg-[#2a2318] hover:scale-[1.02] active:scale-[0.98]'
+                            ${minimalMode
+                              ? `border border-gray-200 ${isRightEdge ? 'border-r-2 border-r-black' : ''} ${isBottomEdge ? 'border-b-2 border-b-black' : ''}`
+                              : `border-b border-r border-[#d4c9b5]/40 dark:border-[#3d3629]/20 ${isLastCol ? 'border-r-0' : ''} ${isLastRow ? 'border-b-0' : ''} ${isRightEdge ? 'mr-[3px]' : ''} ${isBottomEdge ? 'mb-[3px]' : ''}`
                             }
-                            ${isSelected
-                              ? 'bg-gradient-to-br from-[#8b7355]/40 to-[#8b7355]/25 dark:from-[#8b7355]/50 dark:to-[#8b7355]/35 ring-2 ring-inset ring-[#8b7355] !border-transparent z-10 shadow-[inset_0_0_0_1px_rgba(139,115,85,0.3)]'
-                              : isHighlighted
-                                ? 'bg-gradient-to-br from-[#d4c9b5]/35 to-[#d4c9b5]/20 dark:from-[#8b7355]/20 dark:to-[#8b7355]/10'
+                            ${minimalMode
+                              ? cell.isGiven
+                                ? 'bg-white text-black font-bold cursor-default'
+                                : 'bg-white text-black cursor-pointer hover:bg-gray-50'
+                              : cell.isGiven
+                                ? 'bg-gradient-to-br from-[#fcfaf7] to-[#f5f0e6] dark:from-[#2a2318] dark:to-[#242018] text-[#4a3f32] dark:text-[#e8e0d0] font-bold cursor-default shadow-[inset_0_-1px_0_rgba(0,0,0,0.05)]'
+                                : 'bg-gradient-to-br from-white to-[#faf7f0] dark:from-[#242018] dark:to-[#1e1a14] text-[#8b7355] dark:text-[#a08060] cursor-pointer hover:bg-[#f5f0e6] dark:hover:bg-[#2a2318] hover:scale-[1.02] active:scale-[0.98]'
+                            }
+                            ${minimalMode
+                              ? isSelected
+                                ? 'bg-black !text-white'
+                                : isHighlighted
+                                  ? 'bg-gray-100'
+                                  : ''
+                              : isSelected
+                                ? 'bg-gradient-to-br from-[#8b7355]/40 to-[#8b7355]/25 dark:from-[#8b7355]/50 dark:to-[#8b7355]/35 ring-2 ring-inset ring-[#8b7355] !border-transparent z-10 shadow-[inset_0_0_0_1px_rgba(139,115,85,0.3)]'
+                                : isHighlighted
+                                  ? 'bg-gradient-to-br from-[#d4c9b5]/35 to-[#d4c9b5]/20 dark:from-[#8b7355]/20 dark:to-[#8b7355]/10'
+                                  : ''
+                            }
+                            ${minimalMode
+                              ? cell.isError
+                                ? 'text-white bg-black'
+                                : ''
+                              : cell.isError
+                                ? 'text-red-600 dark:text-red-400 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-900/20 animate-pulse'
                                 : ''
                             }
-                            ${cell.isError
-                              ? 'text-red-600 dark:text-red-400 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-900/20 animate-pulse'
-                              : ''
-                            }
-                            ${isSameNumber && !isSelected
-                              ? 'bg-gradient-to-br from-[#c9b896]/45 to-[#c9b896]/25 dark:from-[#8b7355]/25 dark:to-[#8b7355]/12 shadow-[inset_0_0_0_1px_rgba(139,115,85,0.15)]'
-                              : ''
+                            ${minimalMode
+                              ? isSameNumber && !isSelected
+                                ? 'bg-gray-200'
+                                : ''
+                              : isSameNumber && !isSelected
+                                ? 'bg-gradient-to-br from-[#c9b896]/45 to-[#c9b896]/25 dark:from-[#8b7355]/25 dark:to-[#8b7355]/12 shadow-[inset_0_0_0_1px_rgba(139,115,85,0.15)]'
+                                : ''
                             }
                           `}
                         >
                           {cell.value !== 0 ? (
-                            <span className={cell.isGiven ? 'text-[#4a3f32] dark:text-[#e8e0d0]' : 'text-[#8b7355] dark:text-[#a08060]'}>
+                            <span className={minimalMode ? '' : (cell.isGiven ? 'text-[#4a3f32] dark:text-[#e8e0d0]' : 'text-[#8b7355] dark:text-[#a08060]')}>
                               {cell.value}
                             </span>
                           ) : cell.notes.length > 0 ? (
@@ -859,7 +908,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                                 <span
                                   key={n}
-                                  className={cell.notes.includes(n) ? 'text-[#8b7355]/80 dark:text-[#a08060]/80' : 'text-transparent'}
+                                  className={minimalMode
+                                    ? cell.notes.includes(n) ? 'text-black' : 'text-transparent'
+                                    : cell.notes.includes(n) ? 'text-[#8b7355]/80 dark:text-[#a08060]/80' : 'text-transparent'
+                                  }
                                 >
                                   {n}
                                 </span>
@@ -873,7 +925,7 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-2 mb-3">
+              <div className="flex gap-2 justify-center mb-3">
                 <button
                   onClick={() => {
                     vibrate(VIBRATION_PATTERNS.LIGHT);
@@ -881,9 +933,13 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   }}
                   className={`
                     px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 transition-colors
-                    ${showNotes
-                      ? 'bg-[#8b7355] text-white dark:text-[#f5f0e6]'
-                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
+                    ${minimalMode
+                      ? showNotes
+                        ? 'bg-black text-white'
+                        : 'bg-white text-black border border-black hover:bg-gray-100'
+                      : showNotes
+                        ? 'bg-[#8b7355] text-white dark:text-[#f5f0e6]'
+                        : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
                     }
                   `}
                 >
@@ -894,9 +950,13 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   onClick={toggleInputMode}
                   className={`
                     px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 transition-colors
-                    ${inputMode === 'system'
-                      ? 'bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6]'
-                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
+                    ${minimalMode
+                      ? inputMode === 'system'
+                        ? 'bg-black text-white'
+                        : 'bg-white text-black border border-black hover:bg-gray-100'
+                      : inputMode === 'system'
+                        ? 'bg-[#6b5544] dark:bg-[#5a4a38] text-white dark:text-[#f5f0e6]'
+                        : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5] dark:hover:bg-[#3d3629]'
                     }
                   `}
                   title={inputMode === 'builtin' ? '当前：内置键盘，点击切换' : '当前：系统键盘，点击切换'}
@@ -907,22 +967,44 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   </svg>
                   {inputMode === 'builtin' ? '内置键盘' : '系统键盘'}
                 </button>
+                <button
+                  onClick={toggleMinimalMode}
+                  className={`
+                    px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 transition-colors
+                    ${minimalMode
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black border border-black hover:bg-gray-100'
+                    }
+                  `}
+                  title="极简模式"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                  </svg>
+                  极简
+                </button>
               </div>
 
               {inputMode === 'builtin' ? (
-                <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
+                <div className="flex flex-wrap gap-2 justify-center mx-auto max-w-xs">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                     <button
                       key={num}
                       onClick={() => handleNumberInput(num)}
-                      className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#6b5544] to-[#5a4838] dark:from-[#5a4a38] dark:to-[#4a3a28] text-white dark:text-[#f5f0e6] font-bold text-xl shadow-md hover:from-[#5a4838] hover:to-[#4a3828] dark:hover:from-[#4a3a28] dark:hover:to-[#3a2a18] transition-all hover:scale-105 active:scale-95"
+                      className={`w-11 h-11 rounded-xl font-bold text-xl transition-all hover:scale-105 active:scale-95 ${minimalMode
+                        ? 'bg-white text-black border-2 border-black hover:bg-black hover:text-white'
+                        : 'bg-gradient-to-br from-[#6b5544] to-[#5a4838] dark:from-[#5a4a38] dark:to-[#4a3a28] text-white dark:text-[#f5f0e6] shadow-md hover:from-[#5a4838] hover:to-[#4a3828] dark:hover:from-[#4a3a28] dark:hover:to-[#3a2a18]'
+                      }`}
                     >
                       {num}
                     </button>
                   ))}
                   <button
                     onClick={handleErase}
-                    className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#e8e0d8] to-[#d4c9b5] dark:from-[#2a2318] dark:to-[#3d3629] text-[#6b5544] dark:text-[#a08060] font-bold text-xl shadow-md hover:from-[#d4c9b5] hover:to-[#c4b9a5] dark:hover:from-[#3d3629] dark:hover:to-[#4d4639] transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                    className={`w-11 h-11 rounded-xl font-bold text-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${minimalMode
+                      ? 'bg-white text-black border-2 border-black hover:bg-black hover:text-white'
+                      : 'bg-gradient-to-br from-[#e8e0d8] to-[#d4c9b5] dark:from-[#2a2318] dark:to-[#3d3629] text-[#6b5544] dark:text-[#a08060] shadow-md hover:from-[#d4c9b5] hover:to-[#c4b9a5] dark:hover:from-[#3d3629] dark:hover:to-[#4d4639]'
+                      }`}
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -931,7 +1013,10 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                 <div className="flex justify-center">
                   <button
                     onClick={handleErase}
-                    className="px-6 py-2 rounded-lg bg-gradient-to-br from-[#e8e0d8] to-[#d4c9b5] dark:from-[#2a2318] dark:to-[#3d3629] text-[#6b5544] dark:text-[#a08060] font-medium shadow-md hover:from-[#d4c9b5] hover:to-[#c4b9a5] dark:hover:from-[#3d3629] dark:hover:to-[#4d4639] transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                    className={`px-6 py-2 rounded-lg font-medium transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${minimalMode
+                      ? 'bg-white text-black border-2 border-black hover:bg-black hover:text-white'
+                      : 'bg-gradient-to-br from-[#e8e0d8] to-[#d4c9b5] dark:from-[#2a2318] dark:to-[#3d3629] text-[#6b5544] dark:text-[#a08060] shadow-md hover:from-[#d4c9b5] hover:to-[#c4b9a5] dark:hover:from-[#3d3629] dark:hover:to-[#4d4639]'
+                      }`}
                   >
                     <X className="w-5 h-5" />
                     清除
@@ -945,22 +1030,34 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
       {/* 排行榜弹窗 */}
       {showLeaderboard && (
         <div className="flex absolute inset-0 z-50 justify-center items-center backdrop-blur-sm bg-black/50">
-          <div className="w-[90%] max-w-md max-h-[80%] overflow-hidden flex flex-col rounded-lg bg-[#f5f0e6] dark:bg-[#1a1815] border border-[#d4c9b5] dark:border-[#3d3629] shadow-2xl">
-            <div className="px-4 py-3 bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629] flex items-center justify-between">
+          <div className={`w-[90%] max-w-md max-h-[80%] overflow-hidden flex flex-col ${minimalMode
+            ? 'bg-white border-2 border-black'
+            : 'rounded-lg bg-[#f5f0e6] dark:bg-[#1a1815] border border-[#d4c9b5] dark:border-[#3d3629] shadow-2xl'
+          }`}>
+            <div className={`px-4 py-3 ${minimalMode
+              ? 'bg-white border-b-2 border-black'
+              : 'bg-[#ebe5d8] dark:bg-[#2a2318] border-b border-[#d4c9b5] dark:border-[#3d3629]'
+            } flex items-center justify-between`}>
               <div className="flex gap-2 items-center">
-                <Trophy className="w-5 h-5 text-[#8b7355]" />
-                <h3 className="text-lg font-bold text-[#4a3f32] dark:text-[#e8e0d0]">数独排行榜</h3>
+                <Trophy className={`w-5 h-5 ${minimalMode ? 'text-black' : 'text-[#8b7355]'}`} />
+                <h3 className={`text-lg font-bold ${minimalMode ? 'text-black' : 'text-[#4a3f32] dark:text-[#e8e0d0]'}`}>数独排行榜</h3>
               </div>
               <button
                 onClick={() => setShowLeaderboard(false)}
-                className="p-1 rounded hover:bg-[#d4c9b5]/50"
+                className={`p-1 rounded ${minimalMode
+                  ? 'hover:bg-gray-100'
+                  : 'hover:bg-[#d4c9b5]/50'
+                }`}
               >
-                <X className="w-5 h-5 text-[#6b5544]" />
+                <X className={`w-5 h-5 ${minimalMode ? 'text-black' : 'text-[#6b5544]'}`} />
               </button>
             </div>
-            
+
             {/* 难度切换 */}
-            <div className="px-4 py-2 bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629] flex gap-2">
+            <div className={`px-4 py-2 ${minimalMode
+              ? 'bg-white border-b-2 border-black'
+              : 'bg-[#f0ebe0] dark:bg-[#221e16] border-b border-[#d4c9b5] dark:border-[#3d3629]'
+            } flex gap-2`}>
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <button
                   key={diff}
@@ -970,9 +1067,13 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                   }}
                   className={`
                     px-3 py-1 rounded text-sm font-medium transition-all
-                    ${difficulty === diff
-                      ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6]'
-                      : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
+                    ${minimalMode
+                      ? difficulty === diff
+                        ? 'bg-black text-white'
+                        : 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                      : difficulty === diff
+                        ? 'bg-[#4a3f32] dark:bg-[#5a4a38] text-[#f5f0e6]'
+                        : 'bg-[#e8e0d8] dark:bg-[#2a2318] text-[#6b5544] dark:text-[#a08060] hover:bg-[#d4c9b5]'
                     }
                   `}
                 >
@@ -980,15 +1081,15 @@ export const SudokuGame: React.FC<SudokuGameProps> = ({ onClose }) => {
                 </button>
               ))}
             </div>
-            
+
             {/* 排行榜列表 */}
-            <div className="overflow-y-auto flex-1 p-4">
+            <div className={`overflow-y-auto flex-1 p-4 ${minimalMode ? 'bg-white' : ''}`}>
               {leaderboardLoading ? (
                 <div className="flex justify-center items-center h-32">
-                  <div className="w-8 h-8 rounded-full border-t-2 border-b-2 animate-spin border-[#8b7355]" />
+                  <div className={`w-8 h-8 rounded-full border-t-2 border-b-2 animate-spin ${minimalMode ? 'border-black' : 'border-[#8b7355]'}`} />
                 </div>
               ) : leaderboard.length === 0 ? (
-                <div className="text-center text-[#8b7355] py-8">
+                <div className={`text-center py-8 ${minimalMode ? 'text-gray-600' : 'text-[#8b7355]'}`}>
                   暂无记录，快来挑战吧！
                 </div>
               ) : (

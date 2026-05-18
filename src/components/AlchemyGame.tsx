@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { X, RefreshCw, Coins, Backpack } from 'lucide-react';
+import { X, RefreshCw, Coins, Backpack, Save, FolderOpen } from 'lucide-react';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 const ALCHEMY_LEVELS: Record<number, { id: string; name: string; price: number; color: string; textColor?: string }> = {
@@ -30,12 +30,52 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
   const [highestTile, setHighestTile] = useState(0);
   const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
   const [maxReached, setMaxReached] = useState(false); // 8192已达标志
+  const [hasSavedState, setHasSavedState] = useState(false);
   const vibrate = useGameVibrate();
+
+  const STORAGE_KEY = 'alchemy-saved-state';
 
   // Initialize game
   useEffect(() => {
+    checkSavedState();
     initGame();
   }, []);
+
+  const saveState = () => {
+    const state = {
+      board,
+      gameOver,
+      highestTile,
+      maxReached,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setHasSavedState(true);
+    vibrate(VIBRATION_PATTERNS.SUCCESS);
+  };
+
+  const loadState = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setBoard(state.board);
+        setGameOver(state.gameOver);
+        setHighestTile(state.highestTile);
+        setMaxReached(state.maxReached);
+        localStorage.removeItem(STORAGE_KEY);
+        setHasSavedState(false);
+        vibrate(VIBRATION_PATTERNS.SUCCESS);
+      } catch (e) {
+        console.error('加载暂存失败', e);
+      }
+    }
+  };
+
+  const checkSavedState = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    setHasSavedState(!!saved);
+  };
 
   const initGame = () => {
     const newBoard = Array(4).fill(null).map(() => Array(4).fill(0));
@@ -206,6 +246,8 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
           { itemsAdd: [itemData.id] },
           `你结束了炼丹，小心翼翼地收起了【${itemData.name}】。`
         );
+        localStorage.removeItem(STORAGE_KEY);
+        setHasSavedState(false);
     }
     onClose();
   };
@@ -290,6 +332,38 @@ export const AlchemyGame: React.FC<AlchemyGameProps> = ({ onClose }) => {
                     <div className="flex flex-col items-start leading-none">
                         <span className="text-xs opacity-90">收入行囊</span>
                         <span className="font-bold">保留物品</span>
+                    </div>
+                </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <button
+                    onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        saveState();
+                    }}
+                    disabled={gameOver || maxReached}
+                    className="flex gap-2 justify-center items-center p-3 text-white bg-amber-600 rounded-lg transition-colors hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <Save size={18} />
+                    <div className="flex flex-col items-start leading-none">
+                        <span className="text-xs opacity-90">暂存进度</span>
+                        <span className="font-bold">保存当前</span>
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => {
+                        vibrate(VIBRATION_PATTERNS.LIGHT);
+                        loadState();
+                    }}
+                    disabled={!hasSavedState}
+                    className="flex gap-2 justify-center items-center p-3 text-white bg-purple-600 rounded-lg transition-colors hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <FolderOpen size={18} />
+                    <div className="flex flex-col items-start leading-none">
+                        <span className="text-xs opacity-90">恢复暂存</span>
+                        <span className="font-bold">{hasSavedState ? '读取存档' : '无存档'}</span>
                     </div>
                 </button>
             </div>
