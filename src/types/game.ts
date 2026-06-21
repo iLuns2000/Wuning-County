@@ -382,6 +382,9 @@ export interface EventOption {
   effect?: Effect;
   message: string;
   description?: string;
+  requirements?: {
+    minRelation?: { npcId: string; value: number };
+  };
   /** 选择此选项后附加的 Debuff id 列表 */
   addDebuffIds?: string[];
 }

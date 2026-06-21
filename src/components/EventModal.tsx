@@ -7,6 +7,7 @@ import { GameEvent, PlayerStats, Effect } from '@/types/game';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { X, Sparkles, ArrowRight } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { useGameStore } from '@/store/gameStore';
 
 interface EventModalProps {
   event: GameEvent;
@@ -43,8 +44,16 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
   const { theme } = useTheme();
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   const typeStyle = eventTypeStyles[event.type] || eventTypeStyles.daily;
+  const npcRelations = useGameStore(state => state.npcRelations);
   
-  const checkRequirement = (effect?: Effect) => {
+  const checkRequirement = (effect?: Effect, minRelation?: { npcId: string; value: number }) => {
+    if (minRelation) {
+      const currentRelation = npcRelations[minRelation.npcId] || 0;
+      if (currentRelation < minRelation.value) {
+        return { allowed: false, reason: `好感不足 (需 ${minRelation.value}，当前 ${currentRelation})` };
+      }
+    }
+
     if (!effect) return { allowed: true, reason: '' };
     
     let moneyCost = 0;
@@ -62,7 +71,6 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
     if (healthCost > 0 && playerStats.health < healthCost) {
       return { allowed: false, reason: `体力不足 (需 ${healthCost} 点)` };
     }
-    
     return { allowed: true, reason: '' };
   };
   
@@ -168,7 +176,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, playerStats, onOp
         {/* 选项按钮 */}
         <div className="space-y-2.5">
           {(event.options || []).map((option, index) => {
-            const { allowed, reason } = checkRequirement(option.effect);
+            const { allowed, reason } = checkRequirement(option.effect, option.requirements?.minRelation);
             
             return (
               <button
