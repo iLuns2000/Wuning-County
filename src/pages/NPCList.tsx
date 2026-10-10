@@ -34,7 +34,7 @@ const sortLabels: Record<SortType, string> = {
   id_desc: '姓名 Z→A',
 };
 
-export const NPCList: React.FC = () => {
+export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   const vibrate = useGameVibrate();
   const {
@@ -695,7 +695,7 @@ export const NPCList: React.FC = () => {
           {/* 头部 */}
           <header className="flex gap-4 items-center py-2 shrink-0">
             <button
-              onClick={() => navigate('/game')}
+              onClick={() => onBack ? onBack() : navigate('/game')}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />

@@ -2,6 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+.snack-menu {
+  width: min(800px, calc(100% - 48px));
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  box-shadow: 0 24px 80px #0006;
+  overflow: hidden;
+}
+.snack-menu::backdrop { background: #11151bb3; backdrop-filter: blur(5px); }
+.snack-menu-shell { display: flex; flex-direction: column; height: min(760px, 86dvh); }
+.snack-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 28px; background: hsl(var(--card)); border-bottom: 1px solid hsl(var(--border)); flex-shrink: 0; }
+.snack-menu-mark { display: grid; place-items: center; width: 46px; height: 46px; background: #a4abd6; color: #292d36; border-radius: 8px; flex-shrink: 0; }
+.snack-menu-close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 6px; color: hsl(var(--muted-foreground)); flex-shrink: 0; }
+.snack-menu-close:hover { background: hsl(var(--muted)); }
+.snack-menu-wallet { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 28px; border-bottom: 1px solid hsl(var(--border)); flex-shrink: 0; }
+.snack-menu-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 0 28px; }
+.snack-menu-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+.snack-menu-item { display: flex; flex-direction: column; min-width: 0; padding: 24px 0; border-bottom: 1px solid hsl(var(--border)); }
+.snack-menu-number { font-size: 12px; font-variant-numeric: tabular-nums; color: hsl(var(--primary)); }
+.snack-menu-effects { display: flex; flex-wrap: wrap; gap: 12px; min-height: 30px; margin-top: 12px; align-items: center; font-size: 12px; color: #356c51; }
+.dark .snack-menu-effects { color: #a7d3be; }
+.snack-menu-effects .snack-effect-negative { color: #b34454; }
+.dark .snack-menu-effects .snack-effect-negative { color: #f6a7b0; }
+.snack-menu-action { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px; border-radius: 6px; font-size: 14px; transition: background-color .15s; }
+.snack-menu-taste { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.snack-menu-taste:hover:not(:disabled) { filter: brightness(.95); }
+.snack-menu-takeout { border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); background: hsl(var(--card)); }
+.snack-menu-takeout:hover:not(:disabled) { background: hsl(var(--muted)); }
+.snack-menu-action:disabled { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); cursor: not-allowed; }
+.snack-menu button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.snack-menu-footer { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 12px 20px; border-top: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--muted-foreground)); font-size: 12px; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .snack-menu { width: calc(100% - 16px); }
+  .snack-menu-shell { height: 90dvh; }
+  .snack-menu-header { padding: 18px 16px; }
+  .snack-menu-wallet { padding: 12px 16px; }
+  .snack-menu-scroll { padding: 0 16px; }
+  .snack-menu-list { grid-template-columns: minmax(0, 1fr); }
+  .snack-menu-item { padding: 20px 0; }
+  .snack-menu-footer { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+
 /* ===== 古风色彩系统升级 ===== */
 @layer base {
   :root {
@@ -74,7 +120,65 @@
   }
 }
 
+@layer base {
+  :root[data-interface='modern'] {
+    --brand: 232 38% 74%;
+    --background: 220 23% 97%;
+    --foreground: 222 14% 19%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 14% 19%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 14% 19%;
+    --primary: 231 23% 43%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 232 38% 74%;
+    --secondary-foreground: 222 14% 19%;
+    --muted: 220 18% 93%;
+    --muted-foreground: 222 10% 42%;
+    --accent: 232 38% 91%;
+    --accent-foreground: 231 23% 35%;
+    --border: 225 18% 82%;
+    --input: 225 18% 82%;
+    --ring: 231 23% 43%;
+    --destructive: 357 39% 55%;
+    --color-gold: 36 41% 51%;
+    --color-success: 166 19% 44%;
+    --color-info: 166 19% 44%;
+    --color-warning: 36 41% 51%;
+    --color-danger: 357 39% 55%;
+  }
+
+  :root.dark[data-interface='modern'] {
+    --background: 222 14% 12%;
+    --foreground: 220 23% 97%;
+    --card: 222 14% 19%;
+    --card-foreground: 220 23% 97%;
+    --popover: 222 14% 19%;
+    --popover-foreground: 220 23% 97%;
+    --primary: 232 38% 74%;
+    --primary-foreground: 222 14% 19%;
+    --secondary: 166 19% 29%;
+    --secondary-foreground: 220 23% 97%;
+    --muted: 222 12% 24%;
+    --muted-foreground: 220 16% 74%;
+    --accent: 231 23% 32%;
+    --accent-foreground: 220 23% 97%;
+    --border: 222 12% 34%;
+    --input: 222 12% 34%;
+    --ring: 232 38% 74%;
+  }
+}
+
 /* ===== 字体系统 ===== */
+/* Bright resource colors need darker counterparts on the modern light surface. */
+:root.light[data-interface='modern'] .modern-stats :is(.text-yellow-400, .text-amber-300, .text-amber-400) { color: #806020; }
+:root.light[data-interface='modern'] .modern-stats :is(.text-purple-400, .text-indigo-400) { color: #66528c; }
+:root.light[data-interface='modern'] .modern-stats :is(.text-cyan-400, .text-cyan-300, .text-blue-400) { color: #226878; }
+:root.light[data-interface='modern'] .modern-stats .text-green-400 { color: #356c51; }
+:root.light[data-interface='modern'] .modern-stats :is(.text-pink-400, .text-red-400) { color: #a33b60; }
+:root.light[data-interface='modern'] .modern-stats .text-orange-400 { color: #98521d; }
+:root.light[data-interface='modern'] .modern-stats :is(.text-slate-400, .text-gray-400) { color: #526075; }
+
 @layer base {
   /* 基础字体 */
   html {

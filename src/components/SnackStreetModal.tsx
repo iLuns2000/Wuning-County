@@ -8,17 +8,21 @@ import { useGameStore } from '@/store/gameStore';
 import { snacks } from '@/data/snacks';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useTheme } from '@/hooks/useTheme';
+import { useInterfaceStore } from '@/store/interfaceStore';
+import { SnackStreetMenu } from '@/components/SnackStreetMenu';
 
 interface SnackStreetModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) => {
+export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose, embedded }) => {
   const gameStore = useGameStore();
   const playerStats = gameStore.playerStats;
   const { buyItem, useItem, addLog } = gameStore;
   const vibrate = useGameVibrate();
   const { theme } = useTheme();
+  const modernInterface = useInterfaceStore(state => state.version === 'modern');
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // 安全获取金钱值
@@ -57,6 +61,10 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose }) =
     buyItem(snackId, price);
     addLog('打包了美食，准备路上吃。');
   };
+
+  if (modernInterface) {
+    return <SnackStreetMenu money={money} getPrice={getPrice} onTaste={handleTaste} onTakeout={handleTakeout} onClose={onClose} embedded={embedded} />;
+  }
 
   return (
     // 遮罩层

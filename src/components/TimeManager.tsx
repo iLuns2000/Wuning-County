@@ -3,11 +3,12 @@ import { useGameStore } from '@/store/gameStore';
 import { Sun, Moon, Pause, Play } from 'lucide-react';
 
 interface TimeManagerProps {
+  inline?: boolean;
   onNightWarning?: () => void;
   onNightChange?: (isNight: boolean) => void;
 }
 
-export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning, onNightChange }) => {
+export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning, onNightChange, inline = false }) => {
   const { 
     timeSettings, 
     nextDay, 
@@ -122,7 +123,7 @@ export const TimeManager: React.FC<TimeManagerProps> = ({ onNightWarning, onNigh
   if (!timeSettings.isTimeFlowEnabled) return null;
 
   return (
-    <div className="flex fixed top-1 right-4 z-40 gap-2 items-center">
+    <div className={inline ? 'flex gap-2 items-center' : 'flex fixed top-1 right-4 z-40 gap-2 items-center'}>
       {/* Time Display Badge */}
       <div 
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all ${

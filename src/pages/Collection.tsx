@@ -36,7 +36,7 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-export const Collection: React.FC = () => {
+export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, combineScrollFragments, inventory, playerStats, buyScroll, buyTreasure, grantFreeScrollsIfNeeded, flags, updateStats, checkAchievements } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
@@ -237,7 +237,7 @@ export const Collection: React.FC = () => {
       <div className="space-y-6 w-full max-w-2xl">
         <header className="flex gap-4 items-center py-2 shrink-0">
           <button
-            onClick={() => navigate('/game')}
+            onClick={() => onBack ? onBack() : navigate('/game')}
             className="p-2 rounded-full transition-colors hover:bg-secondary"
           >
             <ArrowLeft size={20} />

@@ -468,7 +468,7 @@ const SudokuFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
 };
 
 // 主组件
-export const Facilities: React.FC = () => {
+export const Facilities: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const { logs } = useGameStore();
   const navigate = useNavigate();
   const [showAlchemy, setShowAlchemy] = useState(false);
@@ -517,7 +517,7 @@ export const Facilities: React.FC = () => {
           {/* 头部 */}
           <header className="flex justify-between items-center py-2">
             <button
-              onClick={() => navigate('/game')}
+              onClick={() => onBack ? onBack() : navigate('/game')}
               className="flex gap-2 items-center text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft size={20} />

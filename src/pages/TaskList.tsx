@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { tasks } from '@/data/tasks';
 import { LogPanel } from '@/components/LogPanel';
 
-export const TaskList: React.FC = () => {
+export const TaskList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   const { role, currentTaskId, completedTaskIds, logs } = useGameStore();
 
@@ -25,7 +25,7 @@ export const TaskList: React.FC = () => {
         <div className="flex overflow-hidden flex-col gap-4 w-full max-w-md h-full md:max-w-none">
           <header className="flex gap-4 items-center py-2 shrink-0">
             <button 
-              onClick={() => navigate('/game')}
+              onClick={() => onBack ? onBack() : navigate('/game')}
               className="p-2 rounded-full hover:bg-secondary"
             >
               <ArrowLeft size={20} />

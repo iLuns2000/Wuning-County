@@ -1,65 +1,44 @@
 import { useEffect, useState } from 'react';
+import { create } from 'zustand';
 
 type Theme = 'dark' | 'light' | 'system';
 
-export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check local storage first, but default to system if not found
-    // Since user asked for auto-adapt, we might want to default to system
-    // But usually saving preference is good.
-    // For this specific request "based on user's mobile device", 'system' is key.
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') as Theme;
-      return savedTheme || 'system';
-    }
+function readTheme(): Theme {
+  try {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark' || saved === 'light' ? saved : 'system';
+  } catch {
     return 'system';
-  });
+  }
+}
 
-  useEffect(() => {
-    const root = window.document.documentElement;
-
-    root.classList.remove('light', 'dark');
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-
-      root.classList.add(systemTheme);
-      return;
-    }
-
-    root.classList.add(theme);
-  }, [theme]);
-
-  // Listener for system changes when in system mode
-  useEffect(() => {
-    if (theme !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = () => {
-      const root = window.document.documentElement;
-      if (mediaQuery.matches) {
-        root.classList.add('dark');
-        root.classList.remove('light');
-      } else {
-        root.classList.add('light');
-        root.classList.remove('dark');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
+const useThemeStore = create<{ theme: Theme; setTheme: (theme: Theme) => void }>((set) => ({
+  theme: readTheme(),
+  setTheme: (theme) => {
+    try {
       localStorage.setItem('theme', theme);
-      setTheme(theme);
-    },
-  };
+    } catch {
+      // Theme switching still works when storage is unavailable.
+    }
+    set({ theme });
+  },
+}));
 
-  return value;
+export function useTheme() {
+  const { theme, setTheme } = useThemeStore();
+  const [, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      setSystemDark(media.matches);
+      const dark = theme === 'dark' || (theme === 'system' && media.matches);
+      root.classList.toggle('dark', dark);
+      root.classList.toggle('light', !dark);
+    };
+    applyTheme();
+    media.addEventListener('change', applyTheme);
+    return () => media.removeEventListener('change', applyTheme);
+  }, [theme]);
+  return { theme, setTheme };
 }

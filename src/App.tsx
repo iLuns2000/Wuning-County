@@ -17,6 +17,10 @@ import { ActivityModal, hashContent } from '@/components/ActivityModal';
 
 import { MobileLogToast } from '@/components/MobileLogToast';
 import { useTheme } from '@/hooks/useTheme';
+import { useInterfaceStore } from '@/store/interfaceStore';
+import { InterfaceChoice } from '@/components/InterfaceChoice';
+import { ModernRouteFrame } from '@/components/ModernRouteFrame';
+import { BackgroundChoice } from '@/components/BackgroundChoice';
 import { NewYearCountdownBanner } from '@/components/NewYearCountdownBanner';
 import { FireworksSplash } from '@/components/FireworksSplash';
 import { useGameStore } from '@/store/gameStore';
@@ -75,6 +79,12 @@ export const cn = (...classes: (string | undefined | null | false)[]) => {
 };
 
 const Router = HashRouter;
+
+const GameLogToast = () => {
+  const location = useLocation();
+  const modern = useInterfaceStore(state => state.version === 'modern');
+  return modern && location.pathname === '/game' ? null : <MobileLogToast />;
+};
 
 /** 旧存档格式迁移提示弹窗（含进度条 + 完成自动关闭） */
 const InventoryMigrationNotice: React.FC = () => {
@@ -172,6 +182,13 @@ const InventoryMigrationNotice: React.FC = () => {
 
 function App() {
   useTheme();
+  const interfaceVersion = useInterfaceStore(state => state.version);
+  const needsInterfaceChoice = useInterfaceStore(state => state.needsChoice);
+  const needsBackgroundChoice = useInterfaceStore(state => state.needsBackgroundChoice);
+
+  useEffect(() => {
+    document.documentElement.dataset.interface = interfaceVersion;
+  }, [interfaceVersion]);
 
   // 启动画面状态
   const [showSplash, setShowSplash] = useState(true);
@@ -233,10 +250,12 @@ function App() {
   return (
     <>
       {showSplash && <SplashScreen onReady={() => setShowSplash(false)} />}
+      {needsInterfaceChoice && !showSplash && <InterfaceChoice />}
+      {needsBackgroundChoice && !needsInterfaceChoice && !showSplash && <BackgroundChoice />}
       <Router>
         <ScrollToTop />
         <InventoryMigrationNotice />
-      <Routes>
+      {!needsInterfaceChoice && <ModernRouteFrame><Routes>
         <Route path="/" element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
         <Route path="/game" element={<Suspense fallback={<PageLoader />}><Game /></Suspense>} />
         <Route path="/npcs" element={<Suspense fallback={<PageLoader />}><NPCList /></Suspense>} />
@@ -254,13 +273,13 @@ function App() {
         <Route path="/bug-report" element={<Suspense fallback={<PageLoader />}><BugReport /></Suspense>} />
         <Route path="/announcements/:announcementId" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
         <Route path="/announcements" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
-      </Routes>
+      </Routes></ModernRouteFrame>}
       <NewYearCountdownBanner />
       <FireworksSplash />
-      <MobileLogToast />
+      <GameLogToast />
       <Watermark />
       {/* 活动弹窗 */}
-      {shouldShowActivityPopup && activityPopup && (
+      {!needsInterfaceChoice && !showSplash && shouldShowActivityPopup && activityPopup && (
         <ActivityModal
           isOpen={true}
           activityId={activityPopup.id}

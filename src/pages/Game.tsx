@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { StatsDisplay } from '@/components/StatsDisplay';
 import { LogPanel } from '@/components/LogPanel';
 import { EventModal } from '@/components/EventModal';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Moon, Briefcase, Coffee, Users, Star, FileText, ScrollText, Scroll, ShoppingBag, Building2, Dices, Landmark, Gem, Heart, Bird, BookOpen, Shield, User, Bug, Truck, Megaphone } from 'lucide-react';
 import { roles } from '@/data/roles';
 import { tasks } from '@/data/tasks';
@@ -39,18 +39,32 @@ import { getBackgroundImage, BACKGROUND_IMAGES } from '@/constants';
 import { useTheme } from '@/hooks/useTheme';
 import { OnboardingGuide } from '@/components/OnboardingGuide';
 import { GuidanceCard } from '@/components/GuidanceCard';
+import { useInterfaceStore } from '@/store/interfaceStore';
+import { ModernGame } from '@/components/ModernGame';
+
+const ModernNPCList = lazy(() => import('@/pages/NPCList').then(module => ({ default: module.NPCList })));
+const ModernBuildings = lazy(() => import('@/pages/Buildings').then(module => ({ default: module.Buildings })));
+const ModernFacilities = lazy(() => import('@/pages/Facilities').then(module => ({ default: module.Facilities })));
+const ModernCollection = lazy(() => import('@/pages/Collection').then(module => ({ default: module.Collection })));
+const ModernPigeonRace = lazy(() => import('@/pages/PigeonRace').then(module => ({ default: module.PigeonRace })));
+const ModernTasks = lazy(() => import('@/pages/TaskList').then(module => ({ default: module.TaskList })));
+const ModernLeaderboard = lazy(() => import('@/pages/Leaderboard').then(module => ({ default: module.Leaderboard })));
+const ModernAnnouncements = lazy(() => import('@/pages/Announcements').then(module => ({ default: module.Announcements })));
 
 export const Game: React.FC = () => {
   const navigate = useNavigate();
+  const [gameParams] = useSearchParams();
   const vibrate = useGameVibrate();
   const screenOrientation = useScreenOrientation();
   const { theme } = useTheme();
+  const modernInterface = useInterfaceStore(state => state.version === 'modern');
   
   // 判断是否为浅色模式
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   
   // 根据主题和毛玻璃开关决定背景样式
   const getGlassClass = (baseClasses: string = '') => {
+    if (modernInterface) return 'bg-card text-card-foreground border-border hover:bg-muted';
     // 如果关闭毛玻璃效果，或者浅色模式，都使用纯色背景
     const shouldUseGlass = glassEffectEnabled && !isLightMode;
     const glassClasses = shouldUseGlass
@@ -190,16 +204,13 @@ export const Game: React.FC = () => {
 
     // 如果背景图发生变化，开始过渡
     if (backgroundImage !== currentBg) {
-      // 如果已经在过渡中，先立即完成当前过渡
-      if (isTransitioning && nextBg) {
-        setCurrentBg(nextBg);
-        setNextBg('');
-        setIsTransitioning(false);
-      }
-
       // 开始新的过渡
       setNextBg(backgroundImage);
-      setIsTransitioning(true);
+      setIsTransitioning(false);
+      let secondFrame = 0;
+      const firstFrame = requestAnimationFrame(() => {
+        secondFrame = requestAnimationFrame(() => setIsTransitioning(true));
+      });
       
       // 1.5秒后完成过渡（与CSS过渡时间一致）
       const timer = setTimeout(() => {
@@ -208,9 +219,13 @@ export const Game: React.FC = () => {
         setIsTransitioning(false);
       }, 1500);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(firstFrame);
+        cancelAnimationFrame(secondFrame);
+      };
     }
-  }, [backgroundImage, showBackgroundImage, currentBg, isTransitioning, nextBg]);
+  }, [backgroundImage, showBackgroundImage]);
 
   // Meiwu Tea Seeking Logic
   const isTeaDay = ((day - 1) % 360 + 1) === 61 && weather === 'sunny';
@@ -695,8 +710,50 @@ export const Game: React.FC = () => {
     };
   }, [raidAlert, logs]);
 
+  const modernStats = (onAction: () => void) => <StatsDisplay playerStats={playerStats} countyStats={countyStats} day={day} weather={weather} playerProfile={playerProfile}
+    onEditProfile={() => { onAction(); setShowProfileModal(true); }} onOpenTalents={() => { onAction(); setShowTalents(true); }} onOpenAchievements={() => { onAction(); setShowAchievements(true); }}
+    onOpenOffice={() => { onAction(); setShowOffice(true); }} equippedApparel={equippedApparel} equippedAccessories={equippedAccessories} externalThreat={externalThreat}/>;
+  const renderModernFeature = (name: string, onClose: () => void) => {
+    const featureProps = { onClose };
+    const features: Record<string, React.ReactNode> = {
+      '小吃街': <SnackStreetModal {...featureProps} embedded />,
+      '西市集': <MarketModal {...featureProps}/>,
+      '产业置办': <EstateModal {...featureProps}/>,
+      '县衙办公室': <OfficeModal {...featureProps}/>,
+      '韭菜园': <LeekGardenModal {...featureProps}/>,
+      '柳园': <WillowGardenModal {...featureProps}/>,
+      '游乐街': <PlayStreetModal {...featureProps}/>,
+      '珍宝阁': <TreasureModal {...featureProps}/>,
+      '善行义举': <CharityModal {...featureProps}/>,
+      '外出探险': <ExploreModal {...featureProps}/>,
+      '建筑阁': <ModernBuildings onBack={onClose}/>,
+      '游乐坊': <ModernFacilities onBack={onClose}/>,
+      '赛鸽场': <ModernPigeonRace onBack={onClose}/>,
+      '藏珍匣': <ModernCollection onBack={onClose}/>,
+      '任务记录': <ModernTasks onBack={onClose}/>,
+      '财富榜': <ModernLeaderboard/>,
+      '公告栏': <ModernAnnouncements/>,
+      '拜访 NPC': <ModernNPCList onBack={onClose}/>,
+    };
+    return <Suspense fallback={<p className="p-6 text-muted-foreground">载入中…</p>}>{features[name] || <button onClick={onClose}>返回县城</button>}</Suspense>;
+  };
+
   return (
-    <div className="flex overflow-hidden relative justify-center p-4 min-h-screen">
+    <div className={modernInterface ? `modern-game-root w-full ${showBackgroundImage ? 'has-scene' : ''}` : 'flex overflow-hidden relative justify-center p-4 min-h-screen'}>
+      {modernInterface && showBackgroundImage && <div className="mg-scene" aria-hidden="true">
+        {currentBg && <div className="mg-scene-image" style={{ backgroundImage: `url(${currentBg})`, opacity: 1 }}/>}
+        {nextBg && <div className="mg-scene-image" style={{ backgroundImage: `url(${nextBg})`, opacity: isTransitioning ? 1 : 0 }}/>}
+      </div>}
+      {modernInterface && <>
+        <ModernGame onWork={handleWork} onRest={handleRest} onSkill={handleSpecialAbility} onMerchantPatrol={handleMerchantPatrol} onEscort={handleEscortMerchant}
+          stats={modernStats} clock={<TimeManager inline onNightWarning={() => setIsNightWarning(true)} onNightChange={setIsNight}/>} renderFeature={renderModernFeature} onOpen={name => {
+            if (name === '设置') setShowSettings(true);
+            if (name === '天赋') setShowTalents(true);
+            if (name === '成就') setShowAchievements(true);
+            if (name === '政令') setShowPolicies(true);
+          }}/>
+      </>}
+      {!modernInterface && <>
       {/* 动态背景图层 - 双层交叉淡入淡出 */}
       {showBackgroundImage && (
         <>
@@ -1241,8 +1298,9 @@ export const Game: React.FC = () => {
 
       </div>
       </div>
+      </>}
 
-      {currentEvent && (
+      {currentEvent && !(modernInterface && gameParams.get('place') === '拜访 NPC') && (
         <EventModal
           event={currentEvent}
           playerStats={playerStats}

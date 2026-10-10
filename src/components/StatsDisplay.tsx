@@ -12,6 +12,7 @@ import {
 import { getDateInfo } from '@/store/gameStore';
 import { items } from '@/data/items';
 import { useTheme } from '@/hooks/useTheme';
+import { useInterfaceStore } from '@/store/interfaceStore';
 
 interface StatsDisplayProps {
   playerStats: PlayerStats;
@@ -157,6 +158,7 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
 }) => {
   const { year, season, dayOfSeason } = getDateInfo(day);
   const { theme } = useTheme();
+  const modernInterface = useInterfaceStore(state => state.version === 'modern');
   const itemMap = new Map(items.map(item => [item.id, item]));
   
   // 存储上一次的资源值用于动画
@@ -170,7 +172,9 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
   const isLightMode = theme === 'light' || (theme === 'system' && typeof window !== 'undefined' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
   
   // 古风背景样式（不使用 card-ancient 以避免背景图片）
-  const bgClass = isLightMode 
+  const bgClass = modernInterface
+    ? 'modern-stats rounded-lg border bg-card text-card-foreground border-border'
+    : isLightMode
     ? 'bg-card border-border' 
     : 'rounded-xl border border-white/5  shadow-lg ';
   

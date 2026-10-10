@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, Download, Upload, Settings, Volume2, VolumeX, Vibrate, VibrateOff, Copy, ClipboardPaste, Sun, Moon, Laptop, LogOut, AlertTriangle, Share2, Image, ImageOff, Sparkles, Layers, Cloud, CloudOff, Clock } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useTheme } from '@/hooks/useTheme';
+import { useInterfaceStore } from '@/store/interfaceStore';
 import { useNavigate } from 'react-router-dom';
 import { uploadCloudSave, downloadCloudSave, listCloudSaves, deleteCloudSave, getDeviceId, registerUser, addMoney } from '@/utils/cloudApi';
 import { CloudSave } from '@/utils/cloudApi';
@@ -14,6 +15,8 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const interfaceVersion = useInterfaceStore(state => state.version);
+  const selectInterfaceVersion = useInterfaceStore(state => state.selectVersion);
   const { 
     exportSave, 
     exportSaveString,
@@ -281,18 +284,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
-      <div className="overflow-y-auto p-6 space-y-6 w-full max-w-md max-h-full rounded-xl border shadow-xl bg-card text-card-foreground">
-        <div className="flex justify-between items-center">
+      <div className="flex flex-col overflow-hidden w-full max-w-md max-h-[calc(100dvh-2rem)] rounded-xl border shadow-xl bg-card text-card-foreground">
+        <div className="flex shrink-0 justify-between items-center border-b border-border bg-card px-4 py-3 sm:px-6">
           <div className="flex gap-2 items-center">
             <Settings className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-bold">系统设置</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted">
+          <button onClick={onClose} aria-label="关闭系统设置" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-muted">
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
         <div className="space-y-4">
+          {interfaceVersion === 'modern' && <section className="border-b border-border pb-4">
+            <h3 className="mb-3 font-semibold">游戏与帮助</h3>
+            <div className="flex flex-wrap gap-2">
+              <button className="min-h-11 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted" onClick={() => { onClose(); navigate('/manual'); }}>游戏说明</button>
+              <button className="min-h-11 rounded-md border border-border px-4 py-2 text-sm hover:bg-muted" onClick={() => { onClose(); navigate('/bug-report'); }}>反馈建议</button>
+            </div>
+          </section>}
+          <section className="border-b border-border pb-4">
+            <h3 className="mb-3 font-semibold">游戏界面</h3>
+            <div role="group" aria-label="游戏界面版本" className="flex gap-2">
+              <button aria-pressed={interfaceVersion === 'classic'} onClick={() => selectInterfaceVersion('classic')}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md border px-3 py-3 text-sm ${interfaceVersion === 'classic' ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-muted'}`}>
+                <Layers size={16} />经典界面
+              </button>
+              <button aria-pressed={interfaceVersion === 'modern'} onClick={() => selectInterfaceVersion('modern')}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md border px-3 py-3 text-sm ${interfaceVersion === 'modern' ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-muted'}`}>
+                <Sparkles size={16} />暮山紫新版
+              </button>
+            </div>
+          </section>
           <div className="p-4 rounded-lg border border-dashed bg-muted/30 border-border">
             <h3 className="mb-4 font-semibold">外观设置</h3>
             <div className="flex p-1 rounded-lg border bg-background/50">
@@ -722,6 +746,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           >
             APK 下载
           </a>
+        </div>
         </div>
       </div>
     </div>

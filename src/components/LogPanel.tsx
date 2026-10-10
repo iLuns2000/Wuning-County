@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { useGameStore } from '@/store/gameStore';
+import { useInterfaceStore } from '@/store/interfaceStore';
 
 interface LogPanelProps {
   logs: string[];
@@ -183,6 +184,7 @@ const LogEntry: React.FC<{ log: string; index: number; isNew?: boolean; isLightM
 // 日志面板
 export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
   const { theme } = useTheme();
+  const modernInterface = useInterfaceStore(state => state.version === 'modern');
   const { glassEffectEnabled } = useGameStore();
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [newLogCount, setNewLogCount] = useState(0);
@@ -193,7 +195,9 @@ export const LogPanel: React.FC<LogPanelProps> = ({ logs }) => {
   
   // 古风背景样式
   const shouldUseGlass = glassEffectEnabled && !isLightMode;
-  const bgClass = shouldUseGlass
+  const bgClass = modernInterface
+    ? 'bg-card text-card-foreground border-border'
+    : shouldUseGlass
     ? 'bg-black/30 backdrop-blur-md border-white/10'
     : isLightMode
       ? 'bg-amber-50/50 border border-amber-200/30'

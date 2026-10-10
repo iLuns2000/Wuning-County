@@ -79,7 +79,7 @@ const weatherNames: Record<string, string> = {
   rain_heavy: '大雨', snow_light: '小雪', snow_heavy: '大雪',
 };
 
-export const PigeonRace: React.FC = () => {
+export const PigeonRace: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   const vibrate = useGameVibrate();
 
@@ -183,7 +183,7 @@ export const PigeonRace: React.FC = () => {
           {/* Header */}
           <header className="flex gap-3 items-center py-2 shrink-0">
             <button
-              onClick={() => { vibrate(VIBRATION_PATTERNS.LIGHT); navigate('/game'); }}
+              onClick={() => { vibrate(VIBRATION_PATTERNS.LIGHT); if (onBack) onBack(); else navigate('/game'); }}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />

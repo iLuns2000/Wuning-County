@@ -1022,7 +1022,7 @@ const LingyinMusicHouse: React.FC = () => {
   );
 };
 
-export const Buildings: React.FC = () => {
+export const Buildings: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
   const vibrate = useGameVibrate();
@@ -1037,7 +1037,7 @@ export const Buildings: React.FC = () => {
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
-                navigate('/game');
+                if (onBack) onBack(); else navigate('/game');
               }}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
