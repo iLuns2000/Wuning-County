@@ -468,7 +468,7 @@ const SudokuFacility: React.FC<{ onEnter: () => void }> = ({ onEnter }) => {
 };
 
 // 主组件
-export const Facilities: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const Facilities: React.FC<{ onBack?: () => void; embedded?: boolean }> = ({ onBack, embedded = false }) => {
   const { logs } = useGameStore();
   const navigate = useNavigate();
   const [showAlchemy, setShowAlchemy] = useState(false);
@@ -509,13 +509,13 @@ export const Facilities: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl lg:grid-cols-2">
+    <div className={embedded ? "mg-city-page mg-city-facilities" : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="city-page-layout grid grid-cols-1 gap-6 w-full max-w-5xl lg:grid-cols-2">
         
         {/* 左侧：游乐设施 */}
         <div className="space-y-4">
           {/* 头部 */}
-          <header className="flex justify-between items-center py-2">
+          {!embedded && <header className="flex justify-between items-center py-2">
             <button
               onClick={() => onBack ? onBack() : navigate('/game')}
               className="flex gap-2 items-center text-muted-foreground hover:text-foreground"
@@ -528,7 +528,7 @@ export const Facilities: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               游乐坊
             </h1>
             <div className="w-16" />
-          </header>
+          </header>}
 
           {/* 设施列表 */}
           <div className="space-y-4">

@@ -17,9 +17,11 @@ function sortAnnouncements(data: Announcement[]): Announcement[] {
   });
 }
 
-export const Announcements: React.FC = () => {
+export const Announcements: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const navigate = useNavigate();
-  const { announcementId } = useParams<{ announcementId?: string }>();
+  const { announcementId: routeAnnouncementId } = useParams<{ announcementId?: string }>();
+  const [localAnnouncementId, setLocalAnnouncementId] = useState<string | undefined>();
+  const announcementId = embedded ? localAnnouncementId : routeAnnouncementId;
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,11 +67,11 @@ export const Announcements: React.FC = () => {
    * - 在详情：弹出详情，回到列表（不要用 push/replace 到 /announcements，否则会叠两条列表或回到详情）。
    * - 在列表：回到进入公告前的页面（如游戏）。
    */
-  const handleBack = () => navigate(-1);
+  const handleBack = () => embedded ? setLocalAnnouncementId(undefined) : navigate(-1);
 
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-b from-sky-50 to-sky-100/60 dark:from-slate-900 dark:to-slate-900/95">
-      <div className="mx-auto mb-4 max-w-md">
+    <div className={embedded ? "mg-city-announcements" : "p-4 min-h-screen bg-gradient-to-b from-sky-50 to-sky-100/60 dark:from-slate-900 dark:to-slate-900/95"}>
+      {(!embedded || isDetail) && <div className="mx-auto mb-4 max-w-md">
         <button
           type="button"
           onClick={() => handleBack()}
@@ -78,7 +80,7 @@ export const Announcements: React.FC = () => {
           <ArrowLeft className="mr-1 w-5 h-5" />
           {isDetail ? '返回列表' : '返回'}
         </button>
-      </div>
+      </div>}
 
       <div className="mx-auto space-y-4 max-w-md">
         <div className="py-2 text-center">
@@ -118,7 +120,7 @@ export const Announcements: React.FC = () => {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => navigate(`/announcements/${item.id}`)}
+                  onClick={() => embedded ? setLocalAnnouncementId(String(item.id)) : navigate(`/announcements/${item.id}`)}
                   className="flex items-center gap-3 w-full px-4 py-3 text-left transition-colors hover:bg-sky-50/80 dark:hover:bg-accent/40"
                 >
                   <div className="flex justify-center items-center w-9 h-9 text-sm font-bold rounded-full shrink-0 bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200">

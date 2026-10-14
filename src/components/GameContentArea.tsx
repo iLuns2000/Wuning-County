@@ -22,9 +22,11 @@ function sections(children: React.ReactNode): React.ReactNode[] {
 export function GameContentArea({
   children,
   contentKey,
+  motionKey = contentKey,
 }: {
   children: React.ReactNode;
   contentKey: string;
+  motionKey?: string;
 }) {
   const content = useRef<HTMLDivElement>(null);
   const desktop = useDesktopGameLayout();
@@ -36,9 +38,9 @@ export function GameContentArea({
   }, [contentKey, desktop]);
 
   return (
-    <div className="mg-content-area" ref={content}>
+    <div className="mg-content-area" ref={content} data-motion={motionKey}>
       {sections(children).map((section, index) =>
-        React.isValidElement(section) ? React.cloneElement(section, { key: index }) : section,
+        React.isValidElement(section) ? React.cloneElement(section, { key: `${motionKey}/${index}` }) : section,
       )}
     </div>
   );

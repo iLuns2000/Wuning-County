@@ -1,3 +1,4 @@
+import { useInterfaceStore } from '@/store/interfaceStore';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Scroll, Sparkles, BookOpen, ShoppingCart, Shuffle, ChevronLeft, ChevronRight, CopyCheck, Check, Trash2, Heart, Eye, Filter, ShieldCheck, ArrowUpDown, Puzzle } from 'lucide-react';
@@ -36,8 +37,9 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const Collection: React.FC<{ onBack?: () => void; embedded?: boolean }> = ({ onBack, embedded = false }) => {
   const navigate = useNavigate();
+  const modern = useInterfaceStore(state => state.version === 'modern');
   const { collectedScrolls, openScroll, openAllScrolls, openScrollsBatch, removeScrollsByIds, combineScrollFragments, inventory, playerStats, buyScroll, buyTreasure, grantFreeScrollsIfNeeded, flags, updateStats, checkAchievements } = useGameStore();
   const hasChronicleBook = (inventory[CHRONICLE_BOOK_ID] || 0) > 0;
   const [revealingScroll, setRevealingScroll] = useState<ScrollType | null>(null);
@@ -233,11 +235,12 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const getUpdatedScroll = (id: string) => collectedScrolls.find(s => s.id === id);
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="space-y-6 w-full max-w-2xl">
-        <header className="flex gap-4 items-center py-2 shrink-0">
-          <button
-            onClick={() => onBack ? onBack() : navigate('/game')}
+    <div className={modern ? `modern-collection${embedded ? " collection-embedded" : " modern-page"}` : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="collection-body space-y-6 w-full max-w-2xl">
+        <header className="collection-toolbar flex gap-4 items-center py-2 shrink-0">
+          {!embedded && <><button
+            aria-label="返回行囊"
+            onClick={() => onBack ? onBack() : navigate(modern ? '/game?tab=行囊' : '/game')}
             className="p-2 rounded-full transition-colors hover:bg-secondary"
           >
             <ArrowLeft size={20} />
@@ -245,8 +248,8 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <h1 className="flex gap-2 items-center text-xl font-bold">
             <Scroll className="text-primary" />
             藏珍匣
-          </h1>
-          <div className="flex gap-2 ml-auto">
+          </h1></>}
+          <div className="collection-actions flex gap-2 ml-auto">
             {unopenedScrolls.length >= 10 && (
               <button
                 onClick={() => openScrollsBatch(10)}
@@ -271,7 +274,7 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 className="flex gap-1.5 items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80"
               >
                 <Sparkles size={14} />
-                全部
+                全部展开
               </button>
             )}
             {openedScrolls.length > 1 && (
@@ -296,11 +299,13 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </header>
 
         {/* 筛选栏 + 排序 */}
-        <div className="flex flex-wrap gap-1 items-center">
+        <div className="collection-filters flex flex-wrap gap-1 items-center">
+          <div className="collection-filter-tabs" role="group" aria-label="卷轴筛选">
           <Filter size={14} className="mr-1 text-muted-foreground" />
           {([['all', '全部'], ['unopened', '未打开'], ['read', '已读'], ['favorite', '收藏']] as [FilterType, string][]).map(([key, label]) => (
             <button
               key={key}
+              aria-pressed={filter === key}
               onClick={() => setFilterAndReset(key)}
               className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
                 filter === key
@@ -316,7 +321,8 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               {unopenedScrolls.length} 未打开
             </span>
           )}
-          <div className="relative ml-auto">
+          </div>
+          <div className="collection-sort relative ml-auto">
             <button
               onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu); }}
               className="flex gap-1 items-center px-2 py-1 text-xs rounded-full transition-colors bg-secondary text-muted-foreground hover:bg-secondary/80"
@@ -345,7 +351,7 @@ export const Collection: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </div>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="collection-count text-xs text-muted-foreground">
             {filteredScrolls.length} / {collectedScrolls.length}
           </span>
         </div>

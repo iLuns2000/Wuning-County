@@ -6,14 +6,16 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface CharityModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const CharityModal: React.FC<CharityModalProps> = ({ onClose }) => {
+export const CharityModal: React.FC<CharityModalProps> = ({ onClose, embedded = false }) => {
   const { playerStats, performCharity } = useGameStore();
   const vibrate = useGameVibrate();
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
+    <div className={embedded ? "mg-secondary-page mg-secondary-charity" : "flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>把善意留在县里</h2><p>量力而行，让每一笔支出都帮助到百姓。</p></div></div>}
       <div className="bg-card rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl border border-border">
         <div className="flex justify-between items-center p-4 bg-rose-50 border-b border-border dark:bg-rose-950/30">
           <h2 className="flex gap-2 items-center text-xl font-bold text-rose-900 dark:text-rose-100">

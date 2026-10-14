@@ -1022,18 +1022,18 @@ const LingyinMusicHouse: React.FC = () => {
   );
 };
 
-export const Buildings: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const Buildings: React.FC<{ onBack?: () => void; embedded?: boolean }> = ({ onBack, embedded = false }) => {
   const navigate = useNavigate();
   const { logs } = useGameStore();
   const vibrate = useGameVibrate();
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+    <div className={embedded ? "mg-city-page mg-city-buildings" : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="city-page-layout grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
         
         {/* Left: Buildings List */}
         <div className="flex overflow-y-auto flex-col gap-4 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
-          <header className="flex gap-4 items-center py-2 shrink-0">
+          {!embedded && <header className="flex gap-4 items-center py-2 shrink-0">
             <button 
               onClick={() => {
                 vibrate(VIBRATION_PATTERNS.LIGHT);
@@ -1044,7 +1044,7 @@ export const Buildings: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <ArrowLeft size={20} />
             </button>
             <h1 className="text-xl font-bold">建筑阁</h1>
-          </header>
+          </header>}
 
           <BlacksmithShop />
           <FengEGe />

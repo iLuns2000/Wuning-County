@@ -1,3 +1,4 @@
+import { MotionPresence } from '@/components/MotionPresence';
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -28,7 +29,9 @@ import { useGameStore, getDateInfo } from "@/store/gameStore";
 import { roles } from "@/data/roles";
 import { tasks } from "@/data/tasks";
 import { items } from "@/data/items";
-import { npcs } from "@/data/npcs";
+const InlineCollection = React.lazy(() => import('@/pages/Collection').then(module => ({ default: module.Collection })));
+const InlineWardrobe = React.lazy(() => import('@/components/PlayStreetModal').then(module => ({ default: module.PlayStreetModal })));
+const InlineNPCList = React.lazy(() => import('@/pages/NPCList').then(module => ({ default: module.NPCList })));
 import { facilities } from "@/data/facilities";
 import { CachedImage } from "@/utils/imageCache";
 import { LogPanel } from "@/components/LogPanel";
@@ -82,6 +85,13 @@ function Drawer({
   wide?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const pressedBackdrop = useRef(false);
+  const isBackdrop = (event: React.MouseEvent<HTMLDialogElement> | React.PointerEvent<HTMLDialogElement>) => {
+    if (event.target !== event.currentTarget) return false;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return event.clientX < bounds.left || event.clientX > bounds.right ||
+      event.clientY < bounds.top || event.clientY > bounds.bottom;
+  };
   useEffect(() => {
     const previousFocus = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
@@ -97,6 +107,13 @@ function Drawer({
       ref={dialog}
       className={`mg-drawer${wide ? " mg-feature-drawer" : ""}`}
       aria-labelledby="mg-drawer-title"
+      onPointerDown={(event) => { pressedBackdrop.current = isBackdrop(event); }}
+      onPointerCancel={() => { pressedBackdrop.current = false; }}
+      onClick={(event) => {
+        const shouldClose = pressedBackdrop.current && isBackdrop(event);
+        pressedBackdrop.current = false;
+        if (shouldClose) onClose();
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -108,7 +125,7 @@ function Drawer({
           <X size={22} />
         </button>
       </header>
-      <div className="mg-drawer-body">{children}</div>
+      <div className="mg-drawer-body" key={title}>{children}</div>
     </dialog>
   );
 }
@@ -136,7 +153,6 @@ export function ModernGame({
   const [district, setDistrict] = useState("市井");
   const [drawer, setDrawer] = useState("");
   const [inventoryTab, setInventoryTab] = useState("物品");
-  const [npcSearch, setNpcSearch] = useState("");
   const [notice, setNotice] = useState("");
   const previousLog = useRef(state.logs[0]);
   const scrollPositions = useRef<Record<string, number>>({});
@@ -321,7 +337,7 @@ export function ModernGame({
                     : ""}
             </span>
           </div>
-          <GameContentArea contentKey={`${positionKey}/${district}/${inventoryTab}/${npcSearch}`}>
+          <GameContentArea contentKey={`${positionKey}/${district}/${inventoryTab}`} motionKey={`${tab}/${desktop ? "" : feature}/${district}/${inventoryTab}`}>
           {blocked && (
             <div className="mg-alert">
               <ScrollText size={18} />
@@ -605,6 +621,11 @@ export function ModernGame({
                       onClick: () => visit("韭菜园"),
                     },
                     {
+                      name: "鸽子园",
+                      detail: `现有 ${state.pigeons.length} 只鸽子 · 购鸽、训练与参赛`,
+                      onClick: () => visit("赛鸽场"),
+                    },
+                    {
                       name: "西市集",
                       detail: "商品库存与买卖",
                       onClick: () => visit("西市集"),
@@ -653,35 +674,12 @@ export function ModernGame({
                       财富榜
                     </button>
                   </div>
-                  <div className="mg-section-title">
-                    <h2>县中故人</h2>
-                    <button
-                      disabled={blocked || snow}
-                      onClick={() => visit("拜访 NPC")}
-                    >
-                      拜访与互动
-                      <ChevronRight size={16} />
-                    </button>
+                  <div className="mg-section-title"><h2>县中故人</h2><span>拜访 · 闲聊 · 送礼</span></div>
+                  <div className="mg-inline-people">
+                    <React.Suspense fallback={<p className="mg-empty">载入人物…</p>}>
+                      <InlineNPCList embedded showEventModal={!feature} />
+                    </React.Suspense>
                   </div>
-                  <input
-                    className="mg-search"
-                    type="search"
-                    aria-label="搜索人物"
-                    placeholder="搜索人物姓名"
-                    value={npcSearch}
-                    onChange={(event) => setNpcSearch(event.target.value)}
-                  />
-                  {snow && <p className="mg-empty">大雪封路，今日无法拜访。</p>}
-                  {links(
-                    npcs
-                      .filter((npc) => npc.name.includes(npcSearch))
-                      .map((npc) => ({
-                        name: npc.name,
-                        detail: `${npc.title} · 好感 ${state.npcRelations[npc.id] || 0}`,
-                        disabled: snow,
-                        onClick: () => navigate(`/npcs/${npc.id}`),
-                      })),
-                  )}
                 </>
               )}
               {tab === "行囊" && (
@@ -755,21 +753,17 @@ export function ModernGame({
                       )}
                     </>
                   ) : inventoryTab === "衣装" ? (
-                    links([
-                      {
-                        name: "衣装与饰品",
-                        detail: "衣装更换、发型与饰品搭配",
-                        onClick: () => visit("游乐街"),
-                      },
-                    ])
+                    <div className="mg-inline-wardrobe">
+                      <React.Suspense fallback={<p className="mg-empty">载入衣装…</p>}>
+                        <InlineWardrobe embedded initialTab="dressing" onClose={() => setInventoryTab('物品')} />
+                      </React.Suspense>
+                    </div>
                   ) : (
-                    links([
-                      {
-                        name: "藏珍匣",
-                        detail: "已收集卷轴与藏品",
-                        onClick: () => visit("藏珍匣"),
-                      },
-                    ])
+                    <div className="mg-inline-collection">
+                      <React.Suspense fallback={<p className="mg-empty">载入藏珍匣…</p>}>
+                        <InlineCollection embedded onBack={() => setInventoryTab('物品')} />
+                      </React.Suspense>
+                    </div>
                   )}
                 </>
               )}
@@ -778,12 +772,23 @@ export function ModernGame({
           </GameContentArea>
         </div>
       </main>
-      {feature && desktop && (
+      {tab === '今日' && !feature && <div className="mg-mobile-actions" role="group" aria-label="常用日常操作">
+        <button disabled={blocked || snow || state.dailyCounts.work >= 3 || state.playerStats.health < 10} onClick={onWork}>
+          <Briefcase size={18} /><span>工作<small>{snow ? '大雪停工' : `剩余 ${Math.max(0, 3 - state.dailyCounts.work)} 次`}</small></span>
+        </button>
+        <button disabled={blocked || state.dailyCounts.rest >= 1} onClick={onRest}>
+          <Heart size={18} /><span>休息<small>{state.dailyCounts.rest >= 1 ? '今日已休息' : `恢复 ${state.role === 'hero' ? 30 : 20} 体力`}</small></span>
+        </button>
+        <button className="mg-mobile-next" disabled={blocked} onClick={() => setDrawer('日终小结')}>
+          <Moon size={18} /><span>结束今日<small>查看日终小结</small></span>
+        </button>
+      </div>}
+      <MotionPresence show={Boolean(feature && desktop)} kind="drawer">
         <Drawer title={feature} onClose={closeFeature} wide>
           {notice && <div className="mg-feature-notice" role="status">{notice}</div>}
           <div className="mg-feature">{renderFeature(feature, closeFeature)}</div>
         </Drawer>
-      )}
+      </MotionPresence>
       {notice && !(feature && desktop) && (
         <div className="mg-toast" role="status">
           <span>{notice}</span>
@@ -792,7 +797,7 @@ export function ModernGame({
           </button>
         </div>
       )}
-      {drawer && (
+      <MotionPresence show={Boolean(drawer)} kind="drawer">
         <Drawer title={drawer} onClose={() => setDrawer("")}>
           {drawer === "记录" ? (
             <LogPanel logs={state.logs} />
@@ -891,7 +896,7 @@ export function ModernGame({
             </>
           )}
         </Drawer>
-      )}
+      </MotionPresence>
     </div>
   );
 }

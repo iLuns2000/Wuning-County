@@ -6,9 +6,10 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface ExploreModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
+export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose, embedded = false }) => {
   const { exploreResult, performExplore, isExploring } = useGameStore();
   const [showResult, setShowResult] = useState(false);
   const vibrate = useGameVibrate();
@@ -36,8 +37,35 @@ export const ExploreModal: React.FC<ExploreModalProps> = ({ onClose }) => {
   const gainedItem = exploreResult?.itemId ? items.find(i => i.id === exploreResult.itemId) : null;
   const isSuccess = (exploreResult?.reputation || 0) > 0;
 
+  if (embedded) {
+    const signed = (value = 0) => `${value >= 0 ? '+' : ''}${value}`;
+    return <section className="modern-explore" aria-live="polite">
+      <div className="modern-explore-heading">
+        <span className="modern-explore-icon"><Compass size={24} /></span>
+        <div><small>山野行记</small><h2>{showResult ? (isSuccess ? '满载归来' : '此行不易') : '行至山野'}</h2></div>
+        <span className="modern-explore-status">{showResult ? '旅途结束' : '探索中'}</span>
+      </div>
+      {!showResult ? <div className="modern-explore-loading">
+        <Compass size={36} className="animate-pulse" />
+        <p>翻山越岭，寻觅奇珍异宝</p>
+        <small>旅途结束后，收获会显示在这里。</small>
+      </div> : <>
+        <p className="modern-explore-story">{exploreResult?.message || '这段旅途已经结束。'}</p>
+        {isSuccess && <div className="modern-explore-rewards">
+          <div><Coins size={20} /><span>银两</span><strong>{signed(exploreResult?.money)}<small> 文</small></strong></div>
+          <div><Trophy size={20} /><span>声望</span><strong>{signed(exploreResult?.reputation)}</strong></div>
+          {gainedItem && <div><Package size={20} /><span>{gainedItem.name}</span><strong>获得物品</strong></div>}
+        </div>}
+        {gainedItem && isSuccess && <p className="modern-explore-item-note">{gainedItem.description}</p>}
+        {isSuccess && !gainedItem && <p className="modern-explore-item-note">本次未发现特殊物品。</p>}
+        <button className="modern-explore-return" onClick={onClose}>{isSuccess ? '收下奖励，返回县城' : '返回县城'}</button>
+      </>}
+    </section>;
+  }
+
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-300 bg-black/80 animate-in fade-in">
+    <div className={embedded ? "mg-secondary-page mg-secondary-explore" : "flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-300 bg-black/80 animate-in fade-in"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>山野行记</h2><p>走出县城，等待这次旅途的收获。</p></div></div>}
       <div className="flex overflow-hidden relative flex-col w-full max-w-md rounded-xl border shadow-2xl bg-card border-border">
         
         {/* Close button (only when done) */}

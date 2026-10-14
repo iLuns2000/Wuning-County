@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface TreasureModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
 // 珍宝稀有度颜色
@@ -21,7 +22,7 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
   legend: { bg: 'bg-amber-500/20', border: 'border-amber-500/50', text: 'text-amber-300', glow: 'shadow-amber-500/40' },
 };
 
-export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
+export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose, embedded = false }) => {
   const { inventory, playerStats, buyTreasure, propertyTaxHalvingDaysLeft, flags } = useGameStore();
   const vibrate = useGameVibrate();
   const { theme } = useTheme();
@@ -32,8 +33,9 @@ export const TreasureModal: React.FC<TreasureModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+    <div className={embedded ? "mg-secondary-page mg-secondary-treasure" : "fixed inset-0 z-50 flex items-center justify-center p-4"} onClick={embedded ? undefined : onClose}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>寻一件传世之珍</h2><p>细看珍品，收藏属于你的县城故事。</p></div></div>}
+      {!embedded && <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />}
       
       {/* 弹窗主体 - 金色调 */}
       <div 

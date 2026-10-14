@@ -79,7 +79,7 @@ const weatherNames: Record<string, string> = {
   rain_heavy: '大雨', snow_light: '小雪', snow_heavy: '大雪',
 };
 
-export const PigeonRace: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const PigeonRace: React.FC<{ onBack?: () => void; embedded?: boolean }> = ({ onBack, embedded = false }) => {
   const navigate = useNavigate();
   const vibrate = useGameVibrate();
 
@@ -174,14 +174,14 @@ export const PigeonRace: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     .slice(0, 5);
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+    <div className={embedded ? "mg-city-page mg-city-pigeonrace" : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="city-page-layout grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
 
         {/* Left: Main Content */}
         <div className="relative flex overflow-y-auto flex-col gap-4 mx-auto w-full max-w-md h-full md:max-w-none no-scrollbar">
 
           {/* Header */}
-          <header className="flex gap-3 items-center py-2 shrink-0">
+          {!embedded && <header className="flex gap-3 items-center py-2 shrink-0">
             <button
               onClick={() => { vibrate(VIBRATION_PATTERNS.LIGHT); if (onBack) onBack(); else navigate('/game'); }}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
@@ -192,7 +192,7 @@ export const PigeonRace: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <Bird size={22} className="text-sky-500" />
               <h1 className="text-xl font-bold">赛鸽场</h1>
             </div>
-          </header>
+          </header>}
 
           {/* 场地描述 */}
           <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/60 dark:border-sky-800 dark:bg-sky-950/20">

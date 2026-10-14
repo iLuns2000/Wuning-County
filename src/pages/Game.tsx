@@ -1,3 +1,4 @@
+import { MotionPresence } from '@/components/MotionPresence';
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { StatsDisplay } from '@/components/StatsDisplay';
@@ -717,23 +718,23 @@ export const Game: React.FC = () => {
     const featureProps = { onClose };
     const features: Record<string, React.ReactNode> = {
       '小吃街': <SnackStreetModal {...featureProps} embedded />,
-      '西市集': <MarketModal {...featureProps}/>,
-      '产业置办': <EstateModal {...featureProps}/>,
-      '县衙办公室': <OfficeModal {...featureProps}/>,
-      '韭菜园': <LeekGardenModal {...featureProps}/>,
-      '柳园': <WillowGardenModal {...featureProps}/>,
-      '游乐街': <PlayStreetModal {...featureProps}/>,
-      '珍宝阁': <TreasureModal {...featureProps}/>,
-      '善行义举': <CharityModal {...featureProps}/>,
-      '外出探险': <ExploreModal {...featureProps}/>,
-      '建筑阁': <ModernBuildings onBack={onClose}/>,
-      '游乐坊': <ModernFacilities onBack={onClose}/>,
-      '赛鸽场': <ModernPigeonRace onBack={onClose}/>,
-      '藏珍匣': <ModernCollection onBack={onClose}/>,
-      '任务记录': <ModernTasks onBack={onClose}/>,
+      '西市集': <MarketModal {...featureProps} embedded/>,
+      '产业置办': <EstateModal {...featureProps} embedded/>,
+      '县衙办公室': <OfficeModal {...featureProps} embedded/>,
+      '韭菜园': <LeekGardenModal {...featureProps} embedded/>,
+      '柳园': <WillowGardenModal {...featureProps} embedded/>,
+      '游乐街': <PlayStreetModal {...featureProps} embedded/>,
+      '珍宝阁': <TreasureModal {...featureProps} embedded/>,
+      '善行义举': <CharityModal {...featureProps} embedded/>,
+      '外出探险': <ExploreModal {...featureProps} embedded/>,
+      '建筑阁': <ModernBuildings onBack={onClose} embedded/>,
+      '游乐坊': <ModernFacilities onBack={onClose} embedded/>,
+      '赛鸽场': <ModernPigeonRace onBack={onClose} embedded/>,
+      '藏珍匣': <ModernCollection onBack={onClose} embedded/>,
+      '任务记录': <ModernTasks onBack={onClose} embedded/>,
       '财富榜': <ModernLeaderboard/>,
-      '公告栏': <ModernAnnouncements/>,
-      '拜访 NPC': <ModernNPCList onBack={onClose}/>,
+      '公告栏': <ModernAnnouncements embedded/>,
+      '拜访 NPC': <ModernNPCList onBack={onClose} embedded/>,
     };
     return <Suspense fallback={<p className="p-6 text-muted-foreground">载入中…</p>}>{features[name] || <button onClick={onClose}>返回县城</button>}</Suspense>;
   };
@@ -1300,7 +1301,7 @@ export const Game: React.FC = () => {
       </div>
       </>}
 
-      {currentEvent && !(modernInterface && gameParams.get('place') === '拜访 NPC') && (
+      <MotionPresence show={Boolean(currentEvent && !(modernInterface && (gameParams.get('place') === '拜访 NPC' || (gameParams.get('tab') === '人物' && !gameParams.get('place')))))}>{currentEvent && (
         <EventModal
           event={currentEvent}
           playerStats={playerStats}
@@ -1318,19 +1319,19 @@ export const Game: React.FC = () => {
             };
           })()}
         />
-      )}
+      )}</MotionPresence>
 
-      {showPolicies && role === 'magistrate' && (
+      <MotionPresence show={showPolicies && role === 'magistrate'}>
         <PolicyModal 
           activePolicyId={activePolicyId} 
           onSelect={setPolicy}
           onCancel={cancelPolicy}
           onClose={() => setShowPolicies(false)}
         />
-      )}
+      </MotionPresence>
 
-      <ProfileModal 
-        isOpen={showProfileModal}
+      <MotionPresence show={showProfileModal}><ProfileModal
+        isOpen={true}
         onClose={() => {
           setShowProfileModal(false);
           if (isMoGuRenaming) setIsMoGuRenaming(false);
@@ -1339,32 +1340,32 @@ export const Game: React.FC = () => {
         initialAvatar={playerProfile?.avatar || ''}
         canEditName={canEditProfileName}
         onSave={handleSaveProfile}
-      />
+      /></MotionPresence>
 
-      <TalentModal isOpen={showTalents} onClose={() => setShowTalents(false)} />
-      <AchievementModal isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
-      {showMarket && <MarketModal onClose={() => setShowMarket(false)} />}
-      {showSnackStreet && <SnackStreetModal onClose={() => setShowSnackStreet(false)} />}
-      {showEstates && <EstateModal onClose={() => setShowEstates(false)} />}
-      {showOffice && <OfficeModal onClose={() => setShowOffice(false)} />}
-      {showInventory && <InventoryModal onClose={() => setShowInventory(false)} />}
-      {showExplore && <ExploreModal onClose={() => setShowExplore(false)} />}
-      {showLeekGarden && <LeekGardenModal onClose={() => setShowLeekGarden(false)} />}
-      {showWillowGarden && <WillowGardenModal onClose={() => setShowWillowGarden(false)} />}
-      {showPlayStreet && <PlayStreetModal onClose={() => setShowPlayStreet(false)} />}
-      {showTreasure && <TreasureModal onClose={() => setShowTreasure(false)} />}
-      {showCharity && <CharityModal onClose={() => setShowCharity(false)} />}
+      <MotionPresence show={showTalents}><TalentModal isOpen={true} onClose={() => setShowTalents(false)} /></MotionPresence>
+      <MotionPresence show={showAchievements}><AchievementModal isOpen={true} onClose={() => setShowAchievements(false)} /></MotionPresence>
+      <MotionPresence show={showSettings}><SettingsModal isOpen={true} onClose={() => setShowSettings(false)} /></MotionPresence>
+      <MotionPresence show={showMarket}><MarketModal onClose={() => setShowMarket(false)} /></MotionPresence>
+      <MotionPresence show={showSnackStreet}><SnackStreetModal onClose={() => setShowSnackStreet(false)} /></MotionPresence>
+      <MotionPresence show={showEstates}><EstateModal onClose={() => setShowEstates(false)} /></MotionPresence>
+      <MotionPresence show={showOffice}><OfficeModal onClose={() => setShowOffice(false)} /></MotionPresence>
+      <MotionPresence show={showInventory}><InventoryModal onClose={() => setShowInventory(false)} /></MotionPresence>
+      <MotionPresence show={showExplore}><ExploreModal onClose={() => setShowExplore(false)} /></MotionPresence>
+      <MotionPresence show={showLeekGarden}><LeekGardenModal onClose={() => setShowLeekGarden(false)} /></MotionPresence>
+      <MotionPresence show={showWillowGarden}><WillowGardenModal onClose={() => setShowWillowGarden(false)} /></MotionPresence>
+      <MotionPresence show={showPlayStreet}><PlayStreetModal onClose={() => setShowPlayStreet(false)} /></MotionPresence>
+      <MotionPresence show={showTreasure}><TreasureModal onClose={() => setShowTreasure(false)} /></MotionPresence>
+      <MotionPresence show={showCharity}><CharityModal onClose={() => setShowCharity(false)} /></MotionPresence>
 
-      {showChoiceModal && choiceModalData && (
+      <MotionPresence show={Boolean(showChoiceModal && choiceModalData)}>{choiceModalData && (
         <ChoiceModal
-          isOpen={showChoiceModal}
+          isOpen={true}
           onClose={() => setShowChoiceModal(false)}
           title={choiceModalData.title}
           description={choiceModalData.description}
           choices={choiceModalData.choices}
         />
-      )}
+      )}</MotionPresence>
 
       {showTeaPopup && (
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black/50">

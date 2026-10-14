@@ -7,9 +7,10 @@ import { HelpButton } from './ContextualHelpTip';
 
 interface MarketModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
+export const MarketModal: React.FC<MarketModalProps> = ({ onClose, embedded = false }) => {
   const { marketPrices, marketInventory, ownedGoods, playerStats, buyGood, sellGood, marketState, flags, npcRelations } = useGameStore();
   const vibrate = useGameVibrate();
 
@@ -40,7 +41,8 @@ export const MarketModal: React.FC<MarketModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-200 bg-black/50 animate-in fade-in">
+    <div className={embedded ? "mg-secondary-page mg-secondary-market" : "flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm duration-200 bg-black/50 animate-in fade-in"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>市井交易</h2><p>看行情，备货物，把握每一笔买卖。</p></div></div>}
       <div className="bg-card text-card-foreground rounded-xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-border">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-border bg-muted/20">

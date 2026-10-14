@@ -1,3 +1,4 @@
+import { MotionPresence } from '@/components/MotionPresence';
 /*
  * @Author: xyZhan
  * @Date: 2026-01-19 15:02:38
@@ -79,6 +80,11 @@ export const cn = (...classes: (string | undefined | null | false)[]) => {
 };
 
 const Router = HashRouter;
+
+const RouteMotion = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  return <div className="route-motion" key={location.pathname}>{children}</div>;
+};
 
 const GameLogToast = () => {
   const location = useLocation();
@@ -255,7 +261,7 @@ function App() {
       <Router>
         <ScrollToTop />
         <InventoryMigrationNotice />
-      {!needsInterfaceChoice && <ModernRouteFrame><Routes>
+      {!needsInterfaceChoice && <ModernRouteFrame><RouteMotion><Routes>
         <Route path="/" element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
         <Route path="/game" element={<Suspense fallback={<PageLoader />}><Game /></Suspense>} />
         <Route path="/npcs" element={<Suspense fallback={<PageLoader />}><NPCList /></Suspense>} />
@@ -273,13 +279,13 @@ function App() {
         <Route path="/bug-report" element={<Suspense fallback={<PageLoader />}><BugReport /></Suspense>} />
         <Route path="/announcements/:announcementId" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
         <Route path="/announcements" element={<Suspense fallback={<PageLoader />}><Announcements /></Suspense>} />
-      </Routes></ModernRouteFrame>}
+      </Routes></RouteMotion></ModernRouteFrame>}
       <NewYearCountdownBanner />
       <FireworksSplash />
       <GameLogToast />
       <Watermark />
       {/* 活动弹窗 */}
-      {!needsInterfaceChoice && !showSplash && shouldShowActivityPopup && activityPopup && (
+      <MotionPresence show={Boolean(!needsInterfaceChoice && !showSplash && shouldShowActivityPopup && activityPopup)}>{activityPopup && (
         <ActivityModal
           isOpen={true}
           activityId={activityPopup.id}
@@ -291,7 +297,7 @@ function App() {
           onClose={() => setActivityPopup(null)}
           onDismiss={(id, hash) => dismissActivityPopup(id, hash)}
         />
-      )}
+      )}</MotionPresence>
       {/* 备案号 - 只在首页显示 */}
       <IcpBadge />
     </Router>

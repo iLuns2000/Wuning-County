@@ -5,9 +5,10 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface WillowGardenModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const WillowGardenModal: React.FC<WillowGardenModalProps> = ({ onClose }) => {
+export const WillowGardenModal: React.FC<WillowGardenModalProps> = ({ onClose, embedded = false }) => {
   const { 
     disasterState, 
     ownedGoods, 
@@ -39,7 +40,8 @@ export const WillowGardenModal: React.FC<WillowGardenModalProps> = ({ onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+    <div className={embedded ? "mg-secondary-page mg-secondary-willowgarden" : "fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>柳荫下的小憩</h2><p>歇脚、游园，也为县中百姓尽一份心意。</p></div></div>}
       <div className="w-full max-w-md bg-card border-2 border-primary/20 rounded-xl shadow-2xl overflow-hidden m-4 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b bg-muted/50">

@@ -1,16 +1,48 @@
-import React from 'react';
-import { X, Building2, Coins } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Building2, Coins, Sprout, Trees, TrendingUp } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { facilities } from '@/data/facilities';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface EstateModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const EstateModal: React.FC<EstateModalProps> = ({ onClose }) => {
+export const EstateModal: React.FC<EstateModalProps> = ({ onClose, embedded = false }) => {
   const { ownedFacilities, playerStats, buyFacility } = useGameStore();
   const vibrate = useGameVibrate();
+  const [category, setCategory] = useState<'all' | 'normal' | 'resource'>('all');
+
+  if (embedded) {
+    const income = facilities.reduce((sum, f) => sum + (f.type === 'resource' ? 0 : f.dailyIncome * (ownedFacilities[f.id] || 0)), 0);
+    const total = facilities.reduce((sum, f) => sum + (ownedFacilities[f.id] || 0), 0);
+    return <section className="mg-estate-page">
+      <div className="mg-secondary-intro"><Building2 size={24}/><div><h2>置一份家业，收一份长利</h2><p>田庄、商铺与资源产业，都在这里经营。</p></div></div>
+      <div className="mg-estate-overview">
+        <div><span><Coins size={16}/>可用资金</span><strong>{playerStats.money.toLocaleString()}<small>文</small></strong></div>
+        <div><span><TrendingUp size={16}/>产业基础日收</span><strong>{income.toLocaleString()}<small>文 / 日</small></strong></div>
+        <div><span><Building2 size={16}/>持有规模</span><strong>{total.toLocaleString()}<small>份 / 级</small></strong></div>
+      </div>
+      <div className="mg-estate-toolbar"><div role="group" aria-label="产业分类">{([['all', '全部产业'], ['normal', '收租经营'], ['resource', '资源采集']] as const).map(([key, label]) => <button key={key} aria-pressed={category === key} className={category === key ? 'active' : ''} onClick={() => setCategory(key)}>{label}</button>)}</div><span>收益随县城经济变化</span></div>
+      <div className="mg-estate-list">{facilities.filter(f => category === 'all' || (f.type === 'resource' ? 'resource' : 'normal') === category).map(f => {
+        const owned = ownedFacilities[f.id] || 0;
+        const resource = f.type === 'resource';
+        const maximum = resource ? (f.maxLevel || 10) : (f.maxCount || 999);
+        const maxed = owned >= maximum;
+        const cost = resource ? Math.floor(f.cost * Math.pow(1.5, owned)) : f.cost;
+        const affordable = playerStats.money >= cost;
+        const Icon = resource ? Trees : Sprout;
+        return <article key={f.id}>
+          <div className="mg-estate-icon"><Icon size={24}/></div>
+          <div className="mg-estate-description"><div><h3>{f.name}</h3><span>{resource ? `等级 ${owned} / ${maximum}` : `持有 ${owned} / ${maximum}`}</span></div><p>{f.description}</p><small>{f.incomeDescription}</small></div>
+          <div className="mg-estate-yield"><span>{resource ? '当前产出 / 每2秒' : '每份基础日收'}</span><b>{resource ? `+${(f.resourceAmount || 0) * owned} ${f.resourceType === 'wood' ? '木材' : '石料'}` : `+${f.dailyIncome} 文`}</b>{resource && !maxed && <small>下一级 +{(f.resourceAmount || 0) * (owned + 1)}</small>}</div>
+          <div className="mg-estate-purchase"><span>{maxed ? '已达上限' : `${cost.toLocaleString()} 文`}</span><button disabled={maxed || !affordable} onClick={() => { vibrate(VIBRATION_PATTERNS.SUCCESS); buyFacility(f.id); }}>{maxed ? '已达上限' : !affordable ? '资金不足' : resource && owned > 0 ? '升级产业' : '置办产业'}</button></div>
+        </article>;
+      })}</div>
+      <p className="mg-estate-note">经营产业每日结算；资源产业持续采集，升级后提高产量。</p>
+    </section>;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

@@ -1,3 +1,5 @@
+import { useInterfaceStore } from '@/store/interfaceStore';
+import { MotionPresence } from '@/components/MotionPresence';
 /*
  * @Author: xyZhan
  * @Date: 2026-01-19 15:41:56
@@ -9,7 +11,7 @@
  * Copyright (c) 2026 by , All Rights Reserved. 
  */
 import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Gift, MessageCircle, Sparkles, Search, SortAsc, X } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { npcEvents } from '@/data/events';
@@ -34,8 +36,10 @@ const sortLabels: Record<SortType, string> = {
   id_desc: '姓名 Z→A',
 };
 
-export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const NPCList: React.FC<{ onBack?: () => void; embedded?: boolean; showEventModal?: boolean }> = ({ onBack, embedded = false, showEventModal = true }) => {
   const navigate = useNavigate();
+  const modern = useInterfaceStore(state => state.version === 'modern');
+  const location = useLocation();
   const vibrate = useGameVibrate();
   const {
     npcRelations,
@@ -687,15 +691,15 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+    <div className={modern ? "modern-page modern-npclist" : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="directory-layout grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
 
         {/* Left: NPC List */}
-        <div className="flex overflow-hidden flex-col gap-4 w-full max-w-md h-full md:max-w-none">
+        <div className="directory-main flex overflow-hidden flex-col gap-4 w-full max-w-md h-full md:max-w-none">
           {/* 头部 */}
-          <header className="flex gap-4 items-center py-2 shrink-0">
+          {!embedded && <header className="flex gap-4 items-center py-2 shrink-0">
             <button
-              onClick={() => onBack ? onBack() : navigate('/game')}
+              onClick={() => onBack ? onBack() : navigate(modern ? '/game?tab=人物' : '/game')}
               className="p-2 rounded-full transition-colors hover:bg-secondary"
             >
               <ArrowLeft size={20} />
@@ -703,14 +707,14 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <div className="flex flex-col">
               <h1 className="text-xl font-bold font-display">拜访 NPC</h1>
             </div>
-          </header>
+          </header>}
 
           {/* 搜索和筛选区域 - 古风样式 */}
           <div className="flex flex-col gap-2 px-1">
             {/* 搜索框 - 古风样式 */}
             <div className={`
               relative transition-all duration-300
-              ${isSearchFocused ? 'scale-105' : ''}`}>
+              ${isSearchFocused && !modern ? 'scale-105' : ''}`}>
               <Search 
                 className={`
                   absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300
@@ -770,7 +774,7 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           </div>
 
           {/* NPC 列表 */}
-          <div className="overflow-y-auto flex-1 pr-2 space-y-3 min-h-0">
+          <div className="directory-cards overflow-y-auto flex-1 pr-2 space-y-3 min-h-0">
             {filteredAndSortedNPCs.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
                 <span className="block mb-2 text-3xl">🔍</span>
@@ -785,7 +789,7 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 return (
                   <div 
                     key={npc.id} 
-                    className="p-4 space-y-3 rounded-xl border transition-all duration-300 bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+                    className="directory-card p-4 space-y-3 rounded-xl border transition-all duration-300 bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
                   >
                     <div className="flex gap-3 justify-between items-start">
                       <div className="flex-1 min-w-0">
@@ -825,10 +829,10 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </div>
 
                     {/* 交互按钮 */}
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
+                    <div className="directory-actions flex flex-wrap gap-2 pt-2 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
                       {/* 详情按钮 */}
                       <button
-                        onClick={() => navigate(`/npcs/${npc.id}`)}
+                        onClick={() => navigate(`/npcs/${npc.id}`, { state: { returnTo: `${location.pathname}${location.search}` } })}
                         className="flex flex-1 gap-2 justify-center items-center py-2 text-sm rounded-lg transition-colors bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground min-w-[80px]"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -933,35 +937,29 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
 
         {/* Right: Log Panel */}
-        <div className="mx-auto w-full max-w-md h-64 md:h-full md:max-w-none">
+        <div className="directory-log mx-auto w-full max-w-md h-64 md:h-full md:max-w-none">
           <LogPanel logs={logs} />
         </div>
       </div>
 
-      {currentEvent && (
-        <EventModal
+      <MotionPresence show={Boolean(showEventModal && currentEvent)}>{currentEvent && (<EventModal
           event={currentEvent}
           playerStats={playerStats}
           onOptionSelect={handleOptionSelect}
           onClose={() => dismissEvent()}
-        />
-      )}
+        />)}</MotionPresence>
 
-      {giftNpcId && giftNpcName && (
-        <NPCGiftModal
+      <MotionPresence show={Boolean(giftNpcId && giftNpcName)}>{giftNpcId && giftNpcName && (<NPCGiftModal
           npcId={giftNpcId}
           npcName={giftNpcName}
           onClose={() => { setGiftNpcId(null); setGiftNpcName(null); }}
           onConfirm={handleJiYiOuGiftConfirm}
-        />
-      )}
+        />)}</MotionPresence>
 
-      {showClinicAnimalModal && (
-        <ClinicAnimalModal onClose={() => setShowClinicAnimalModal(false)} />
-      )}
+      <MotionPresence show={showClinicAnimalModal}><ClinicAnimalModal onClose={() => setShowClinicAnimalModal(false)} /></MotionPresence>
 
-      <ProfileModal 
-        isOpen={showProfileModal}
+      <MotionPresence show={showProfileModal}><ProfileModal
+        isOpen={true}
         onClose={() => {
           setShowProfileModal(false);
           if (isMoGuRenaming) setIsMoGuRenaming(false);
@@ -970,7 +968,7 @@ export const NPCList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         initialAvatar={playerProfile?.avatar || ''}
         canEditName={canEditProfileName}
         onSave={handleSaveProfile}
-      />
+      /></MotionPresence>
     </div>
   );
 };

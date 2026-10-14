@@ -1,3 +1,4 @@
+import { MotionPresence } from '@/components/MotionPresence';
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -20,9 +21,14 @@ export function ModernRouteFrame({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState(false);
   if (!modern || location.pathname === "/" || location.pathname === "/game")
     return <>{children}</>;
+  const origin = location.state?.returnTo;
+  const backTo = location.pathname.startsWith('/npcs/') && typeof origin === 'string' &&
+    (origin.startsWith('/game?') || origin === '/npcs') ? origin : null;
   const active = location.pathname.startsWith("/npcs")
     ? "人物"
-    : location.pathname === "/collection"
+    : location.pathname === "/tasks"
+      ? "今日"
+      : location.pathname === "/collection"
       ? "行囊"
       : "县城";
   return (
@@ -57,7 +63,7 @@ export function ModernRouteFrame({ children }: { children: React.ReactNode }) {
       <main className="mg-main">
         <header className="mg-topbar">
           <button
-            onClick={() => navigate(`/game?tab=${encodeURIComponent(active)}`)}
+            onClick={() => navigate(backTo || `/game?tab=${encodeURIComponent(active)}`)}
           >
             <ArrowLeft size={18} />
             返回{active}
@@ -72,7 +78,7 @@ export function ModernRouteFrame({ children }: { children: React.ReactNode }) {
         </header>
         <div className="mg-route-content">{children}</div>
       </main>
-      <SettingsModal isOpen={settings} onClose={() => setSettings(false)} />
+      <MotionPresence show={settings}><SettingsModal isOpen={true} onClose={() => setSettings(false)} /></MotionPresence>
     </div>
   );
 }

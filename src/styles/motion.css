@@ -1,0 +1,69 @@
+:root {
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+.motion-presence { display: contents; }
+.motion-modal > div { animation: ui-fade-in 220ms ease-out backwards; }
+.motion-modal > div > :is(div, section):not(.absolute) {
+  animation: ui-modal-in 280ms var(--motion-ease) backwards;
+}
+.motion-modal[data-state='closing'] > div {
+  animation: ui-fade-out 180ms ease-in both;
+  pointer-events: none;
+}
+.motion-modal[data-state='closing'] > div > :is(div, section):not(.absolute) {
+  animation: ui-modal-out 180ms ease-in both;
+}
+.motion-drawer > .mg-drawer { animation: ui-drawer-in 320ms var(--motion-ease) backwards; }
+.motion-drawer > .mg-drawer::backdrop { animation: ui-fade-in 240ms ease-out backwards; }
+.motion-drawer .mg-drawer-body { animation: ui-fade-in 180ms ease-out backwards; }
+.motion-drawer[data-state='closing'] > .mg-drawer {
+  animation: ui-drawer-out 180ms ease-in both;
+  pointer-events: none;
+}
+.motion-drawer[data-state='closing'] > .mg-drawer::backdrop { animation: ui-fade-out 180ms ease-in both; }
+
+/* Animate content rather than its scroll container or persistent navigation. */
+.mg-content-area[data-motion] > * {
+  animation: ui-content-in 220ms var(--motion-ease) backwards;
+}
+.route-motion { display: contents; }
+.route-motion > * { animation: ui-fade-in 220ms ease-out backwards; }
+.mg-rail nav button, .mg-topbar button, .mg-subtabs button {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+/* Existing Tailwind-style motion classes were previously undefined. */
+.animate-in { animation: ui-legacy-in 240ms var(--motion-ease) backwards; }
+.fade-in { --ui-enter-opacity: 0; }
+.zoom-in, .zoom-in-95 { --ui-enter-scale: .96; }
+.slide-in-from-bottom-4 { --ui-enter-y: 16px; }
+.slide-in-from-top-2 { --ui-enter-y: -8px; }
+@keyframes ui-legacy-in {
+  from { opacity: var(--ui-enter-opacity, 1); transform: translateY(var(--ui-enter-y, 0px)) scale(var(--ui-enter-scale, 1)); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ui-modal-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes ui-modal-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px) scale(.985); } }
+@keyframes ui-drawer-in { from { opacity: .5; transform: translateX(100%); } to { opacity: 1; transform: none; } }
+@keyframes ui-drawer-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(100%); } }
+@keyframes ui-sheet-in { from { opacity: .5; transform: translateY(100%); } to { opacity: 1; transform: none; } }
+@keyframes ui-sheet-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(100%); } }
+@keyframes ui-content-in { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: none; } }
+
+@media (max-width: 640px) {
+  .motion-drawer > .mg-drawer { animation-name: ui-sheet-in; }
+  .motion-drawer[data-state='closing'] > .mg-drawer { animation-name: ui-sheet-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-presence > *, .motion-presence > div > *,
+  .motion-presence > dialog::backdrop,
+  .motion-drawer .mg-drawer-body,
+  .mg-content-area[data-motion] > *, .route-motion > *, .animate-in {
+    animation: none !important;
+  }
+  .mg-rail nav button, .mg-topbar button, .mg-subtabs button { transition: none; }
+}

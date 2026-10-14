@@ -15,6 +15,7 @@ import {
 
 interface LeekGardenModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
 const STANDARD_VARIETIES = [
@@ -42,7 +43,7 @@ const FACILITIES = [
   { id: 'processing_table', name: '精加工台', cost: 600, desc: '降低成品腐损，提高效率', icon: Utensils },
 ];
 
-export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => {
+export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose, embedded = false }) => {
   const vibrate = useGameVibrate();
   const { 
     leekPlots, ownedGoods, playerStats, leekFacilities, leekOrders, leekColdStorageLevel,
@@ -63,7 +64,8 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose }) => 
   const [showHelp, setShowHelp] = React.useState(false);
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className={embedded ? "mg-secondary-page mg-secondary-leekgarden" : "flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/50 backdrop-blur-sm"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>耕种与收获</h2><p>照看地块，把鲜韭变成日常收入。</p></div></div>}
       {showHelp && <LeekGardenHelpModal onClose={() => setShowHelp(false)} />}
       <div className="bg-card rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl border border-border">
         <div className="flex justify-between items-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border-b border-border shrink-0">

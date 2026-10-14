@@ -7,9 +7,10 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 
 interface OfficeModalProps {
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
+export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose, embedded = false }) => {
   const {
     playerStats,
     officeState,
@@ -328,7 +329,8 @@ export const OfficeModal: React.FC<OfficeModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className={embedded ? "mg-secondary-page mg-secondary-office" : "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"}>
+      {embedded && <div className="mg-secondary-intro"><div><h2>官邸与县政</h2><p>修缮官邸，规划县城的发展方向。</p></div></div>}
       <div className="bg-card rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl border border-border">
         {/* Header */}
         <div className="p-4 border-b border-border flex justify-between items-center bg-indigo-50 dark:bg-indigo-950/30">

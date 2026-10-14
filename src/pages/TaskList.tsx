@@ -1,3 +1,4 @@
+import { useInterfaceStore } from '@/store/interfaceStore';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Circle, Lock } from 'lucide-react';
@@ -5,8 +6,9 @@ import { useGameStore } from '@/store/gameStore';
 import { tasks } from '@/data/tasks';
 import { LogPanel } from '@/components/LogPanel';
 
-export const TaskList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const TaskList: React.FC<{ onBack?: () => void; embedded?: boolean }> = ({ onBack, embedded = false }) => {
   const navigate = useNavigate();
+  const modern = useInterfaceStore(state => state.version === 'modern');
   const { role, currentTaskId, completedTaskIds, logs } = useGameStore();
 
   const roleTasks = tasks.filter(t => t.role === role);
@@ -18,20 +20,20 @@ export const TaskList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="flex justify-center p-4 min-h-screen bg-background">
-      <div className="grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
+    <div className={modern ? `modern-page modern-tasklist${embedded ? " city-task-embedded" : ""}` : "flex justify-center p-4 min-h-screen bg-background"}>
+      <div className="directory-layout grid grid-cols-1 gap-6 w-full max-w-5xl md:grid-cols-2 md:h-[calc(100vh-2rem)]">
         
         {/* Left: Task List */}
-        <div className="flex overflow-hidden flex-col gap-4 w-full max-w-md h-full md:max-w-none">
-          <header className="flex gap-4 items-center py-2 shrink-0">
+        <div className="directory-main flex overflow-hidden flex-col gap-4 w-full max-w-md h-full md:max-w-none">
+          {!embedded && <header className="flex gap-4 items-center py-2 shrink-0">
             <button 
-              onClick={() => onBack ? onBack() : navigate('/game')}
+              onClick={() => onBack ? onBack() : navigate(modern ? '/game?tab=今日' : '/game')}
               className="p-2 rounded-full hover:bg-secondary"
             >
               <ArrowLeft size={20} />
             </button>
             <h1 className="text-xl font-bold">任务记录</h1>
-          </header>
+          </header>}
 
           <div className="overflow-y-auto flex-1 pr-2 space-y-4 min-h-0">
             {roleTasks.length === 0 ? (
@@ -100,7 +102,7 @@ export const TaskList: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
         
         {/* Right: Log Panel */}
-        <div className="w-full max-w-md mx-auto h-64 md:h-full md:max-w-none">
+        <div className="directory-log w-full max-w-md mx-auto h-64 md:h-full md:max-w-none">
           <LogPanel logs={logs} />
         </div>
       </div>

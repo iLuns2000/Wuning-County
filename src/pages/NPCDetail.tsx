@@ -1,5 +1,6 @@
+import { useInterfaceStore } from '@/store/interfaceStore';
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, User, Scroll, Lock, Briefcase, Package, Fingerprint } from 'lucide-react';
 import { npcs } from '@/data/npcs';
 import { useGameStore } from '@/store/gameStore';
@@ -8,6 +9,11 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 export const NPCDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const modern = useInterfaceStore(state => state.version === 'modern');
+  const origin = location.state?.returnTo;
+  const returnTo = typeof origin === 'string' && (origin.startsWith('/game?') || origin === '/npcs')
+    ? origin : modern ? '/game?tab=人物' : '/npcs';
   const { npcRelations } = useGameStore();
   const vibrate = useGameVibrate();
 
@@ -20,14 +26,14 @@ export const NPCDetail: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col p-4 min-h-screen bg-background">
+    <div className={modern ? "modern-page modern-npc-detail" : "flex flex-col p-4 min-h-screen bg-background"}>
       <header className="flex gap-4 items-center py-4 mb-4 border-b">
         <button 
           onClick={() => {
             vibrate(VIBRATION_PATTERNS.LIGHT);
-            navigate('/npcs');
+            navigate(returnTo);
           }}
-          className="p-2 rounded-full hover:bg-secondary"
+          aria-label="返回人物列表" className="p-2 rounded-full hover:bg-secondary"
         >
           <ArrowLeft size={24} />
         </button>
