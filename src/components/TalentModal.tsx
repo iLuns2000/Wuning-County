@@ -1,7 +1,7 @@
 /**
  * 古风天赋面板 - TalentModal 优化版
  */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Zap, ArrowUp, Star, Sparkles } from 'lucide-react';
 import { talents } from '@/data/talents';
 import { useGameStore } from '@/store/gameStore';
@@ -23,6 +23,38 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
 export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => {
   const { talents: playerTalents, playerStats, upgradeTalent } = useGameStore();
   const vibrate = useGameVibrate();
+  const panel = useRef<HTMLDivElement>(null);
+  const closeHandler = useRef(onClose);
+  closeHandler.current = onClose;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panel.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeHandler.current();
+      if (event.key === 'Tab' && panel.current) {
+        const controls = Array.from(panel.current.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -33,8 +65,13 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
       
       {/* 弹窗主体 */}
       <div 
-        className="relative w-full max-w-2xl bg-gradient-to-b from-[#1e2d2f] to-[#182628] 
-                   rounded-2xl border border-white/10 shadow-2xl max-h-[80vh] flex flex-col overflow-hidden"
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="talent-modal-title"
+        tabIndex={-1}
+        className="relative w-full max-w-2xl bg-card text-card-foreground
+                   rounded-2xl border border-border shadow-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[85dvh] flex flex-col overflow-hidden"
         style={{ animation: 'modalIn 0.3s ease-out forwards' }}
         onClick={e => e.stopPropagation()}
       >
@@ -42,36 +79,37 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
         
         {/* 标题栏 */}
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="flex shrink-0 items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20">
-              <Zap className="w-5 h-5 text-amber-400" />
+              <Zap className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-xl font-bold font-display">天赋树</h2>
+            <h2 id="talent-modal-title" className="text-xl font-bold font-display">天赋树</h2>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="关闭天赋树"
+            className="p-3 rounded-lg hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors"
           >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
         
         {/* 阅历显示 */}
-        <div className="p-4 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-white/5">
+        <div className="shrink-0 p-4 bg-muted/50 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-400" />
+              <Star className="w-4 h-4 text-primary" />
               <span className="text-sm text-muted-foreground">当前阅历</span>
             </div>
-            <span className="text-2xl font-bold text-amber-400 font-mono">
+            <span className="text-2xl font-bold text-primary font-mono" aria-live="polite">
               {playerStats.experience || 0}
             </span>
           </div>
         </div>
 
         {/* 天赋列表 */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3">
           {talents.map((talent) => {
             const currentLevel = playerTalents[talent.id] || 0;
             const isMaxed = currentLevel >= talent.maxLevel;
@@ -84,20 +122,20 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
               <div 
                 key={talent.id} 
                 className={`
-                  p-4 rounded-xl border transition-all duration-300
+                  p-3 sm:p-4 rounded-xl border transition-all duration-300
                   ${rarityStyle.bg} ${rarityStyle.border}
                   hover:border-primary/50 hover:shadow-lg ${rarityStyle.glow}
                 `}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       {/* 稀有度标识 */}
                       <span className={`w-1.5 h-1.5 rounded-full ${rarityStyle.bg.replace('/10', '').replace('bg-', 'bg-')}`} />
-                      <h3 className={`font-bold ${rarityStyle.text}`}>{talent.name}</h3>
+                      <h3 className="font-bold text-foreground">{talent.name}</h3>
                       <span className={`
                         text-xs px-2 py-0.5 rounded-full 
-                        ${rarityStyle.bg} ${rarityStyle.text} border ${rarityStyle.border}
+                        ${rarityStyle.bg} text-muted-foreground border ${rarityStyle.border}
                       `}>
                         Lv.{currentLevel} / {talent.maxLevel}
                       </span>
@@ -106,10 +144,14 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{talent.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground/70">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>
-                        当前加成: <span className="text-amber-400 font-mono">
-                          +{Math.round(currentLevel * talent.effectValue * (talent.effectType === 'action_cost' || talent.effectType === 'max_health' ? 1 : 100))}%
+                        当前加成: <span className="text-primary font-mono">
+                          {talent.effectType === 'max_health'
+                            ? `体力上限 +${currentLevel * talent.effectValue} 点`
+                            : talent.effectType === 'action_cost'
+                              ? `体力消耗 -${currentLevel * talent.effectValue} 点`
+                              : `+${Math.round(currentLevel * talent.effectValue * 100)}%`}
                         </span>
                       </span>
                       {talent.effectType !== 'action_cost' && talent.effectType !== 'max_health' && (
@@ -127,28 +169,30 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
                       }
                     }}
                     disabled={isMaxed || !canAfford}
+                    aria-label={isMaxed ? `${talent.name}已满级` : `升级${talent.name}，消耗${cost}阅历${canAfford ? '' : '，阅历不足'}`}
                     className={`
-                      flex flex-col items-center gap-1 p-3 rounded-xl transition-all
+                      shrink-0 flex flex-col items-center gap-1 p-3 rounded-xl transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary
                       ${isMaxed 
-                        ? 'bg-amber-500/20 text-amber-400 cursor-default'
+                        ? 'bg-muted text-muted-foreground cursor-default'
                         : canAfford 
-                          ? 'bg-gradient-to-b from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:from-emerald-500/30 hover:to-emerald-600/30 hover:scale-105 active:scale-95'
-                          : 'bg-secondary/50 text-muted-foreground opacity-50 cursor-not-allowed'
+                          ? 'bg-primary text-primary-foreground hover:opacity-90 active:scale-95'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed'
                       }
                     `}
                   >
                     <ArrowUp size={16} />
-                    <span className="text-xs font-mono">{isMaxed ? 'MAX' : cost}</span>
+                    <span className="text-xs">{isMaxed ? '已满级' : canAfford ? '升级' : '阅历不足'}</span>
+                    {!isMaxed && <span className="text-[10px] font-mono">{cost} 阅历</span>}
                   </button>
                 </div>
                 
                 {/* 进度条 */}
                 <div className="mt-3">
-                  <div className="flex justify-between text-[10px] text-muted-foreground/50 mb-1">
-                    <span>经验积累</span>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                    <span>天赋等级</span>
                     <span>{currentLevel}/{talent.maxLevel}</span>
                   </div>
-                  <div className="h-1.5 bg-black/30 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div 
                       className={`h-full rounded-full transition-all duration-500 ${rarityStyle.text.replace('text-', 'bg-')}`}
                       style={{ width: `${(currentLevel / talent.maxLevel) * 100}%` }}
@@ -161,11 +205,8 @@ export const TalentModal: React.FC<TalentModalProps> = ({ isOpen, onClose }) => 
         </div>
         
         {/* 底部装饰 */}
-        <div className="p-3 border-t border-white/5">
-          <div className="flex justify-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500/40" />
-            <span className="w-2 h-2 rounded-full bg-amber-500/20" />
-          </div>
+        <div className="shrink-0 p-3 border-t border-border text-xs text-muted-foreground text-center">
+          上下滑动查看全部天赋，升级消耗阅历。
         </div>
       </div>
       

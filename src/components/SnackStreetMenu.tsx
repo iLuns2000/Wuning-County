@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Coins, ShoppingBag, Utensils, X, Check } from 'lucide-react';
 import { snacks } from '@/data/snacks';
+import { CachedImage } from '@/utils/imageCache';
 
 interface Props {
   money: number;
@@ -61,17 +62,22 @@ export function SnackStreetMenu({ money, getPrice, onTaste, onTakeout, onClose, 
               ] as const;
               return (
                 <article key={snack.id} className="snack-menu-item">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <div className="flex min-w-0 items-baseline gap-3"><span className="snack-menu-number">{String(index + 1).padStart(2, '0')}</span><h3 className="text-lg font-display font-bold break-words">{snack.name}</h3></div>
+                  <div className="snack-menu-image">
+                    <CachedImage src={`/images/${snack.id}.webp`} alt={snack.name}
+                      className="h-full w-full object-contain [image-rendering:pixelated]"
+                      placeholder={<Utensils size={28} className="text-muted-foreground" />} />
+                  </div>
+                  <div className="snack-menu-item-heading">
+                    <div className="flex min-w-0 items-baseline gap-2"><span className="snack-menu-number">{String(index + 1).padStart(2, '0')}</span><h3 className="font-display font-bold break-words">{snack.name}</h3></div>
                     <span className="shrink-0 text-sm"><strong className="font-mono text-base">{price}</strong><span className="ml-1 text-xs text-muted-foreground">文</span></span>
                   </div>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{snack.description}</p>
+                  <p className="snack-menu-description">{snack.description}</p>
                   <div className="snack-menu-effects">
                     {effects.map(([label, value]) => typeof value === 'number' && value !== 0 && (
                       <span key={label} className={value < 0 ? 'snack-effect-negative' : ''}>{label} {value > 0 ? '+' : ''}{value}</span>
                     ))}
                   </div>
-                  <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
+                  <div className="snack-menu-item-actions">
                     <button className="snack-menu-action snack-menu-taste" disabled={!canBuy}
                       aria-label={`品尝${snack.name}，${price}文`}
                       onClick={() => { onTaste(snack.id, price); setNotice(`已品尝 · ${snack.name}`); }}><Utensils size={16} />品尝</button>

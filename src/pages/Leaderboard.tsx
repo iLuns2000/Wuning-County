@@ -5,10 +5,11 @@ import { getLeaderboard, registerUser, getDeviceId, setUserNickname, addMoney, s
 import { LeaderboardEntry, FavorabilityLeaderboardEntry } from '@/utils/cloudApi';
 import { useGameStore } from '@/store/gameStore';
 import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
+import '@/styles/leaderboard.css';
 
 type LeaderboardType = 'money' | 'favorability';
 
-export const Leaderboard: React.FC = () => {
+export const Leaderboard: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const [leaderboard, setLeaderboard] = useState<(LeaderboardEntry | FavorabilityLeaderboardEntry)[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -158,20 +159,21 @@ export const Leaderboard: React.FC = () => {
   const unit = leaderboardType === 'money' ? '文' : '点';
 
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 dark:from-slate-950 dark:to-slate-900">
+    <div className={embedded ? 'leaderboard-embedded' : 'p-4 min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-100/50 dark:from-slate-950 dark:to-slate-900'}>
       {/* 头部 */}
-      <div className="mx-auto mb-4 max-w-md">
+      {!embedded && <div className="mx-auto mb-4 max-w-md">
         <Link to="/" className="inline-flex items-center text-indigo-700 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200">
           <ArrowLeft className="mr-1 w-5 h-5" />
           返回首页
         </Link>
-      </div>
+      </div>}
 
       <div className="mx-auto space-y-4 max-w-md">
         {/* 排行榜类型切换 */}
-        <div className="flex gap-2 p-2 bg-white rounded-lg shadow-md dark:bg-card">
+        <div className="leaderboard-switch flex gap-2 p-2 bg-white rounded-lg shadow-md dark:bg-card" role="group" aria-label="选择排行榜">
           <button
             onClick={() => handleTypeChange('money')}
+            aria-pressed={leaderboardType === 'money'}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               leaderboardType === 'money'
                 ? 'bg-indigo-600 text-white'
@@ -183,6 +185,7 @@ export const Leaderboard: React.FC = () => {
           </button>
           <button
             onClick={() => handleTypeChange('favorability')}
+            aria-pressed={leaderboardType === 'favorability'}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               leaderboardType === 'favorability'
                 ? 'bg-pink-600 text-white'
@@ -195,7 +198,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 标题 */}
-        <div className="py-4 text-center">
+        {!embedded && <div className="py-4 text-center">
           <h1 className="flex gap-2 justify-center items-center text-2xl font-bold text-indigo-900 dark:text-indigo-100">
             {leaderboardType === 'money' ? (
               <>
@@ -212,10 +215,10 @@ export const Leaderboard: React.FC = () => {
           <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300/90">
             {leaderboardType === 'money' ? '无宁县富甲天下排行' : '无宁县人脉通达排行'}
           </p>
-        </div>
+        </div>}
 
         {/* 上榜状态 */}
-        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
+        <div className="leaderboard-self overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
           <div className={`px-4 py-3 border-b border-border/60 ${leaderboardType === 'money' ? 'bg-indigo-50 dark:bg-indigo-950/50' : 'bg-pink-50 dark:bg-pink-950/40'}`}>
             <h2 className={`flex gap-2 items-center font-bold ${leaderboardType === 'money' ? 'text-indigo-900 dark:text-indigo-100' : 'text-pink-900 dark:text-pink-100'}`}>
               {leaderboardType === 'money' ? (
@@ -228,7 +231,7 @@ export const Leaderboard: React.FC = () => {
           </div>
           <div className="p-4">
             {isOnLeaderboard ? (
-              <div className="text-center">
+              <div className="leaderboard-self-content text-center">
                 <div className={`flex gap-2 justify-center items-center mb-3 ${leaderboardType === 'money' ? 'text-green-600 dark:text-green-400' : 'text-pink-600 dark:text-pink-400'}`}>
                   {leaderboardType === 'money' ? (
                     <Trophy className="w-6 h-6" />
@@ -283,10 +286,10 @@ export const Leaderboard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center">
-                <div className="mb-4 text-indigo-800 dark:text-indigo-200/90">
+              <div className="leaderboard-self-content text-center">
+                {!embedded && <div className="mb-4 text-indigo-800 dark:text-indigo-200/90">
                   {leaderboardType === 'money' ? '登榜展示您的万贯家财' : '登榜展示您的人脉关系'}
-                </div>
+                </div>}
                 <div className="mb-2 text-lg font-medium text-indigo-900 dark:text-foreground">
                   角色名: {playerName || `游客`}
                 </div>
@@ -318,7 +321,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 排行榜列表 */}
-        <div className="overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
+        <div className="leaderboard-ranking overflow-hidden bg-white rounded-lg border border-indigo-100 shadow-lg dark:bg-card dark:border-border">
           <div className={`px-4 py-3 ${leaderboardType === 'money' ? 'bg-indigo-600 dark:bg-indigo-800' : 'bg-pink-600 dark:bg-pink-800'}`}>
             <h2 className="flex gap-2 items-center font-bold text-white">
               <Medal className="w-4 h-4" />
@@ -337,7 +340,7 @@ export const Leaderboard: React.FC = () => {
                 {/* 固定第一名：县令（好感榜）/ 小四（财富榜） - 仅在第一页显示 */}
                 {currentPage === 1 && (
                   leaderboardType === 'money' ? (
-                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50 dark:from-amber-950/40 dark:to-yellow-950/25">
+                    <div className="leaderboard-row leaderboard-first flex items-center px-4 py-3 bg-gradient-to-r from-yellow-50 to-yellow-100/50 dark:from-amber-950/40 dark:to-yellow-950/25">
                       <div className="flex justify-center items-center w-8 h-8 font-bold text-yellow-900 bg-yellow-400 rounded-full dark:text-amber-100 dark:bg-amber-700">
                         1
                       </div>
@@ -347,12 +350,12 @@ export const Leaderboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-indigo-800 dark:text-indigo-200">*************</div>
+                        <div className="font-bold text-indigo-800 dark:text-indigo-200">{embedded ? '未公开' : '*************'}</div>
                         <div className="text-xs text-indigo-500 dark:text-indigo-400">文</div>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50 dark:from-pink-950/35 dark:to-rose-950/25">
+                    <div className="leaderboard-row leaderboard-first flex items-center px-4 py-3 bg-gradient-to-r from-pink-50 to-pink-100/50 dark:from-pink-950/35 dark:to-rose-950/25">
                       <div className="flex justify-center items-center w-8 h-8 font-bold text-pink-900 bg-pink-400 rounded-full dark:text-pink-100 dark:bg-pink-700">
                         1
                       </div>
@@ -362,7 +365,7 @@ export const Leaderboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-pink-800 dark:text-pink-200">*************</div>
+                        <div className="font-bold text-pink-800 dark:text-pink-200">{embedded ? '未公开' : '*************'}</div>
                         <div className="text-xs text-pink-500 dark:text-pink-400">好感度</div>
                       </div>
                     </div>
@@ -377,7 +380,7 @@ export const Leaderboard: React.FC = () => {
                   leaderboard.map((entry) => (
                     <div
                       key={entry.user_id}
-                      className={`flex items-center px-4 py-3 transition-colors hover:bg-indigo-50/50 dark:hover:bg-accent/30 ${
+                      className={`leaderboard-row flex items-center px-4 py-3 transition-colors hover:bg-indigo-50/50 dark:hover:bg-accent/30 ${
                         entry.user_id === deviceId ? 'bg-indigo-50 dark:bg-indigo-950/40' : ''
                       }`}
                     >
@@ -409,7 +412,7 @@ export const Leaderboard: React.FC = () => {
               </div>
 
               {/* 翻页控件 */}
-              <div className="flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30 dark:border-border dark:bg-muted/30">
+              <div className="leaderboard-pagination flex justify-between items-center p-4 border-t border-indigo-50 bg-indigo-50/30 dark:border-border dark:bg-muted/30">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
@@ -435,7 +438,7 @@ export const Leaderboard: React.FC = () => {
         </div>
 
         {/* 提示信息 */}
-        <div className="p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-300 dark:border-indigo-900/50">
+        <div className="leaderboard-note p-4 text-sm text-center text-indigo-500 bg-indigo-50 rounded-lg border border-indigo-100 dark:bg-indigo-950/35 dark:text-indigo-300 dark:border-indigo-900/50">
           <p>
             📌 {leaderboardType === 'money' 
               ? '上榜后每日自动同步财富至官府榜文' 

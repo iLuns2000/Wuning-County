@@ -72,10 +72,7 @@ class ImageCacheManager {
       contentType: blob.type
     });
 
-    return new Promise((resolve, reject) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    await tx.done;
   }
 
   // 从缓存获取图片
@@ -86,6 +83,10 @@ class ImageCacheManager {
     const result = await this.db.get('images', url);
 
     if (result) {
+      if (!result.blob.size || result.blob.type.startsWith('text/')) {
+        await this.db.delete(STORE_NAME, url);
+        return null;
+      }
       // 更新访问时间
       await this.db.put('images', {
         ...result,
@@ -102,7 +103,13 @@ class ImageCacheManager {
   // 检查图片是否存在缓存中
   async hasImage(url: string): Promise<boolean> {
     const cached = await this.getImage(url);
+    if (cached) URL.revokeObjectURL(cached);
     return cached !== null;
+  }
+
+  async removeImage(url: string): Promise<void> {
+    await this.init();
+    await this.db?.delete(STORE_NAME, url);
   }
 
   // 获取缓存大小
@@ -156,12 +163,8 @@ class ImageCacheManager {
 
     const tx = this.db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    store.clear();
-
-    return new Promise((resolve, reject) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    await store.clear();
+    await tx.done;
   }
 }
 
@@ -173,7 +176,15 @@ export const imageCache = new ImageCacheManager();
  * 带缓存的图片加载组件
  * 使用方式：<CachedImage src="/images/xxx.jpg" alt="xxx" />
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+// HTTP 200 can contain the SPA's HTML fallback. Decode before using or caching it.
+const isDecodableImage = (url: string): Promise<boolean> => new Promise(resolve => {
+  const probe = new Image();
+  probe.onload = () => resolve(probe.naturalWidth > 0);
+  probe.onerror = () => resolve(false);
+  probe.src = url;
+});
 
 interface CachedImageProps {
   src: string;
@@ -206,16 +217,29 @@ const loadImageWithFallback = async (src: string, onError?: (err: Error) => void
     const trySrc = basePath + ext;
     try {
       // 先从缓存获取
-      let url = await imageCache.getImage(trySrc);
-      if (url) return url;
+      // Browser storage is optional: a cache error must not block the network.
+      let cached: string | null = null;
+      try { cached = await imageCache.getImage(trySrc); } catch {}
+      if (cached) {
+        if (await isDecodableImage(cached)) return cached;
+        URL.revokeObjectURL(cached);
+        try { await imageCache.removeImage(trySrc); } catch {}
+      }
 
       // 下载并缓存
-      const response = await fetch(trySrc);
+      const response = await fetch(trySrc, { cache: 'no-cache' });
       if (!response.ok) continue;
+      if (response.headers.get('content-type')?.toLowerCase().startsWith('text/')) continue;
       
       const blob = await response.blob();
-      await imageCache.cacheImage(trySrc, blob);
-      return URL.createObjectURL(blob);
+      if (!blob.size) continue;
+      const url = URL.createObjectURL(blob);
+      if (!(await isDecodableImage(url))) {
+        URL.revokeObjectURL(url);
+        continue;
+      }
+      try { await imageCache.cacheImage(trySrc, blob); } catch {}
+      return url;
     } catch {
       // 继续尝试下一种格式
     }
@@ -235,9 +259,15 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const errorHandler = useRef(onError);
+  errorHandler.current = onError;
 
   useEffect(() => {
     let mounted = true;
+    let ownedUrl: string | null = null;
+    setLoading(true);
+    setError(null);
+    setImageUrl(null);
 
     const loadImage = async () => {
       if (!src) {
@@ -249,14 +279,17 @@ export const CachedImage: React.FC<CachedImageProps> = ({
         const url = await loadImageWithFallback(src, (err) => {
           if (mounted) {
             setError(err);
-            onError?.(err);
+            errorHandler.current?.(err);
           }
         });
 
         if (mounted && url) {
+          ownedUrl = url;
           setImageUrl(url);
           setLoading(false);
-        } else if (mounted) {
+        } else {
+          if (url) URL.revokeObjectURL(url);
+          if (!mounted) return;
           setError(new Error('Image load failed'));
           setLoading(false);
         }
@@ -264,7 +297,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
         if (mounted) {
           setError(err as Error);
           setLoading(false);
-          onError?.(err as Error);
+          errorHandler.current?.(err as Error);
         }
       }
     };
@@ -273,8 +306,9 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 
     return () => {
       mounted = false;
+      if (ownedUrl) URL.revokeObjectURL(ownedUrl);
     };
-  }, [src, onError]);
+  }, [src]);
 
   if (loading) {
     return placeholder ? (
@@ -285,7 +319,6 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   }
 
   if (error) {
-    console.error(error)
     return (
       <div className={`flex items-center justify-center bg-gray-100 text-gray-400 ${className}`}>
         <span>图片加载失败</span>

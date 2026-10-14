@@ -2,9 +2,10 @@
  * 古风成就弹出 - AchievementPopup 优化版
  * 包含金灿灿的成就解锁动效
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Award, X, Sparkles, Star } from 'lucide-react';
 import { Achievement } from '@/types/game';
+import { useInterfaceStore } from '@/store/interfaceStore';
 
 interface AchievementPopupProps {
   achievement: Achievement;
@@ -21,36 +22,51 @@ const rarityColors: Record<string, { bg: string; border: string; text: string; g
 
 export const AchievementPopup: React.FC<AchievementPopupProps> = ({ achievement, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const modern = useInterfaceStore(state => state.version === 'modern');
+  const closeHandler = useRef(onClose);
+  closeHandler.current = onClose;
+  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
   const rarity = achievement.rarity || 'common';
   const rarityStyle = rarityColors[rarity] || rarityColors.common;
+  const rarityName = { common: '普通', rare: '稀有', epic: '史诗', legend: '传说' }[rarity as 'common' | 'rare' | 'epic' | 'legend'] || '普通';
+  const dismiss = () => {
+    clearTimeout(hideTimer.current);
+    clearTimeout(closeTimer.current);
+    setIsVisible(false);
+    closeTimer.current = setTimeout(() => closeHandler.current(), 500);
+  };
 
   useEffect(() => {
     // 入场动画
     setIsVisible(true);
     
     // 4秒后自动隐藏
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 500); // 等待退场动画
-    }, 4000);
+    hideTimer.current = setTimeout(dismiss, 4000);
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
+    return () => {
+      clearTimeout(hideTimer.current);
+      clearTimeout(closeTimer.current);
+    };
+  }, [achievement.id]);
 
   return (
     <div 
       className={`
-        fixed top-6 right-6 z-50 transition-all duration-500
+        fixed right-3 sm:right-6 w-[calc(100%-1.5rem)] max-w-sm z-50 transition-all duration-500 motion-reduce:transition-none
+        ${modern ? 'top-[calc(140px+0.75rem)] sm:top-6' : 'top-6'}
         ${isVisible 
           ? 'translate-x-0 opacity-100 scale-100' 
           : 'translate-x-full opacity-0 scale-95'
         }
       `}
+      role="status"
+      aria-live="polite"
     >
       <div 
         className={`
-          relative p-5 rounded-2xl max-w-sm 
-          bg-gradient-to-b from-[#1e2d2f] to-[#182628]
+          relative p-4 sm:p-5 rounded-2xl max-w-sm
+          bg-card text-card-foreground
           border-2 ${rarityStyle.border}
           shadow-2xl ${rarityStyle.glow}
           overflow-hidden
@@ -84,7 +100,7 @@ export const AchievementPopup: React.FC<AchievementPopupProps> = ({ achievement,
             relative p-3 rounded-xl ${rarityStyle.bg} border ${rarityStyle.border}
             ${isVisible ? 'animate-bounce' : ''}
           `} style={{ animationDuration: '0.6s', animationDelay: '0.1s' }}>
-            <Award size={32} className={rarityStyle.text} />
+            <Award size={28} className="text-primary" />
             {/* 光芒效果 */}
             <div className={`
               absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent
@@ -94,24 +110,25 @@ export const AchievementPopup: React.FC<AchievementPopupProps> = ({ achievement,
           
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`text-xs font-bold uppercase tracking-wider ${rarityStyle.text}`}>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="text-xs font-bold text-primary">
                   🎉 成就达成
                 </span>
                 {/* 稀有度标签 */}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${rarityStyle.bg} ${rarityStyle.text} border ${rarityStyle.border}`}>
-                  {rarity}
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${rarityStyle.bg} text-muted-foreground border ${rarityStyle.border}`}>
+                  {rarityName}
                 </span>
               </div>
               <button 
-                onClick={() => { setIsVisible(false); setTimeout(onClose, 500); }}
-                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+                onClick={dismiss}
+                aria-label="关闭成就提示"
+                className="relative z-10 shrink-0 -mr-2 -mt-2 p-3 rounded-lg hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors"
               >
                 <X size={14} className="text-muted-foreground" />
               </button>
             </div>
             
-            <h5 className={`font-bold text-lg mb-1 ${rarityStyle.text}`}>
+            <h5 className="font-bold text-lg mb-1 text-foreground break-words">
               {achievement.name}
             </h5>
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
@@ -122,8 +139,7 @@ export const AchievementPopup: React.FC<AchievementPopupProps> = ({ achievement,
             <div className="flex items-center gap-3">
               <div className={`
                 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold
-                bg-gradient-to-r from-amber-500/20 to-yellow-500/20 
-                border border-amber-500/30 text-amber-300
+                bg-accent border border-border text-accent-foreground
               `}>
                 <Star size={12} />
                 阅历 +{achievement.rewardExp}

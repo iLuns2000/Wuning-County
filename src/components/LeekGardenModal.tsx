@@ -65,10 +65,10 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose, embed
 
   return (
     <div className={embedded ? "mg-secondary-page mg-secondary-leekgarden" : "flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/50 backdrop-blur-sm"}>
-      {embedded && <div className="mg-secondary-intro"><div><h2>耕种与收获</h2><p>照看地块，把鲜韭变成日常收入。</p></div></div>}
+      {embedded && <div className="mg-secondary-intro leek-garden-intro"><div><h2>耕种与收获</h2><p>照看地块，把鲜韭变成日常收入。</p></div><button onClick={() => setShowHelp(true)} aria-label="查看韭菜园玩法说明"><HelpCircle size={18} />说明</button></div>}
       {showHelp && <LeekGardenHelpModal onClose={() => setShowHelp(false)} />}
       <div className="bg-card rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl border border-border">
-        <div className="flex justify-between items-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border-b border-border shrink-0">
+        <div className={`flex justify-between items-center p-4 bg-emerald-50 dark:bg-emerald-950/30 border-b border-border shrink-0 ${embedded ? 'leek-garden-modal-header' : ''}`}>
           <h2 className="flex gap-2 items-center text-xl font-bold text-emerald-900 dark:text-emerald-100">
             <Leaf className="w-5 h-5" />
             韭菜园
@@ -87,19 +87,18 @@ export const LeekGardenModal: React.FC<LeekGardenModalProps> = ({ onClose, embed
           </div>
         </div>
 
-        <div className="flex justify-between items-center p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border-b border-border shrink-0">
-          <div className="flex gap-4">
-             <div className="flex gap-2 items-center text-emerald-800 dark:text-emerald-200">
+        <div className="leek-garden-summary flex justify-between items-center p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border-b border-border shrink-0">
+          <div className="leek-garden-metrics flex gap-4">
+             <div className="leek-garden-money flex gap-2 items-center text-emerald-800 dark:text-emerald-200">
                 <Coins className="w-4 h-4" />
-                <span className="font-bold">资金: {playerStats.money}</span>
+                <span className="font-bold">资金: {playerStats.money.toLocaleString()}</span>
              </div>
-             <div className="text-sm text-emerald-700 dark:text-emerald-300">
-               鲜韭: {owned}
-               {leekCap != null ? ` / ${leekCap}` : ''} | 盒子: {ownedBox}
-               {boxCap != null ? ` / ${boxCap}` : ''}
+             <div className="leek-garden-stock text-sm text-emerald-700 dark:text-emerald-300">
+               <span>鲜韭: <b>{owned}{leekCap != null ? ` / ${leekCap}` : ''}</b></span>
+               <span>盒子: <b>{ownedBox}{boxCap != null ? ` / ${boxCap}` : ''}</b></span>
              </div>
           </div>
-          <div className="flex gap-2 text-sm">
+          <div className="leek-garden-tabs flex gap-2 text-sm" role="group" aria-label="韭菜园功能">
              <button 
                onClick={() => setActiveTab('plots')}
                className={`px-3 py-1 rounded-full ${activeTab === 'plots' ? 'bg-emerald-600 text-white' : 'bg-card text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800'}`}

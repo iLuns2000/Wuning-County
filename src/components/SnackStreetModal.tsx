@@ -10,6 +10,7 @@ import { useGameVibrate, VIBRATION_PATTERNS } from '@/hooks/useGameVibrate';
 import { useTheme } from '@/hooks/useTheme';
 import { useInterfaceStore } from '@/store/interfaceStore';
 import { SnackStreetMenu } from '@/components/SnackStreetMenu';
+import { CachedImage } from '@/utils/imageCache';
 
 interface SnackStreetModalProps {
   onClose: () => void;
@@ -150,6 +151,11 @@ export const SnackStreetModal: React.FC<SnackStreetModalProps> = ({ onClose, emb
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-pointer-events-none pointer-events-none
                                 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent rounded-xl" />
                   
+                  <div className="relative mb-3 flex h-28 items-center justify-center rounded-lg bg-secondary/20 sm:h-36">
+                    <CachedImage src={`/images/${snack.id}.webp`} alt={snack.name}
+                      className="h-full w-full object-contain p-2 [image-rendering:pixelated]"
+                      placeholder={<Utensils size={28} className="text-muted-foreground" />} />
+                  </div>
                   <div className="relative flex justify-between items-start mb-3">
                     <div>
                       <h3 className={`font-bold text-lg ${isLightMode ? 'text-amber-900' : 'text-amber-100'}`}>{snack.name}</h3>

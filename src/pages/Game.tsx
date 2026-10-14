@@ -732,7 +732,7 @@ export const Game: React.FC = () => {
       '赛鸽场': <ModernPigeonRace onBack={onClose} embedded/>,
       '藏珍匣': <ModernCollection onBack={onClose} embedded/>,
       '任务记录': <ModernTasks onBack={onClose} embedded/>,
-      '财富榜': <ModernLeaderboard/>,
+      '财富榜': <ModernLeaderboard embedded/>,
       '公告栏': <ModernAnnouncements embedded/>,
       '拜访 NPC': <ModernNPCList onBack={onClose} embedded/>,
     };

@@ -316,6 +316,54 @@ export function ModernGame({
           {clock}
         </div>
         <div className="mg-workspace">
+          {!desktop && !feature && tab === "今日" && (
+            <section className="mg-mobile-status" aria-label="状态一览">
+              <div className="mg-mobile-status-heading">
+                <div>
+                  <h2>状态一览</h2>
+                  <p>{state.playerProfile.name || role?.name} · {role?.name}</p>
+                </div>
+                <button onClick={() => setDrawer("人物状态")}>
+                  人物详情<ChevronRight size={16} />
+                </button>
+              </div>
+              <h3>人物属性</h3>
+              <dl className="mg-status-grid">
+                {[
+                  { label: "体力", value: `${state.playerStats.health} / ${healthMax}` },
+                  { label: "银两", value: `${state.playerStats.money.toLocaleString()} 文` },
+                  { label: "声望", value: state.playerStats.reputation.toLocaleString() },
+                  { label: "能力", value: state.playerStats.ability.toLocaleString() },
+                  { label: "阅历", value: (state.playerStats.experience || 0).toLocaleString() },
+                  { label: "负债", value: `${(state.playerStats.debt || 0).toLocaleString()} 文` },
+                ].map(({ label, value }) => (
+                  <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+                ))}
+              </dl>
+              <h3>县城概况</h3>
+              <dl className="mg-status-grid mg-status-county">
+                {([
+                  ["经济", state.countyStats.economy],
+                  ["治安", state.countyStats.order],
+                  ["文化", state.countyStats.culture],
+                  ["民生", state.countyStats.livelihood],
+                ] as const).map(([label, value]) => (
+                  <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+                ))}
+              </dl>
+              {state.externalThreat && (
+                <>
+                  <h3>边防局势</h3>
+                  <dl className="mg-status-grid">
+                    <div><dt>匪患</dt><dd>{state.externalThreat.banditThreat} / 100</dd></div>
+                    <div><dt>边防</dt><dd>{state.externalThreat.defense} / 100</dd></div>
+                    <div><dt>战火</dt><dd>{state.externalThreat.warRisk} / 100</dd></div>
+                  </dl>
+                </>
+              )}
+              <p className="mg-status-help">人物详情可查看装扮、天赋与成就；县城治理可在「今日」中进入。</p>
+            </section>
+          )}
           <div className="mg-heading">
             {feature && !desktop && (
               <button
@@ -660,7 +708,7 @@ export function ModernGame({
                   <div className="mg-section-title">
                     <h2>我的养成</h2>
                   </div>
-                  <div className="mg-outings">
+                  <div className="mg-outings mg-growth-actions">
                     <button onClick={() => onOpen("天赋")}>
                       <Star size={20} />
                       天赋

@@ -6,9 +6,9 @@ import { AlertTriangle, Flame, Skull, ChevronDown, ChevronUp } from 'lucide-reac
 
 // 严重程度颜色
 const severityStyle = {
-  minor: { border: 'border-yellow-500/60', bg: 'bg-yellow-950/40', icon: 'text-yellow-400', badge: 'bg-yellow-600/30 text-yellow-300' },
-  moderate: { border: 'border-orange-500/60', bg: 'bg-orange-950/40', icon: 'text-orange-400', badge: 'bg-orange-600/30 text-orange-300' },
-  severe: { border: 'border-red-500/70', bg: 'bg-red-950/50', icon: 'text-red-400', badge: 'bg-red-600/30 text-red-300' },
+  minor: { border: 'border-yellow-500/60', bg: 'bg-yellow-50 dark:bg-yellow-950/40', icon: 'text-yellow-700 dark:text-yellow-400', badge: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-600/30 dark:text-yellow-300' },
+  moderate: { border: 'border-orange-500/60', bg: 'bg-orange-50 dark:bg-orange-950/40', icon: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-100 text-orange-800 dark:bg-orange-600/30 dark:text-orange-300' },
+  severe: { border: 'border-red-500/70', bg: 'bg-red-50 dark:bg-red-950/50', icon: 'text-red-700 dark:text-red-400', badge: 'bg-red-100 text-red-800 dark:bg-red-600/30 dark:text-red-300' },
 };
 
 const SeverityIcon = ({ severity }: { severity: 'minor' | 'moderate' | 'severe' }) => {
@@ -63,7 +63,7 @@ const DebuffCard: React.FC<{ debuff: ActiveDebuff }> = ({ debuff }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={style.icon}><SeverityIcon severity={config.severity} /></span>
-          <span className="font-bold text-white/90">{config.name}</span>
+          <span className="font-bold text-foreground">{config.name}</span>
           {debuff.stacks > 1 && (
             <span className={`text-[10px] px-1 py-0.5 rounded ${style.badge}`}>×{debuff.stacks}</span>
           )}
@@ -72,7 +72,9 @@ const DebuffCard: React.FC<{ debuff: ActiveDebuff }> = ({ debuff }) => {
           <span className={`text-[10px] px-1.5 py-0.5 rounded ${style.badge}`}>{remainText}</span>
           <button
             onClick={() => setExpanded(e => !e)}
-            className="text-white/40 hover:text-white/80 transition-colors"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? '收起' : '查看'}${config.name}详情与解除方式`}
+            className="flex items-center justify-center min-w-11 min-h-11 text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-colors"
           >
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
@@ -80,21 +82,21 @@ const DebuffCard: React.FC<{ debuff: ActiveDebuff }> = ({ debuff }) => {
       </div>
 
       {/* 效果摘要（常显） */}
-      <div className="mt-1 text-white/60 text-[11px]">{effectSummary}</div>
+      <div className="mt-1 text-muted-foreground text-[11px]">{effectSummary}</div>
 
       {/* 来源 */}
       {debuff.source && (
-        <div className="mt-0.5 text-white/30 text-[10px]">来源：{debuff.source}</div>
+        <div className="mt-0.5 text-muted-foreground text-[10px]">来源：{debuff.source}</div>
       )}
 
       {/* 展开详情 */}
       {expanded && (
-        <div className="mt-2 pt-2 border-t border-white/10">
+        <div className="mt-2 pt-2 border-t border-border">
           {/* 描述 */}
-          <p className="text-white/50 text-[11px] mb-2 leading-relaxed">{config.description}</p>
+          <p className="text-muted-foreground text-[11px] mb-2 leading-relaxed">{config.description}</p>
 
           {/* 解除方式 */}
-          <div className="text-white/70 mb-1 font-medium">可用解除方式：</div>
+          <div className="text-foreground mb-1 font-medium">可用解除方式：</div>
           <div className="space-y-1">
             {config.clearMethods.map(method => {
               const canAffordMoney = !method.moneyCost || playerStats.money >= method.moneyCost;
@@ -104,15 +106,15 @@ const DebuffCard: React.FC<{ debuff: ActiveDebuff }> = ({ debuff }) => {
 
               return (
                 <div key={method.id} className="flex items-center justify-between gap-2">
-                  <span className="text-white/60 flex-1 text-[11px]">{method.label}</span>
+                  <span className="text-muted-foreground flex-1 text-[11px]">{method.label}</span>
                   {isManual && (
                     <button
                       onClick={() => handleClear(method.id)}
                       disabled={!canExecute}
-                      className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                      className={`text-xs min-h-11 px-3 py-2 rounded transition-colors ${
                         canExecute
-                          ? 'bg-white/15 hover:bg-white/25 text-white/80'
-                          : 'bg-white/5 text-white/25 cursor-not-allowed'
+                          ? 'bg-primary text-primary-foreground hover:opacity-90'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed'
                       }`}
                     >
                       {canExecute ? '执行' : '资源不足'}
@@ -125,7 +127,7 @@ const DebuffCard: React.FC<{ debuff: ActiveDebuff }> = ({ debuff }) => {
 
           {/* 操作反馈 */}
           {clearMsg && (
-            <div className="mt-2 text-[11px] text-emerald-400">{clearMsg}</div>
+            <div className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-400">{clearMsg}</div>
           )}
         </div>
       )}
@@ -142,10 +144,10 @@ export const DebuffPanel: React.FC = () => {
   const severeCount = debuffs.filter(d => getDebuffConfig(d.configId)?.severity === 'severe').length;
 
   return (
-    <div className="mt-2 p-3 rounded-lg border border-white/10 bg-black/30 backdrop-blur-md">
+    <div className="mt-2 p-3 rounded-lg border border-border bg-card text-card-foreground">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <AlertTriangle size={13} className="text-orange-400" />
-        <span className="text-xs font-semibold text-orange-300">
+        <AlertTriangle size={13} className="text-orange-700 dark:text-orange-400" />
+        <span className="text-xs font-semibold text-orange-800 dark:text-orange-300">
           当前负面效果 ({debuffs.length})
           {severeCount > 0 && <span className="ml-1 text-red-400">⚠ {severeCount} 严重</span>}
         </span>
