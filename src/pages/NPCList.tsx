@@ -25,6 +25,7 @@ import { roles } from '@/data/roles';
 import { simulateJiYiOuArcheryDuel, incrementArcheryDuelCount, simulateXuXiaoxiWudaoDuel, simulateXuXiaoxiChessDuel } from '@/services/npcDuelEngine';
 import { resolveHunt } from '@/services/huntResolutionEngine';
 import { ClinicAnimalModal } from '@/components/ClinicAnimalModal';
+import { checkEventTriggerCondition } from '@/utils/eventConditions';
 
 type SortType = 'default' | 'relation_desc' | 'relation_asc' | 'id_asc' | 'id_desc';
 
@@ -173,6 +174,16 @@ export const NPCList: React.FC<{ onBack?: () => void; embedded?: boolean; showEv
   const handleOptionSelect = (index: number) => {
     if (!currentEvent) return;
     const option = currentEvent.options[index];
+
+    const minRelationReq = option.requirements?.minRelation;
+    if (minRelationReq) {
+      const currentRelation = (useGameStore.getState().npcRelations[minRelationReq.npcId] || 0);
+      if (currentRelation < minRelationReq.value) {
+        addLog(`好感度不足：需 ${minRelationReq.npcId} 好感 ≥ ${minRelationReq.value}（当前 ${currentRelation}）`);
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+    }
     const eventId = currentEvent.id;
 
     // 季一藕射箭切磋特殊处理
@@ -591,6 +602,20 @@ export const NPCList: React.FC<{ onBack?: () => void; embedded?: boolean; showEv
     if (!npc) return;
 
     if (type === 'event' && eventId) {
+      const event = npcEvents.find(e => e.id === eventId);
+      if (!event) {
+        addLog('事件不存在或已失效。');
+        return;
+      }
+
+      const state = useGameStore.getState();
+      const check = checkEventTriggerCondition(event, state);
+      if (!check.passed) {
+        addLog(`【事件未解锁】${event.title}${check.reason ? `：${check.reason}` : ''}`);
+        vibrate(VIBRATION_PATTERNS.ERROR);
+        return;
+      }
+
       const result = interactWithNPC(npcId, 'action');
       if (result.success) {
         triggerSpecificEvent(eventId);
@@ -903,18 +928,8 @@ export const NPCList: React.FC<{ onBack?: () => void; embedded?: boolean; showEv
                         if (!event) return null;
 
                         const state = useGameStore.getState();
-
-                        // 检查custom条件
-                        if (event.triggerCondition?.custom) {
-                          if (!event.triggerCondition.custom(state)) return null;
-                        }
-
-                        // 检查requiredItems条件
-                        if (event.triggerCondition?.requiredItems) {
-                          for (const [itemId, minCount] of Object.entries(event.triggerCondition.requiredItems)) {
-                            if ((state.inventory[itemId] || 0) < minCount) return null;
-                          }
-                        }
+                        const check = checkEventTriggerCondition(event, state);
+                        if (!check.passed) return null;
 
                         return (
                           <button

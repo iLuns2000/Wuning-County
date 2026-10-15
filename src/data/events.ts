@@ -1162,6 +1162,7 @@ export const npcEvents: GameEvent[] = [
       {
         label: '投100文听惊天八卦（好感≥20解锁）',
         description: '打听需一百文；若摊上衙役刁难，另需五十文打点，请备足一百五十文。',
+        requirements: { minRelation: { npcId: 'tuyumen_xiada', value: 20 } },
         message: '一桩无宁县的旧事从你耳边擦过……',
         effect: { money: -150 }
       },
@@ -2775,6 +2776,7 @@ export const npcEvents: GameEvent[] = [
       },
       {
         label: '一起走 (需好感>50)',
+        requirements: { minRelation: { npcId: 'ying_yue', value: 51 } },
         message: '“你也来这里吗？我在准备酿酒的材料，要一起走吗？”（影月开心地邀请你）',
         effect: { relationChange: { ying_yue: 5 } }
       },
